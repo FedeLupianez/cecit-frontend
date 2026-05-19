@@ -1,7 +1,25 @@
 :root {
+
     --bg-color-one: #edf3ff;
     --bg-color-two: #ffffff;
     --cecit-black: #000000;
-    --cecit-red:#d61523;
+    --cecit-red: #d61523;
     --button-bg: #151535;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+
+    font-family: Arial, Helvetica, sans-serif;
+
+    background: #f4f4f4;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+button {
+    cursor: pointer;
 }

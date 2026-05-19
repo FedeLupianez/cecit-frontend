@@ -1,13 +1,13 @@
 <script>
-  import BenefitCard from '$lib/components/BenefitCard.svelte';
+  import BenefitCard from './BenefitCard.svelte';
   import { benefits } from '$lib/data/benefits';
 </script>
 
-<section class="benefits-page">
+<section class="section">
   <div class="top">
-    <h1>Todos los beneficios</h1>
+    <h2>Beneficios populares</h2>
 
-    <input placeholder="Buscar beneficio..." />
+    <button>Ver más</button>
   </div>
 
   <div class="grid">
@@ -18,34 +18,27 @@
 </section>
 
 <style>
-  .benefits-page {
+  .section {
     width: 100%;
     max-width: 1200px;
 
     margin: auto;
-
-    padding: 50px 20px;
+    margin-top: 70px;
   }
 
   .top {
     display: flex;
     justify-content: space-between;
     align-items: center;
-
-    gap: 20px;
   }
 
-  input {
-    width: 300px;
-
-    padding: 14px;
-
-    border-radius: 10px;
-    border: 1px solid #ccc;
+  .top button {
+    border: none;
+    background: transparent;
   }
 
   .grid {
-    margin-top: 40px;
+    margin-top: 30px;
 
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -53,15 +46,6 @@
   }
 
   @media (max-width: 900px) {
-    .top {
-      flex-direction: column;
-      align-items: flex-start;
-    }
-
-    input {
-      width: 100%;
-    }
-
     .grid {
       grid-template-columns: 1fr;
     }
