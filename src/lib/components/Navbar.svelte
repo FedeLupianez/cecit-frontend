@@ -1,19 +1,23 @@
 <script>
-    import { UserCircle2 } from "lucide-svelte";
+    import User24Icon from '@iconify-svelte/qlementine-icons/user-24';
+    const logo = "http://centrodecomercioag.com.ar/wp-content/uploads/2023/07/logonuevo.png";
+
 </script>
 
 <nav class="navbar">
     <div class="logo">
-        <h2>CeCIT</h2>
+    <img src={logo} alt="CeCIT Logo" />
     </div>
 
     <div class="links">
         <a href="#/home">Institucional</a>
+        <a ><p>⸽</p></a>
         <a href="#/become-member">Hacete socio</a>
+        <a ><p>⸽</p></a>
         <a href="#/contact">Contacto</a>
 
         <button class="user-btn">
-            <UserCircle2 size={28} />
+            <User24Icon height="3.0em" />
         </button>
     </div>
 </nav>
@@ -22,6 +26,7 @@
     .navbar {
         height: 10vh;
         background: white;
+    
 
         display: flex;
         justify-content: space-between;
@@ -36,10 +41,15 @@
         gap: 30px;
     }
 
+    .logo img {
+    height: 90px;
+    object-fit: contain;
+    }
+
     a {
         text-decoration: none;
         color: #111;
-        font-size: 15px;
+        font-size: 20px;
     }
 
     .user-btn {
@@ -57,7 +67,7 @@
         }
 
         a {
-            font-size: 12px;
+            font-size: 25px;
         }
     }
 </style>

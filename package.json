@@ -21,6 +21,9 @@
 		"vite": "^7.3.1"
 	},
 	"dependencies": {
+		"@iconify-svelte/qlementine-icons": "^1.0.6",
+		"flowbite": "^4.0.2",
+		"flowbite-svelte": "^1.33.1",
 		"lucide-svelte": "^1.0.1",
 		"swiper": "^12.1.4"
 	}
