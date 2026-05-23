@@ -2,7 +2,7 @@
   import { Search } from 'lucide-svelte';
 
   const banner =
-    'https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=1200&auto=format&fit=crop';
+    'https://www.fotorevista.com.ar/SFotos/16/10/22/161022142707g.jpg';
 </script>
 
 <section class="hero">

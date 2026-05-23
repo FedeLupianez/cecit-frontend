@@ -51,7 +51,7 @@
 
     border: none;
     background: #ef233c;
-    color: white;
+    color: rgb(121, 114, 114);
 
     font-size: 20px;
     font-weight: bold;
