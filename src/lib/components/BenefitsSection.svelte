@@ -13,6 +13,8 @@
     ChevronRight
   } from 'lucide-svelte';
 
+  let { title = 'Beneficios populares' } = $props();
+
   /*
   ==========================================
   FILTROS
@@ -27,7 +29,7 @@
     'Libreria'
   ];
 
-  let activeFilter = 'Todo';
+  let activeFilter = $state('Todo');
 
   /*
   ==========================================
@@ -35,18 +37,30 @@
   ==========================================
   */
 
-  let carousel;
+  let carousel = $state(/** @type {HTMLDivElement | null} */ (null));
+
+  function closeBenefitOverlays() {
+    window.dispatchEvent(new CustomEvent('close-benefit-overlays'));
+  }
 
   function next() {
+    if (!carousel) return;
+
+    closeBenefitOverlays();
+
     carousel.scrollBy({
-      left: 390,
+      left: 480,
       behavior: 'smooth'
     });
   }
 
   function prev() {
+    if (!carousel) return;
+
+    closeBenefitOverlays();
+
     carousel.scrollBy({
-      left: -390,
+      left: -480,
       behavior: 'smooth'
     });
   }
@@ -58,7 +72,7 @@
 
     <div class="title-group">
 
-      <h2>Beneficios populares</h2>
+      <h2>{title}</h2>
 
       <button class="more-btn">
         Ver más
@@ -89,6 +103,7 @@
       type="button"
       class="arrow left"
       onclick={prev}
+      aria-label="Ver beneficios anteriores"
     >
       <ChevronLeft size={24} />
     </button>
@@ -109,6 +124,7 @@
       type="button"
       class="arrow right"
       onclick={next}
+      aria-label="Ver más beneficios"
     >
       <ChevronRight size={24} />
     </button>
@@ -140,12 +156,12 @@
 
   .section {
     width: 100%;
-    max-width: 1250px;
+    max-width: 1205px;
 
     margin: auto;
-    margin-top: 70px;
+    margin-top: 62px;
 
-    overflow: hidden;
+    overflow: visible;
   }
 
   .top {
@@ -167,20 +183,27 @@
   */
 
   h2 {
-    font-size: 42px;
-    font-weight: 700;
+    margin: 0;
+
+    font-size: 25px;
+    font-weight: 800;
+    line-height: 1;
 
     font-family: 'Montserrat', sans-serif;
 
-    color: #111827;
+    color: #050505;
   }
 
   .more-btn {
+    padding: 0;
+
     border: none;
     background: transparent;
+    color: #050505;
 
-    font-size: 18px;
-    font-weight: 600;
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 1;
 
     cursor: pointer;
 
@@ -202,27 +225,29 @@
   */
 
   .filters {
-    margin-top: 24px;
+    margin-top: 11px;
 
     display: flex;
-    gap: 15px;
+    gap: 9px;
 
     flex-wrap: wrap;
   }
 
   .filters button {
-    height: 52px;
+    width: 111px;
+    height: 32px;
 
-    padding: 0 35px;
+    padding: 0 18px;
 
-    border-radius: 4px;
+    border-radius: 999px;
 
-    border: 1px solid #d1d5db;
+    border: 1px solid #c7c8cf;
 
-    background: white;
+    background: transparent;
+    color: #050505;
 
-    font-size: 18px;
-    font-weight: 600;
+    font-size: 15px;
+    font-weight: 700;
 
     cursor: pointer;
 
@@ -236,23 +261,17 @@
   .filters button:hover {
     transform: translateY(-2px);
 
-    box-shadow:
-      0 8px 18px rgba(0,0,0,0.08);
+    box-shadow: none;
   }
 
   .filters button.active {
-    background: linear-gradient(
-      145deg,
-      #2b2b88,
-      #19194f
-    );
+    background: #151535;
 
     color: white;
 
     border-color: transparent;
 
-    box-shadow:
-      0 12px 24px rgba(25,25,79,0.28);
+    box-shadow: none;
 
     transform: translateY(-2px);
   }
@@ -269,37 +288,43 @@ CARRUSEL
 */
 
 .carousel-wrapper {
-  margin-top: 35px;
+  margin-top: 26px;
+  margin-left: -60px;
 
   position: relative;
 
-  width: 100%;
+  width: calc(100% + 120px);
 }
 
 .carousel {
   display: flex;
-  gap: 24px;
+  gap: 26px;
 
-  overflow-x: hidden;
+  overflow-x: clip;
+  overflow-y: visible;
 
   scroll-behavior: smooth;
 
-  padding: 10px 60px 20px;
+  margin: 0 60px;
+  padding: 0 22px 8px 0;
+
+  mask-image: none;
+  -webkit-mask-image: none;
 }
 
 .card-wrapper {
-  min-width: 520px;
-  max-width: 520px;
+  position: relative;
+
+  min-width: 455px;
+  max-width: 455px;
 
   flex-shrink: 0;
 
-  transition:
-    transform 0.35s ease,
-    filter 0.35s ease;
+  transition: z-index 0.2s ease;
 }
 
 .card-wrapper:hover {
-  transform: translateY(-6px);
+  z-index: 100;
 }
 
   /*
@@ -310,20 +335,20 @@ CARRUSEL
 
   .arrow {
     position: absolute;
-    top: 42%;
+    top: 50%;
 
     transform: translateY(-50%);
 
-    width: 54px;
-    height: 54px;
+    width: 42px;
+    height: 42px;
 
     border-radius: 50%;
     border: none;
 
-    background: var(--primary);
-    color: white;
+    background: #e1e3e8;
+    color: #4a4d55;
 
-    box-shadow: var(--shadow);
+    box-shadow: none;
 
     display: flex;
     align-items: center;
@@ -331,7 +356,7 @@ CARRUSEL
 
     cursor: pointer;
 
-    z-index: 20;
+    z-index: 30;
 
     transition:
       transform 0.25s ease,
@@ -343,15 +368,15 @@ CARRUSEL
       translateY(-50%)
       scale(1.08);
 
-    background: var(--primary-light);
+    background: #d6d9e0;
   }
 
   .left {
-    left: 10px;
+    left: 0;
   }
 
   .right {
-    right: 10px;
+    right: 0;
   }
 
   /*
@@ -366,20 +391,39 @@ CARRUSEL
       padding: 0 12px;
     }
 
+    .carousel-wrapper {
+      margin-left: 0;
+      width: 100%;
+    }
+
     h2 {
-      font-size: 30px;
+      font-size: 24px;
     }
 
     .filters {
-      gap: 10px;
+      gap: 8px;
     }
 
     .filters button {
-      height: 42px;
+      width: auto;
+      min-width: 92px;
+      height: 34px;
 
-      padding: 0 22px;
+      padding: 0 18px;
 
       font-size: 15px;
+    }
+
+    .carousel {
+      gap: 16px;
+      margin: 0 38px;
+      padding-right: 0;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .carousel::-webkit-scrollbar {
+      display: none;
     }
 
     .card-wrapper {

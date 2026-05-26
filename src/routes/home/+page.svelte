@@ -3,6 +3,7 @@
   import Categories from '$lib/components/Categories.svelte';
   import BenefitsSection from '$lib/components/BenefitsSection.svelte';
   import PartnersCarousel from '$lib/components/PartnersCarousel.svelte';
+  import JoinSection from '$lib/components/JoinSection.svelte';
 </script>
 
 <section class="home-page">
@@ -16,17 +17,13 @@
     <button>Nuestros socios</button>
   </div>
 
-  <BenefitsSection />
+  <BenefitsSection title="Beneficios populares" />
 
-  <BenefitsSection />
+  <BenefitsSection title="Nuevos beneficios" />
 
   <PartnersCarousel />
 
-  <section class="join-section">
-    <h1>¡HACETE SOCIO!</h1>
-
-    <button>Contactanos</button>
-  </section>
+  <JoinSection />
 </section>
 
 <style>
@@ -63,21 +60,6 @@
 
   .buttons-section button:hover {
     transform: translateY(-5px);
-  }
-
-  .join-section {
-    width: 100%;
-
-    margin-top: 120px;
-
-    padding: 120px 20px;
-
-    background: #ececec;
-
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
   }
 
 </style>
