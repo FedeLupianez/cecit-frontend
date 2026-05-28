@@ -1,5 +1,5 @@
 <script>
-  import { onDestroy, onMount } from 'svelte';
+  import { onMount } from 'svelte';
   import { X } from 'lucide-svelte';
   import favicon from '$lib/assets/favicon.svg';
 
@@ -36,10 +36,10 @@
 
   onMount(() => {
     window.addEventListener('close-benefit-overlays', closeExpanded);
-  });
 
-  onDestroy(() => {
-    window.removeEventListener('close-benefit-overlays', closeExpanded);
+    return () => {
+      window.removeEventListener('close-benefit-overlays', closeExpanded);
+    };
   });
 </script>
 
@@ -363,26 +363,62 @@
   }
 
   @media (max-width: 640px) {
-    .compact-card > img {
-      height: 150px;
+    .card {
+      background: #fff;
     }
 
-    .title-row,
-    .bottom {
-      align-items: flex-start;
-      flex-direction: column;
+    .compact-card > img {
+      height: 145px;
+    }
+
+    .content {
+      padding: 10px 12px 14px;
+      display: flex;
+      flex-wrap: wrap;
       gap: 8px;
     }
 
+    .title-row {
+      display: contents;
+    }
+
     h2 {
+      order: 1;
+      width: 100%;
       max-width: 100%;
-      font-size: 22px;
-      white-space: normal;
+      font-size: 20px;
+      line-height: 1.05;
+      white-space: nowrap;
+    }
+
+    .bottom {
+      display: contents;
+    }
+
+    .business {
+      order: 2;
+      width: 100%;
+    }
+
+    p {
+      font-size: 15px;
+    }
+
+    .info-btn {
+      order: 3;
     }
 
     .info-btn,
     .coupon-btn {
-      width: 100%;
+      width: auto;
+      min-width: 0;
+      padding: 8px 13px;
+      font-size: 13px;
+    }
+
+    .coupon-btn {
+      order: 4;
+      margin-left: auto;
     }
 
     .expanded-backdrop {

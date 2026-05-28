@@ -111,20 +111,44 @@
   @media (max-width: 768px) {
     .partners {
       padding: 0 12px;
+      margin-top: 58px;
+    }
+
+    h2 {
+      font-size: 28px;
     }
 
     .track {
-      gap: 28px;
+      gap: 34px;
       animation-duration: 18s;
     }
 
     .partner-card {
-      width: 94px;
+      width: 116px;
     }
 
     img {
-      width: 76px;
-      height: 76px;
+      width: 104px;
+      height: 104px;
+    }
+
+    p {
+      font-size: 13px;
+    }
+  }
+
+  @media (max-width: 420px) {
+    .track {
+      gap: 28px;
+    }
+
+    .partner-card {
+      width: 104px;
+    }
+
+    img {
+      width: 92px;
+      height: 92px;
     }
   }
 </style>

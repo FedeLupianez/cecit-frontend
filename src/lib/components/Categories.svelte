@@ -99,6 +99,10 @@
               <category.icon size={28} />
             </button>
 
+            <span class="category-name">
+              {category.name}
+            </span>
+
             <span class="tooltip">
               {category.name}
             </span>
@@ -113,29 +117,6 @@
     <button type="button" class="category-arrow" onclick={next} aria-label="Ver más categorías">
       <ChevronRight size={24} />
     </button>
-
-  </div>
-
-  <div class="quick-actions">
-
-    <div class="action-card">
-      <span class="sparkle sparkle-1">✦</span>
-
-      <h3>Hacete socio</h3>
-    </div>
-
-    <div class="action-card featured">
-      <span class="sparkle sparkle-2">✦</span>
-      <span class="sparkle sparkle-3">✦</span>
-
-      <h3>Todos los beneficios</h3>
-    </div>
-
-    <div class="action-card">
-      <span class="sparkle sparkle-4">✦</span>
-
-      <h3>Nuestros socios</h3>
-    </div>
 
   </div>
 

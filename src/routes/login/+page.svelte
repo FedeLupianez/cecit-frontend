@@ -1,6 +1,6 @@
 <script>
-  let email = '';
-  let password = '';
+  let email = $state('');
+  let password = $state('');
 </script>
 
 <section class="login-page">
