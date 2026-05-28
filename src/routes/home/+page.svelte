@@ -11,12 +11,6 @@
 
   <Categories />
 
-  <div class="buttons-section">
-    <button>Hacete socio</button>
-    <button>Todos los beneficios</button>
-    <button>Nuestros socios</button>
-  </div>
-
   <BenefitsSection title="Beneficios populares" />
 
   <BenefitsSection title="Nuevos beneficios" />
@@ -29,37 +23,6 @@
 <style>
   .home-page {
     padding-bottom: 50px;
-  }
-
-  .buttons-section {
-    width: 100%;
-    max-width: 1200px;
-
-    margin: auto;
-    margin-top: 60px;
-
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 30px;
-  }
-
-  .buttons-section button {
-    height: 70px;
-
-    border: none;
-    background: #ef233c;
-    color: rgb(121, 114, 114);
-
-    font-size: 20px;
-    font-weight: bold;
-
-    border-radius: 10px;
-
-    transition: 0.3s;
-  }
-
-  .buttons-section button:hover {
-    transform: translateY(-5px);
   }
 
 </style>

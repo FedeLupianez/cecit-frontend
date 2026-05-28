@@ -89,6 +89,10 @@
   }
 
   @media (max-width: 820px) {
+    footer {
+      padding: 34px 24px 38px;
+    }
+
     .inner,
     .brand,
     .support {
@@ -117,6 +121,35 @@
 
     .backers-logo {
       width: 178px;
+    }
+  }
+
+  @media (max-width: 520px) {
+    footer {
+      padding: 30px 22px 34px;
+    }
+
+    .contact p {
+      font-size: 16px;
+      line-height: 1.35;
+    }
+
+    .support {
+      width: 100%;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      align-items: center;
+      gap: 18px;
+    }
+
+    .cecit-logo {
+      width: 156px;
+    }
+
+    .parks-logo,
+    .backers-logo {
+      width: 100%;
+      max-width: 170px;
     }
   }
 </style>

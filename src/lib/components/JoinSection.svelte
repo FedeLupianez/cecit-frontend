@@ -98,26 +98,57 @@
 
   @media (max-width: 768px) {
     .join-section {
-      min-height: 360px;
-      margin-top: 54px;
+      min-height: 560px;
+      margin-top: 64px;
     }
 
     h2 {
-      font-size: 36px;
+      max-width: 330px;
+      font-size: 48px;
+      text-align: center;
+    }
+
+    button {
+      min-width: 170px;
+      height: 40px;
+      font-size: 18px;
     }
 
     .cart {
-      left: -44px;
-      bottom: 12px;
-      width: 170px;
-      height: 170px;
+      left: -74px;
+      bottom: 52px;
+      width: 250px;
+      height: 250px;
     }
 
     .balloon-dog {
-      top: 10px;
-      right: -116px;
-      width: 230px;
-      height: 230px;
+      top: 40px;
+      right: -118px;
+      width: 300px;
+      height: 300px;
+    }
+  }
+
+  @media (max-width: 420px) {
+    .join-section {
+      min-height: 500px;
+    }
+
+    h2 {
+      max-width: 280px;
+      font-size: 40px;
+    }
+
+    .cart {
+      left: -86px;
+      width: 220px;
+      height: 220px;
+    }
+
+    .balloon-dog {
+      right: -132px;
+      width: 260px;
+      height: 260px;
     }
   }
 </style>

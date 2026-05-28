@@ -30,6 +30,23 @@
   ];
 
   let activeFilter = $state('Todo');
+  let filteredBenefits = $derived(
+    activeFilter === 'Todo'
+      ? benefits
+      : benefits.filter((benefit) => benefit.category === activeFilter)
+  );
+
+  /**
+   * @param {string} filter
+   */
+  function selectFilter(filter) {
+    activeFilter = activeFilter === filter ? 'Todo' : filter;
+
+    carousel?.scrollTo({
+      left: 0,
+      behavior: 'smooth'
+    });
+  }
 
   /*
   ==========================================
@@ -38,31 +55,56 @@
   */
 
   let carousel = $state(/** @type {HTMLDivElement | null} */ (null));
+  const SCROLL_AMOUNT = 480;
 
   function closeBenefitOverlays() {
     window.dispatchEvent(new CustomEvent('close-benefit-overlays'));
   }
 
-  function next() {
+  /**
+   * @param {-1 | 1} direction
+   */
+  function moveCarousel(direction) {
     if (!carousel) return;
 
     closeBenefitOverlays();
 
+    const maxScroll = carousel.scrollWidth - carousel.clientWidth;
+
+    if (maxScroll <= 0) return;
+
+    const nextPosition = carousel.scrollLeft + (direction * SCROLL_AMOUNT);
+
+    if (direction === 1 && nextPosition >= maxScroll - 10) {
+      carousel.scrollTo({
+        left: 0,
+        behavior: 'smooth'
+      });
+
+      return;
+    }
+
+    if (direction === -1 && nextPosition <= 10) {
+      carousel.scrollTo({
+        left: maxScroll,
+        behavior: 'smooth'
+      });
+
+      return;
+    }
+
     carousel.scrollBy({
-      left: 480,
+      left: direction * SCROLL_AMOUNT,
       behavior: 'smooth'
     });
   }
 
+  function next() {
+    moveCarousel(1);
+  }
+
   function prev() {
-    if (!carousel) return;
-
-    closeBenefitOverlays();
-
-    carousel.scrollBy({
-      left: -480,
-      behavior: 'smooth'
-    });
+    moveCarousel(-1);
   }
 </script>
 
@@ -88,7 +130,7 @@
 
       <button
         class:active={activeFilter === filter}
-        onclick={() => activeFilter = filter}
+        onclick={() => selectFilter(filter)}
       >
         {filter}
       </button>
@@ -110,7 +152,7 @@
 
     <div class="carousel" bind:this={carousel}>
 
-      {#each benefits as benefit}
+      {#each filteredBenefits as benefit}
 
         <div class="card-wrapper">
           <BenefitCard {...benefit} />
@@ -160,6 +202,7 @@
 
     margin: auto;
     margin-top: 62px;
+    padding: 0 12px;
 
     overflow: visible;
   }
@@ -230,11 +273,21 @@
     display: flex;
     gap: 9px;
 
-    flex-wrap: wrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 0 0 8px;
+
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .filters::-webkit-scrollbar {
+    display: none;
   }
 
   .filters button {
-    width: 111px;
+    flex: 0 0 auto;
+    min-width: 111px;
     height: 32px;
 
     padding: 0 18px;
@@ -300,7 +353,7 @@ CARRUSEL
   display: flex;
   gap: 26px;
 
-  overflow-x: clip;
+  overflow-x: hidden;
   overflow-y: visible;
 
   scroll-behavior: smooth;
@@ -389,6 +442,7 @@ CARRUSEL
 
     .section {
       padding: 0 12px;
+      margin-top: 48px;
     }
 
     .carousel-wrapper {
@@ -400,8 +454,19 @@ CARRUSEL
       font-size: 24px;
     }
 
+    .title-group {
+      gap: 8px;
+    }
+
+    .more-btn {
+      font-size: 13px;
+    }
+
     .filters {
       gap: 8px;
+      margin-left: -12px;
+      margin-right: -12px;
+      padding: 0 12px 10px;
     }
 
     .filters button {
@@ -415,11 +480,12 @@ CARRUSEL
     }
 
     .carousel {
-      gap: 16px;
-      margin: 0 38px;
+      gap: 18px;
+      margin: 0;
       padding-right: 0;
       overflow-x: auto;
       scrollbar-width: none;
+      scroll-snap-type: x mandatory;
     }
 
     .carousel::-webkit-scrollbar {
@@ -427,21 +493,35 @@ CARRUSEL
     }
 
     .card-wrapper {
-      min-width: 92%;
-      max-width: 92%;
+      min-width: min(86vw, 390px);
+      max-width: min(86vw, 390px);
+      scroll-snap-align: start;
     }
 
     .arrow {
-      width: 44px;
-      height: 44px;
+      display: none;
+    }
+  }
+
+  @media (max-width: 420px) {
+    h2 {
+      font-size: 28px;
+      line-height: 1.05;
     }
 
-    .left {
-      left: 0;
+    .title-group {
+      align-items: baseline;
     }
 
-    .right {
-      right: 0;
+    .filters button {
+      min-width: 132px;
+      height: 34px;
+      font-size: 14px;
+    }
+
+    .card-wrapper {
+      min-width: 88vw;
+      max-width: 88vw;
     }
   }
 </style>

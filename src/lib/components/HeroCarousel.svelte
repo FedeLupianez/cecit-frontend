@@ -24,6 +24,7 @@
 
     margin: auto;
     margin-top: 30px;
+    padding: 0 12px;
   }
 
   img {
@@ -54,6 +55,7 @@
   }
 
   input {
+    min-width: 0;
     flex: 1;
 
     border: none;
@@ -78,12 +80,34 @@
   }
 
   @media (max-width: 768px) {
+    .hero {
+      margin-top: 16px;
+    }
+
     .search-box {
       width: 90%;
     }
 
     img {
       height: 220px;
+      border-radius: 14px;
+    }
+  }
+
+  @media (max-width: 420px) {
+    .search-box {
+      width: calc(100% - 24px);
+    }
+
+    input {
+      padding: 14px;
+      font-size: 13px;
+    }
+
+    button {
+      width: 52px;
+      height: 52px;
+      flex: 0 0 auto;
     }
   }
 </style>
