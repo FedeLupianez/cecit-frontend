@@ -7,7 +7,7 @@
   */
 
     import BenefitCard from "./BenefitCard.svelte";
-    /** @typedef {{ title: string, image: string, business: string, category: string }} Benefit */
+    /** @typedef {{ title: string, image: string, business: string, categories: string[] }} Benefit */
 
     /** @type {Benefit[]} */
     let benefits = $state([]);
@@ -19,7 +19,7 @@
                 return;
             }
             benefits = await response.json();
-            console.log(benefits);
+            console.log($state.snapshot(benefits));
         } catch (error) {
             console.log(error);
         }
@@ -37,13 +37,37 @@
   ==========================================
   */
 
-    const filters = ["Todo", "Comida", "Ropa", "Juguetes", "Libreria"];
+    const filters = [
+        "Todo",
+        "Gastronomía",
+        "Tecnología",
+        "Salud",
+        "Educación",
+        "Construcción",
+        "Automotriz",
+        "Belleza y Estética",
+        "Turismo",
+        "Inmobiliaria",
+        "Finanzas",
+        "Deportes",
+        "Moda y Accesorios",
+        "Mascotas",
+        "Hogar y Decoración",
+        "Transporte y Logística",
+        "Entretenimiento",
+        "Servicios Profesionales",
+        "Agricultura y Ganadería",
+        "Industria y Manufactura",
+        "Comercio Minorista",
+    ];
 
     let activeFilter = $state("Todo");
     let filteredBenefits = $derived(
-        activeFilter === "Todo"
+        activeFilter === "Todo" || !filters.includes(activeFilter)
             ? benefits
-            : benefits.filter((benefit) => benefit.category === activeFilter),
+            : benefits.filter((benefit) =>
+                  benefit.categories.includes(activeFilter),
+              ),
     );
 
     /**
