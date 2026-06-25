@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
     import { onMount } from "svelte";
     /*
   ==========================================
@@ -7,13 +7,26 @@
   */
 
     import BenefitCard from "./BenefitCard.svelte";
-    /** @typedef {{ title: string, image: string, business: string, categories: string[] }} Benefit */
+    import { loadCategories, getFilters } from "$lib/stores/categories.svelte";
+    interface Benefit {
+        title: string;
+        image: string;
+        business: string;
+        categories: string[];
+    }
 
-    /** @type {Benefit[]} */
-    let benefits = $state([]);
+    let {
+        title = "Beneficios populares",
+        endpoint = "http://localhost:3000/benefits/all",
+    } = $props();
+
+    let benefits: Benefit[] = $state([]);
+    let filters = $derived(getFilters());
+
     async function load_benefits() {
+        await loadCategories();
         try {
-            const response = await fetch("http://localhost:3000/benefits/all");
+            const response = await fetch(endpoint);
             if (!response.ok) {
                 console.log("Response does not ok");
                 return;
@@ -29,37 +42,35 @@
 
     import { ChevronLeft, ChevronRight } from "lucide-svelte";
 
-    let { title = "Beneficios populares" } = $props();
-
     /*
   ==========================================
   FILTROS
   ==========================================
   */
 
-    const filters = [
-        "Todo",
-        "Gastronomía",
-        "Tecnología",
-        "Salud",
-        "Educación",
-        "Construcción",
-        "Automotriz",
-        "Belleza y Estética",
-        "Turismo",
-        "Inmobiliaria",
-        "Finanzas",
-        "Deportes",
-        "Moda y Accesorios",
-        "Mascotas",
-        "Hogar y Decoración",
-        "Transporte y Logística",
-        "Entretenimiento",
-        "Servicios Profesionales",
-        "Agricultura y Ganadería",
-        "Industria y Manufactura",
-        "Comercio Minorista",
-    ];
+    // const filters = [
+    //     "Todo",
+    //     "Gastronomía",
+    //     "Tecnología",
+    //     "Salud",
+    //     "Educación",
+    //     "Construcción",
+    //     "Automotriz",
+    //     "Belleza y Estética",
+    //     "Turismo",
+    //     "Inmobiliaria",
+    //     "Finanzas",
+    //     "Deportes",
+    //     "Moda y Accesorios",
+    //     "Mascotas",
+    //     "Hogar y Decoración",
+    //     "Transporte y Logística",
+    //     "Entretenimiento",
+    //     "Servicios Profesionales",
+    //     "Agricultura y Ganadería",
+    //     "Industria y Manufactura",
+    //     "Comercio Minorista"s
+    // ];
 
     let activeFilter = $state("Todo");
     let filteredBenefits = $derived(
@@ -73,7 +84,7 @@
     /**
      * @param {string} filter
      */
-    function selectFilter(filter) {
+    function selectFilter(filter: string) {
         activeFilter = activeFilter === filter ? "Todo" : filter;
 
         carousel?.scrollTo({
@@ -88,7 +99,9 @@
   ==========================================
   */
 
-    let carousel = $state(/** @type {HTMLDivElement | null} */ (null));
+    let carousel: HTMLDivElement | null = $state(
+        /** @type {HTMLDivElement | null} */ (null),
+    );
     const SCROLL_AMOUNT = 480;
 
     function closeBenefitOverlays() {
@@ -98,7 +111,7 @@
     /**
      * @param {-1 | 1} direction
      */
-    function moveCarousel(direction) {
+    function moveCarousel(direction: number) {
         if (!carousel) return;
 
         closeBenefitOverlays();
