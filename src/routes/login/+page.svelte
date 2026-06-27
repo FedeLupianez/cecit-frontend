@@ -1,4 +1,7 @@
 <script>
+    import { accessToken } from "$lib/stores/authStore";
+    import { goto } from "$app/navigation";
+
     let email = $state("");
     let password = $state("");
     let showPassword = $state(false);
@@ -6,7 +9,8 @@
     const passwdError = "Ingresa una contraseña";
     const emailError = "Ingresa un correo electrónico válido.";
 
-    function login() {
+    async function login(e) {
+        e.preventDefault();
         const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
         if (!regex.test(email)) {
@@ -19,8 +23,22 @@
         }
         error = "";
 
-        console.log(email);
-        console.log(password);
+        try {
+            const response = await fetch("http://localhost:3000/auth/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email: email, password: password }),
+                credentials: "include",
+            });
+            if (!response.ok)
+                throw new Error(`Response status : ${response.status}`);
+            const result = await response.json();
+            console.log(result);
+            accessToken.setToken(result.access_token);
+            goto("/");
+        } catch (error) {
+            console.log(error);
+        }
     }
 </script>
 
