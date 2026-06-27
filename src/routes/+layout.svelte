@@ -1,5 +1,4 @@
 <script lang="ts">
-    import favicon from "$lib/assets/favicon.svg";
     import Navbar from "$lib/components/Navbar.svelte";
     import Footer from "$lib/components/Footer.svelte";
 
@@ -7,7 +6,7 @@
 </script>
 
 <svelte:head>
-    <link rel="icon" href={favicon} />
+    <link rel="icon" href="http://centrodecomercioag.com.ar/wp-content/uploads/2023/07/cecit2023.png" />
 </svelte:head>
 
 <Navbar />
@@ -21,5 +20,8 @@
 <style>
     main {
         flex: 1;
+    }
+    * {
+        font-family: "Open Sauce One", sans-serif;
     }
 </style>
