@@ -54,7 +54,7 @@
         onkeydown={(event) =>
             (event.key === "Enter" || event.key === " ") && openExpandedNow()}
     >
-        <img src={image} alt={title} />
+        <img loading="lazy" src={image} alt={title} />
 
         <div class="content">
             <div class="title-row">
@@ -65,7 +65,7 @@
 
             <div class="bottom">
                 <div class="business">
-                    <img src={favicon} alt="" />
+                    <img loading="lazy" src={favicon} alt="" />
                     <p>{business}</p>
                 </div>
 
@@ -104,7 +104,7 @@
             </div>
 
             <div class="expanded-preview">
-                <img src={image} alt={title} />
+                <img loading="lazy" src={image} alt={title} />
             </div>
         </div>
     </div>

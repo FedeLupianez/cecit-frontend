@@ -7,7 +7,7 @@
 <footer>
   <div class="inner">
     <div class="brand">
-      <img class="cecit-logo" src={cecitLogo} alt="CeCIT" />
+      <img loading="lazy" class="cecit-logo" src={cecitLogo} alt="CeCIT" />
 
       <div class="contact">
         <p>España 147, Alta Gracia, Córdoba, Argentina</p>
@@ -16,8 +16,8 @@
     </div>
 
     <div class="support">
-      <img class="parks-logo" src={recurso6} alt="Paseo Libertador y Paseo del Centro" />
-      <img class="backers-logo" src={recurso8} alt="Nos respaldan: CAME y FEDECOM" />
+      <img loading="lazy" class="parks-logo" src={recurso6} alt="Paseo Libertador y Paseo del Centro" />
+      <img loading="lazy" class="backers-logo" src={recurso8} alt="Nos respaldan: CAME y FEDECOM" />
     </div>
   </div>
 </footer>

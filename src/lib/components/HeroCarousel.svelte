@@ -6,7 +6,7 @@
 </script>
 
 <section class="hero">
-  <img src={banner} alt="banner" />
+  <img loading="lazy" src={banner} alt="banner" />
 
   <div class="search-box">
     <input placeholder="Busca por palabra clave o marca" />

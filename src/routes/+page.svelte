@@ -1,20 +1,33 @@
-<script>
+<script lang="ts">
+  import { onMount } from 'svelte';
+  import type { Component } from 'svelte';
   import HeroCarousel from '$lib/components/HeroCarousel.svelte';
   import Categories from '$lib/components/Categories.svelte';
-  import BenefitsSection from '$lib/components/BenefitsSection.svelte';
-  import PartnersCarousel from '$lib/components/PartnersCarousel.svelte';
-  import JoinSection from '$lib/components/JoinSection.svelte';
-</script>
 
+  let BenefitsSection: Component | undefined = $state();
+  let PartnersCarousel: Component | undefined = $state();
+  let JoinSection: Component | undefined = $state();
+
+  onMount(async () => {
+    BenefitsSection = (await import('$lib/components/BenefitsSection.svelte')).default;
+    PartnersCarousel = (await import('$lib/components/PartnersCarousel.svelte')).default;
+    JoinSection = (await import('$lib/components/JoinSection.svelte')).default;
+  });
+</script>
 
 <HeroCarousel />
 
 <Categories />
 
-<BenefitsSection />
+{#if BenefitsSection}
+  <BenefitsSection />
+  <BenefitsSection title="Nuevos beneficios" />
+{/if}
 
-<BenefitsSection title="Nuevos beneficios" />
+{#if PartnersCarousel}
+  <PartnersCarousel />
+{/if}
 
-<PartnersCarousel />
-
-<JoinSection />
+{#if JoinSection}
+  <JoinSection />
+{/if}

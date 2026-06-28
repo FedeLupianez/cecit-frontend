@@ -16,7 +16,7 @@
     <div class="track">
       {#each repeatedPartners as partner}
         <div class="partner-card">
-          <img src={partner.logo} alt={partner.name} />
+          <img loading="lazy" src={partner.logo} alt={partner.name} />
 
           <p>{partner.name}</p>
         </div>

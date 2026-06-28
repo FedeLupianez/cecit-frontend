@@ -1,6 +1,6 @@
 <div class="header-container">
     <div class="logo">
-        <img src="http://centrodecomercioag.com.ar/wp-content/uploads/2023/07/logonuevo.png">
+        <img loading="lazy" src="http://centrodecomercioag.com.ar/wp-content/uploads/2023/07/logonuevo.png">
         <div>
             <strong>CeCIT</strong><br>
             <small>Somos Todos</small>

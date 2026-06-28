@@ -8,7 +8,7 @@
 
 <nav class="navbar">
     <div class="logo">
-    <img src={logo} alt="CeCIT Logo" />
+    <img loading="lazy" src={logo} alt="CeCIT Logo" />
     </div>
 
     <div class="links">

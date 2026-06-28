@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
     import { accessToken } from "$lib/stores/authStore";
     import { goto } from "$app/navigation";
 
@@ -9,7 +9,7 @@
     const passwdError = "Ingresa una contraseña";
     const emailError = "Ingresa un correo electrónico válido.";
 
-    async function login(e) {
+    async function login(e: Event) {
         e.preventDefault();
         const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 

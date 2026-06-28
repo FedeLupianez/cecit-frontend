@@ -4,9 +4,9 @@
 </script>
 
 <section class="join-section">
-  <img class="cart" src={shoppingCart} alt="" aria-hidden="true" />
+  <img loading="lazy" class="cart" src={shoppingCart} alt="" aria-hidden="true" />
 
-  <img class="balloon-dog" src={balloonDog} alt="" aria-hidden="true" />
+  <img loading="lazy" class="balloon-dog" src={balloonDog} alt="" aria-hidden="true" />
 
   <div class="content">
     <h2>¡HACETE SOCIO!</h2>
