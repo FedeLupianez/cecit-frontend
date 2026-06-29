@@ -45,6 +45,8 @@
 
 <style>
     .home-page {
+        margin-top: 3rem;
         padding-bottom: 50px;
+        background: linear-gradient(#f6f9ff, #feffff);
     }
 </style>

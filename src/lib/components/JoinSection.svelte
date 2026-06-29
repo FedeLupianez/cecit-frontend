@@ -35,7 +35,7 @@
         min-height: 80vh;
         margin-top: 2rem;
 
-        background: #eef0f3;
+        background: white;
 
         position: relative;
         overflow: hidden;

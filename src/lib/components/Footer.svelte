@@ -58,7 +58,7 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 7rem;
+        padding: 3rem;
     }
 
     .brand {

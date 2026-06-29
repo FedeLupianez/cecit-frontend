@@ -1,113 +1,112 @@
 <script>
-  import { Search } from 'lucide-svelte';
+    import { Search } from "lucide-svelte";
 
-  const banner =
-    'https://www.fotorevista.com.ar/SFotos/16/10/22/161022142707g.jpg';
+    const banner =
+        "https://www.fotorevista.com.ar/SFotos/16/10/22/161022142707g.jpg";
 </script>
 
 <section class="hero">
-  <img loading="lazy" src={banner} alt="banner" />
+    <img loading="lazy" src={banner} alt="banner" />
 
-  <div class="search-box">
-    <input placeholder="Busca por palabra clave o marca" />
+    <div class="search-box">
+        <input placeholder="Busca por palabra clave o marca" />
 
-    <button>
-      <Search size={20} />
-    </button>
-  </div>
+        <button>
+            <Search size={20} />
+        </button>
+    </div>
 </section>
 
 <style>
-  .hero {
-    width: 100%;
-    max-width: 1200px;
-
-    margin: auto;
-    margin-top: 30px;
-    padding: 0 12px;
-  }
-
-  img {
-    width: 100%;
-    height: 350px;
-
-    object-fit: cover;
-
-    border-radius: 20px;
-  }
-
-  .search-box {
-    width: 60%;
-
-    margin: auto;
-    margin-top: -30px;
-
-    background: white;
-    border-radius: 50px;
-
-    display: flex;
-    align-items: center;
-
-    overflow: hidden;
-
-    position: relative;
-    z-index: 5;
-  }
-
-  input {
-    min-width: 0;
-    flex: 1;
-
-    border: none;
-
-    padding: 18px;
-
-    outline: none;
-  }
-
-  button {
-    width: 60px;
-    height: 60px;
-
-    border: none;
-
-    background: #19194f;
-    color: white;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  @media (max-width: 768px) {
     .hero {
-      margin-top: 16px;
-    }
+        width: 100%;
+        max-width: 1200px;
 
-    .search-box {
-      width: 90%;
+        margin: auto;
+        padding: 0 12px;
     }
 
     img {
-      height: 220px;
-      border-radius: 14px;
-    }
-  }
+        width: 100%;
+        height: 350px;
 
-  @media (max-width: 420px) {
+        object-fit: cover;
+
+        border-radius: 20px;
+    }
+
     .search-box {
-      width: calc(100% - 24px);
+        width: 60%;
+
+        margin: auto;
+        margin-top: -30px;
+
+        background: white;
+        border-radius: 50px;
+
+        display: flex;
+        align-items: center;
+
+        overflow: hidden;
+
+        position: relative;
+        z-index: 5;
     }
 
     input {
-      padding: 14px;
-      font-size: 13px;
+        min-width: 0;
+        flex: 1;
+
+        border: none;
+
+        padding: 18px;
+
+        outline: none;
     }
 
     button {
-      width: 52px;
-      height: 52px;
-      flex: 0 0 auto;
+        width: 60px;
+        height: 60px;
+
+        border: none;
+
+        background: #19194f;
+        color: white;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
-  }
+
+    @media (max-width: 768px) {
+        .hero {
+            margin-top: 16px;
+        }
+
+        .search-box {
+            width: 90%;
+        }
+
+        img {
+            height: 220px;
+            border-radius: 14px;
+        }
+    }
+
+    @media (max-width: 420px) {
+        .search-box {
+            width: calc(100% - 24px);
+        }
+
+        input {
+            padding: 14px;
+            font-size: 13px;
+        }
+
+        button {
+            width: 52px;
+            height: 52px;
+            flex: 0 0 auto;
+        }
+    }
 </style>

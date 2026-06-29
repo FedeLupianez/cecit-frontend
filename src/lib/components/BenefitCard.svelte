@@ -1,9 +1,13 @@
 <script>
     import { onMount } from "svelte";
-    import { X } from "lucide-svelte";
+    import { Download, X } from "lucide-svelte";
     import favicon from "$lib/assets/favicon.svg";
+    import { profileStore } from "$lib/stores/profileStore";
+    import { accessToken } from "$lib/stores/authStore";
 
-    let { title, image, business } = $props();
+    let { benefit_id, title, image, business } = $props();
+    let error = "";
+    let voucherToken = "";
 
     let isExpanded = $state(false);
 
@@ -13,6 +17,40 @@
 
     function closeExpanded() {
         isExpanded = false;
+    }
+
+    async function getCopoun() {
+        const profile = profileStore.getProfile();
+        console.log(profile);
+        const result = await fetch("/api/vouchers/create", {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                id_user: profile?.user_id,
+                id_benefit: benefit_id,
+            }),
+        });
+        if (!result.ok) {
+            error = "Error getting voucher";
+            voucherToken = "";
+            return;
+        }
+        error = "";
+        const data = await result.json();
+        voucherToken = data.token;
+    }
+
+    async function getFile() {
+        const res = await fetch(`/api/vouchers/file?token=${voucherToken}`, {
+            method: "GET",
+            credentials: "include",
+        });
+        if (!res.ok) {
+            error = "error getting file";
+            return;
+        }
+        error = "";
     }
 
     onMount(() => {
@@ -74,8 +112,13 @@
             <div class="expanded-info">
                 <h3>{title}</h3>
                 <p>{business}</p>
-
-                <button class="coupon-btn" onclick={openExpanded}
+                {#if accessToken}
+                    <p>Token : {accessToken}</p>
+                    <button class="download-button" onclick={getFile}>
+                        <Download />
+                    </button>
+                {/if}
+                <button class="coupon-btn" onclick={getCopoun}
                     >Adquirir cupón</button
                 >
             </div>

@@ -9,16 +9,15 @@
     import BenefitCard from "./BenefitCard.svelte";
     import { loadCategories, getFilters } from "$lib/stores/categories.svelte";
     interface Benefit {
+        id_benefit: string;
         title: string;
         image: string;
         business: string;
         categories: string[];
     }
 
-    let {
-        title = "Beneficios populares",
-        endpoint = "http://localhost:3000/benefits/all",
-    } = $props();
+    let { title = "Beneficios populares", endpoint = "/api/benefits/all" } =
+        $props();
 
     let benefits: Benefit[] = $state([]);
     let filters = $derived(getFilters());
@@ -32,7 +31,7 @@
                 return;
             }
             benefits = await response.json();
-            console.log($state.snapshot(benefits));
+            console.log(benefits);
         } catch (error) {
             console.log(error);
         }
@@ -189,6 +188,7 @@
             {#each filteredBenefits as benefit}
                 <div class="card-wrapper">
                     <BenefitCard
+                        benefit_id={benefit.id_benefit}
                         title={benefit.title}
                         image={benefit.image}
                         business={benefit.business}

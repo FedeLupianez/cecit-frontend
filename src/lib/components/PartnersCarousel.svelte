@@ -9,7 +9,7 @@
     let partners: Partner[] = $state([]);
 
     async function load_partners() {
-        const result = await fetch("http://localhost:3000/partners/all", {
+        const result = await fetch("/api/partners/all", {
             method: "GET",
             credentials: "include",
         });

@@ -6,17 +6,33 @@
     import Footer from "$lib/components/Footer.svelte";
     import { onMount } from "svelte";
     import { goto } from "$app/navigation";
+    import { profileStore } from "$lib/stores/profileStore";
 
     let { children } = $props();
     let initialized = false;
+    let currentToken = $state(accessToken.getToken());
+
+    async function refreshProfile() {
+        const token = accessToken.getToken();
+        const res = await fetch("/api/auth/profile", {
+            method: "GET",
+            credentials: "include",
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        });
+        if (!res.ok) {
+            profileStore.clear();
+            return;
+        }
+        const data = await res.json();
+        profileStore.setProfile(data);
+    }
 
     async function refresh() {
         if (initialized) return;
 
-        const token = accessToken.getToken();
-        if (token) return;
-
-        const res = await fetch("http://localhost:3000/auth/refresh", {
+        const res = await fetch("/api/auth/refresh", {
             method: "POST",
             credentials: "include",
         });
@@ -27,11 +43,25 @@
             initialized = true;
             return;
         }
+        profileStore.clear();
+        accessToken.clear();
 
         goto("/login");
     }
 
-    onMount(refresh);
+    $effect(() => {
+        if (currentToken) {
+            refreshProfile();
+        }
+    });
+
+    onMount(() => {
+        const unsub = accessToken.subscribe((value) => {
+            currentToken = value;
+        });
+        refresh();
+        return unsub;
+    });
 </script>
 
 <svelte:head>
@@ -42,15 +72,14 @@
 </svelte:head>
 
 <Navbar />
-
 <main>
     {@render children()}
 </main>
-
 <Footer />
 
 <style>
     main {
+        padding-top: 3rem;
         flex: 1;
     }
 </style>
