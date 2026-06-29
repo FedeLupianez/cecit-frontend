@@ -79,7 +79,6 @@
 
 <style>
     main {
-        padding-top: 3rem;
         flex: 1;
     }
 </style>

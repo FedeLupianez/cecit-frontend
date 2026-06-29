@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
     import { onMount } from "svelte";
     import { Download, X } from "lucide-svelte";
     import favicon from "$lib/assets/favicon.svg";
@@ -7,7 +7,7 @@
 
     let { benefit_id, title, image, business } = $props();
     let error = "";
-    let voucherToken = "";
+    let voucherToken: string = $state("");
 
     let isExpanded = $state(false);
 
@@ -21,11 +21,14 @@
 
     async function getCopoun() {
         const profile = profileStore.getProfile();
-        console.log(profile);
+        const tmpAccessToken = accessToken.getToken();
         const result = await fetch("/api/vouchers/create", {
             method: "POST",
             credentials: "include",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${tmpAccessToken}`,
+            },
             body: JSON.stringify({
                 id_user: profile?.user_id,
                 id_benefit: benefit_id,
@@ -42,15 +45,28 @@
     }
 
     async function getFile() {
+        const tmpAccessToken = accessToken.getToken();
         const res = await fetch(`/api/vouchers/file?token=${voucherToken}`, {
             method: "GET",
             credentials: "include",
+            headers: {
+                Authorization: `Bearer ${tmpAccessToken}`,
+            },
         });
         if (!res.ok) {
             error = "error getting file";
             return;
         }
         error = "";
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `cecit_voucher_${voucherToken}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
     }
 
     onMount(() => {
@@ -112,8 +128,8 @@
             <div class="expanded-info">
                 <h3>{title}</h3>
                 <p>{business}</p>
-                {#if accessToken}
-                    <p>Token : {accessToken}</p>
+                {#if voucherToken}
+                    <p>Token : {voucherToken}</p>
                     <button class="download-button" onclick={getFile}>
                         <Download />
                     </button>
@@ -133,7 +149,6 @@
 <style>
     .card {
         position: relative;
-        z-index: 1;
 
         background: #f4f5f7;
         border: 1px solid #2b2b2b;
@@ -310,6 +325,7 @@
 
     .expanded-backdrop.visible .expanded-card {
         transform: translateY(0) scale(1);
+        z-index: 1;
     }
 
     .close-btn {
