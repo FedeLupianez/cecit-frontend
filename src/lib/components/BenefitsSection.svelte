@@ -264,8 +264,6 @@
         font-weight: 800;
         line-height: 1;
 
-        font-family: "Montserrat", sans-serif;
-
         color: #050505;
     }
 
@@ -389,6 +387,7 @@ CARRUSEL
         overflow-y: visible;
 
         scroll-behavior: smooth;
+        min-height: 20rem;
 
         margin: 0 60px;
         padding: 0 22px 8px 0;

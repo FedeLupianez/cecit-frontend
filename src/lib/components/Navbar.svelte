@@ -1,14 +1,14 @@
 <script>
-    import User24Icon from '@iconify-svelte/qlementine-icons/user-24';
-    import { Menu } from 'lucide-svelte';
+    import User24Icon from "@iconify-svelte/qlementine-icons/user-24";
+    import { Menu } from "lucide-svelte";
 
-    const logo = "http://centrodecomercioag.com.ar/wp-content/uploads/2023/07/logonuevo.png";
-
+    const logo =
+        "http://centrodecomercioag.com.ar/wp-content/uploads/2023/07/logonuevo.png";
 </script>
 
 <nav class="navbar">
     <div class="logo">
-    <img loading="lazy" src={logo} alt="CeCIT Logo" />
+        <img loading="lazy" src={logo} alt="CeCIT Logo" />
     </div>
 
     <div class="links">
@@ -32,7 +32,6 @@
     .navbar {
         min-height: 92px;
         background: white;
-    
 
         display: flex;
         justify-content: space-between;

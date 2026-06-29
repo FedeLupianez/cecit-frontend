@@ -1,16 +1,17 @@
 <script lang="ts">
     import { accessToken } from "$lib/stores/authStore";
+    import "../app.css";
 
     import Navbar from "$lib/components/Navbar.svelte";
     import Footer from "$lib/components/Footer.svelte";
     import { onMount } from "svelte";
+    import { goto } from "$app/navigation";
 
     let { children } = $props();
     let initialized = false;
 
     async function refresh() {
         if (initialized) return;
-        initialized = true;
 
         const token = accessToken.getToken();
         if (token) return;
@@ -23,7 +24,11 @@
         if (res.ok) {
             const data = await res.json();
             accessToken.setToken(data.access_token);
+            initialized = true;
+            return;
         }
+
+        goto("/login");
     }
 
     onMount(refresh);
@@ -47,8 +52,5 @@
 <style>
     main {
         flex: 1;
-    }
-    * {
-        font-family: "Open Sauce One", sans-serif;
     }
 </style>

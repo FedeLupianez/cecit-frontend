@@ -1,12 +1,8 @@
 @import url("https://fonts.cdnfonts.com/css/open-sauce-one");
 
 :root {
-
-    --bg-color-one: #edf3ff;
-    --bg-color-two: #ffffff;
-    --cecit-black: #000000;
-    --cecit-red: #d61523;
-    --button-bg: #151535;
+  --primary-blue: #19194f;
+  --primary-blue-light: #2a2a7d;
 }
 
 html {
@@ -19,15 +15,10 @@ body {
     padding: 0;
     width: 100%;
     overflow-x: hidden;
-
-    font-family: "Open Sauce One", sans-serif;
     background: #f4f4f4;
 }
 
 * {
     box-sizing: border-box;
-}
-
-button {
-    cursor: pointer;
+    font-family: "Open Sauce One", sans-serif;
 }

@@ -6,31 +6,12 @@
     let { title, image, business } = $props();
 
     let isExpanded = $state(false);
-    let openTimer = /** @type {ReturnType<typeof setTimeout> | null} */ (null);
 
-    function clearOpenTimer() {
-        if (!openTimer) return;
-
-        clearTimeout(openTimer);
-        openTimer = null;
-    }
-
-    function scheduleExpanded() {
-        clearOpenTimer();
-
-        openTimer = setTimeout(() => {
-            isExpanded = true;
-            openTimer = null;
-        }, 1000);
-    }
-
-    function openExpandedNow() {
-        clearOpenTimer();
+    function openExpanded() {
         isExpanded = true;
     }
 
     function closeExpanded() {
-        clearOpenTimer();
         isExpanded = false;
     }
 
@@ -44,16 +25,7 @@
 </script>
 
 <div class="card">
-    <div
-        class="compact-card"
-        role="button"
-        tabindex="0"
-        onmouseenter={scheduleExpanded}
-        onmouseleave={clearOpenTimer}
-        onfocusin={openExpandedNow}
-        onkeydown={(event) =>
-            (event.key === "Enter" || event.key === " ") && openExpandedNow()}
-    >
+    <div class="compact-card" onclick={openExpanded}>
         <img loading="lazy" src={image} alt={title} />
 
         <div class="content">
@@ -69,7 +41,9 @@
                     <p>{business}</p>
                 </div>
 
-                <button class="coupon-btn">Adquirir cupón</button>
+                <button class="coupon-btn" onclick={openExpanded}
+                    >Adquirir cupón</button
+                >
             </div>
         </div>
     </div>
@@ -78,6 +52,7 @@
         class:visible={isExpanded}
         class="expanded-backdrop"
         role="presentation"
+        onclick={closeExpanded}
         onkeydown={(event) => event.key === "Escape" && closeExpanded()}
     >
         <div
@@ -85,7 +60,7 @@
             role="dialog"
             aria-label={title}
             tabindex="-1"
-            onmouseleave={closeExpanded}
+            onclick={(e) => e.stopPropagation()}
         >
             <button
                 class="close-btn"
@@ -100,7 +75,9 @@
                 <h3>{title}</h3>
                 <p>{business}</p>
 
-                <button class="coupon-btn">Adquirir cupón</button>
+                <button class="coupon-btn" onclick={openExpanded}
+                    >Adquirir cupón</button
+                >
             </div>
 
             <div class="expanded-preview">

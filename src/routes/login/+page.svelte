@@ -12,7 +12,6 @@
     async function login(e: Event) {
         e.preventDefault();
         const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
         if (!regex.test(email)) {
             error = emailError;
             return;
@@ -115,6 +114,7 @@
     .left {
         padding-left: 4rem;
         padding-top: 5rem;
+        padding-right: 1rem;
         flex-wrap: wrap;
         max-width: 50%;
         align-items: flex-start;
@@ -123,7 +123,7 @@
     .right {
         align-items: start;
         justify-content: center;
-        width: 30%;
+        width: 40%;
         gap: 1rem;
     }
 
@@ -162,18 +162,17 @@
         border: none;
         border-radius: 12px;
 
-        background: #19194f;
+        background: var(--primary-blue);
         color: white;
 
         font-size: 16px;
-        border: 1px solid #19194f;
+        border: 1px solid var(--primary-blue);
     }
 
     button:hover {
         cursor: pointer;
-        color: #19194f;
-        background: white;
-        border: 1px solid black;
+        background: var(--primary-blue-light);
+        border: 1px solid var(--primary-blue-light);
     }
     .error {
         color: #d32f2f;
