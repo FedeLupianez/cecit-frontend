@@ -31,7 +31,6 @@
                 return;
             }
             benefits = await response.json();
-            console.log(benefits);
         } catch (error) {
             console.log(error);
         }
