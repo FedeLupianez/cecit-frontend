@@ -109,10 +109,6 @@
                         <span class="category-name">
                             {category.name}
                         </span>
-
-                        <span class="tooltip">
-                            {category.name}
-                        </span>
                     </div>
                 {/each}
             </div>

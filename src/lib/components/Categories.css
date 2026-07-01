@@ -104,14 +104,12 @@ Incluye:
 */
 
 .category-wrapper {
-  position: relative;
+    display: flex;
+    height: 8rem;
 
-  display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
-
-  flex: 0 0 auto;
 }
 
 .category-btn {
@@ -192,15 +190,21 @@ Incluye:
 }
 
 .category-name {
-  display: none;
-  margin-top: 8px;
+    margin-top: 0.8rem;
 
-  color: #050505;
+    background: var(--primary);
+    border-radius: 12px;
+    padding: 0.5rem;
 
-  font-size: 13px;
-  font-weight: 800;
-  line-height: 1.1;
-  text-align: center;
+    color: white;
+
+    font-size: 14px;
+    font-weight: 800;
+    line-height: 1.1;
+    text-align: center;
+    white-space: nowrap;
+    text-wrap: wrap;
+    max-width: 7rem;
 }
 
 /*
@@ -209,36 +213,32 @@ TOOLTIPS
 ==========================================
 */
 
-.tooltip {
-  position: absolute;
-  bottom: -42px;
-
-  background: var(--primary);
-
-  color: white;
-
-  padding: 8px 14px;
-
-  border-radius: 12px;
-
-  font-size: 14px;
-  font-weight: 600;
-
-  opacity: 0;
-
-  transform: translateY(-5px);
-
-  transition:
-    opacity 0.25s ease,
-    transform 0.25s ease;
-
-  pointer-events: none;
-
-  white-space: nowrap;
-
-  box-shadow:
-    0 8px 20px rgba(0,0,0,0.2);
-}
+/* .tooltip { */
+/*   position: absolute; */
+/*   bottom: -42px; */
+/**/
+/**/
+/*   padding: 8px 14px; */
+/**/
+/**/
+/*   font-size: 14px; */
+/*   font-weight: 600; */
+/**/
+/*   opacity: 0; */
+/**/
+/*   transform: translateY(-5px); */
+/**/
+/*   transition: */
+/*     opacity 0.25s ease, */
+/*     transform 0.25s ease; */
+/**/
+/*   pointer-events: none; */
+/**/
+/*   white-space: nowrap; */
+/**/
+/*   box-shadow: */
+/*     0 8px 20px rgba(0,0,0,0.2); */
+/* } */
 
 .category-wrapper:hover .tooltip {
   opacity: 1;
@@ -321,10 +321,6 @@ RESPONSIVE
     height: 68px;
   }
 
-  .category-name {
-    display: block;
-    width: 82px;
-  }
 
   .tooltip {
     display: none;
