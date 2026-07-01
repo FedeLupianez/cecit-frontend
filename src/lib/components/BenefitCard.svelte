@@ -1,11 +1,27 @@
 <script lang="ts">
     import { onMount } from "svelte";
-    import { Download, X } from "lucide-svelte";
+    import { Clock, Download, X, HandCoins, Info, Wallet } from "lucide-svelte";
     import favicon from "$lib/assets/favicon.svg";
     import { profileStore } from "$lib/stores/profileStore";
     import { accessToken } from "$lib/stores/authStore";
+    import { slide } from "svelte/transition";
 
-    let { benefit_id, title, image, business } = $props();
+    let {
+        benefit_id,
+        title,
+        image,
+        partner,
+        methods,
+        endDate,
+    }: {
+        benefit_id: string;
+        title: string;
+        image: string;
+        partner: string;
+        methods: string[];
+        endDate: string;
+    } = $props();
+
     let error = "";
     let voucherToken: string = $state("");
 
@@ -79,7 +95,14 @@
 </script>
 
 <div class="card">
-    <div class="compact-card" onclick={openExpanded}>
+    <div
+        class="compact-card"
+        onclick={openExpanded}
+        onkeydown={(e) =>
+            (e.key === "Enter" || e.key === " ") && openExpanded()}
+        role="button"
+        tabindex="0"
+    >
         <img loading="lazy" src={image} alt={title} />
 
         <div class="content">
@@ -92,7 +115,7 @@
             <div class="bottom">
                 <div class="business">
                     <img loading="lazy" src={favicon} alt="" />
-                    <p>{business}</p>
+                    <p>{partner}</p>
                 </div>
 
                 <button class="coupon-btn" onclick={openExpanded}
@@ -110,11 +133,15 @@
         onkeydown={(event) => event.key === "Escape" && closeExpanded()}
     >
         <div
+            onkeydown={(e) => {
+                if (e.key === "Escape") closeExpanded();
+            }}
             class="expanded-card"
             role="dialog"
             aria-label={title}
             tabindex="-1"
             onclick={(e) => e.stopPropagation()}
+            style="background-image:url({image}) ;"
         >
             <button
                 class="close-btn"
@@ -122,25 +149,86 @@
                 aria-label="Cerrar"
                 onclick={closeExpanded}
             >
-                <X size={22} />
+                <X size={28} />
             </button>
-
+            <h3 class="expanded-title">{title}</h3>
             <div class="expanded-info">
-                <h3>{title}</h3>
-                <p>{business}</p>
-                {#if voucherToken}
-                    <p>Token : {voucherToken}</p>
-                    <button class="download-button" onclick={getFile}>
-                        <Download />
-                    </button>
-                {/if}
-                <button class="coupon-btn" onclick={getCopoun}
-                    >Adquirir cupón</button
-                >
-            </div>
+                <div class="expanded-data">
+                    <div class="expanded-col-1">
+                        <div class="expanded-data-container">
+                            <Clock size={70} class="expanded-data-icon"></Clock>
+                            <div class="end-date-info">
+                                <p class="expanded-data-title">FECHA VIGENTE</p>
+                                <p class="expanded-data-var">{endDate}</p>
+                            </div>
+                        </div>
 
-            <div class="expanded-preview">
-                <img loading="lazy" src={image} alt={title} />
+                        <div class="expanded-data-container">
+                            <HandCoins size={70} class="expanded-data-icon"
+                            ></HandCoins>
+                            <div class="refund-limit-info">
+                                <p class="expanded-data-title">
+                                    TOPE DE REINTEGRO
+                                </p>
+                                <p class="expanded-data-var">{endDate}</p>
+                            </div>
+                        </div>
+
+                        <div class="expanded-data-container">
+                            <Wallet size={70} class="expanded-data-icon"
+                            ></Wallet>
+                            <div class="payment-method-info">
+                                <p class="expanded-data-title">
+                                    MÉTODO DE PAGO
+                                </p>
+                                <p class="expanded-data-var">
+                                    {methods.concat(" ")}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="expanded-col-2">
+                        <div class="map-container">
+                            <p>SUCURSALES</p>
+                            <div class="map"></div>
+                        </div>
+                        <div class="terms">
+                            <div class="terms-header">
+                                <Info size={28}></Info>
+                                <p>TÉRMINOS Y CONDICIONES</p>
+                            </div>
+                            <p class="terms-text">
+                                El cupón estará vigente durante siete días a
+                                partir de la fecha canjeada. Si el cupón no ha
+                                sido utilizado en ese periodo, perderá su
+                                validez y volverá a reactivarse en el sistema.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="voucher-buttons">
+                    <button
+                        class="expanded-coupon-btn"
+                        class:acquired={voucherToken}
+                        onclick={getCopoun}
+                    >
+                        {#if voucherToken}
+                            <span>Adquirido</span>
+                        {:else}
+                            <span>Adquirir Cupón</span>
+                        {/if}
+                    </button>
+                    {#if voucherToken}
+                        <button
+                            class="download-btn"
+                            onclick={getFile}
+                            transition:slide
+                        >
+                            <Download size={28}></Download>
+                        </button>
+                    {/if}
+                </div>
             </div>
         </div>
     </div>
@@ -263,20 +351,6 @@
         font-weight: 500;
     }
 
-    .coupon-btn {
-        min-width: max-content;
-
-        background: #19194f;
-        color: white;
-
-        border-radius: 999px;
-
-        padding: 8px 18px;
-
-        font-size: 14px;
-        font-weight: 500;
-    }
-
     .expanded-backdrop {
         position: fixed;
         inset: 0;
@@ -285,8 +359,8 @@
         padding: 42px;
 
         background: rgba(238, 240, 243, 0.72);
-        backdrop-filter: blur(8px);
-        -webkit-backdrop-filter: blur(8px);
+        /* backdrop-filter: blur(8px); */
+        /* -webkit-backdrop-filter: blur(8px); */
 
         display: flex;
         align-items: center;
@@ -308,14 +382,15 @@
     }
 
     .expanded-card {
-        width: min(980px, calc(100vw - 84px));
-        height: min(560px, calc(100vh - 84px));
+        width: 72rem;
+        height: 35rem;
 
         background: #f4f5f7;
         border: 1px solid #7f8188;
-
-        display: grid;
-        grid-template-columns: 1.08fr 1fr;
+        border-radius: 16px;
+        display: flex;
+        flex-direction: row;
+        align-items: stretch;
 
         transform: translateY(12px) scale(0.985);
         transition: transform 0.18s ease;
@@ -328,19 +403,29 @@
         z-index: 1;
     }
 
+    .expanded-title {
+        color: white;
+        font-size: 2rem;
+        white-space: nowrap;
+        z-index: 1;
+        margin: 0;
+        text-transform: uppercase;
+        width: 80px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transform: rotate(-90deg);
+    }
+
     .close-btn {
         position: absolute;
-        top: 18px;
-        right: 18px;
+        top: 12px;
+        right: 10px;
         z-index: 2;
 
-        width: 42px;
-        height: 42px;
-
-        border: 1px solid #c7c9cf;
         border-radius: 50%;
 
-        background: rgba(244, 245, 247, 0.9);
+        background: transparent;
         color: #151535;
 
         display: flex;
@@ -350,52 +435,147 @@
 
     .expanded-info {
         min-width: 0;
-        padding: 54px 48px 38px;
+        flex: 1;
+        height: 100%;
+        border-radius: 16px;
+        background: white;
 
         display: flex;
         flex-direction: column;
-        align-items: flex-start;
+        align-items: center;
+        justify-content: flex-end;
     }
 
-    .expanded-info h3 {
-        max-width: 430px;
-        margin: 0;
+    .expanded-data {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: flex-start;
+    }
 
-        color: #050505;
+    .expanded-col-1 {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: center;
+        gap: 5rem;
+        overflow: hidden;
+    }
 
-        font-size: 50px;
-        font-weight: 900;
-        line-height: 0.9;
-        letter-spacing: 0;
-        text-transform: uppercase;
+    .expanded-data-container {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+        transform: translateX(-1rem);
+    }
+
+    .expanded-data-title {
+        font-size: 2.5rem;
+    }
+    .expanded-data-var {
+        font-size: 2rem;
+    }
+
+    .voucher-buttons {
+        transform: translateY(35%);
+        display: flex;
+        flex-direction: row;
+        gap: 1rem;
+    }
+
+    .expanded-coupon-btn {
+        background: #151535;
+        color: white;
+        padding: 1.5rem 4.5rem;
+        font-size: 1.5rem;
+
+        border-radius: 999px;
+        cursor: pointer;
+        transition:
+            background 0.6s ease,
+            padding 0.6s ease;
+    }
+
+    .coupon-btn {
+        background: #151535;
+        color: white;
+        padding: 0.5rem 1rem;
+        font-size: 1rem;
+
+        border-radius: 999px;
+        cursor: pointer;
+    }
+
+    .expanded-coupon-btn.acquired {
+        background: #4b4b4b;
+        padding: 1.5rem 3rem;
+    }
+
+    .download-btn {
+        background: #151535;
+        color: white;
+        border-radius: 100%;
+        cursor: pointer;
+        padding: 1.5rem;
     }
 
     .expanded-info p {
-        margin-top: 12px;
-
         color: #050505;
 
-        font-size: 14px;
         font-weight: 900;
     }
 
-    .expanded-info .coupon-btn {
-        margin-top: auto;
-        width: auto;
-        padding: 10px 26px;
-    }
-
-    .expanded-preview {
-        border-left: 1px solid #7f8188;
-        background: #f4f5f7;
-    }
-
-    .expanded-preview img {
-        width: 100%;
+    .expanded-col-2 {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        justify-content: center;
+        gap: 2rem;
         height: 100%;
+        padding-top: 3rem;
+    }
 
-        display: block;
-        object-fit: cover;
+    .map-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.6rem;
+        width: 100%;
+    }
+
+    .map {
+        display: flex;
+        width: 100%;
+        height: 18rem;
+        background-color: red;
+        border-radius: 16px;
+    }
+
+    .terms {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+    }
+
+    .terms-header {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+    }
+
+    .terms-text {
+        display: flex;
+        text-wrap: wrap;
+        width: 32rem;
     }
 
     @media (max-width: 640px) {

@@ -10,10 +10,19 @@
     import { loadCategories, getFilters } from "$lib/stores/categories.svelte";
     interface Benefit {
         id_benefit: string;
-        title: string;
+        id_admin: string;
+        id_partner: string;
+        partner: string;
+        type: string;
+        start_date: string;
+        end_date: string;
         image: string;
-        business: string;
+        title: string;
+        description: string;
+        coupons: number;
+        max_coupons: number;
         categories: string[];
+        payment_methods: string[];
     }
 
     let { title = "Beneficios populares", endpoint = "/api/benefits/all" } =
@@ -190,7 +199,9 @@
                         benefit_id={benefit.id_benefit}
                         title={benefit.title}
                         image={benefit.image}
-                        business={benefit.business}
+                        partner={benefit.partner}
+                        endDate={benefit.end_date}
+                        methods={benefit.payment_methods}
                     />
                 </div>
             {/each}
