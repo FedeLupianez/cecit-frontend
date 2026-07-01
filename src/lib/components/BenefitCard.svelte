@@ -13,6 +13,8 @@
         partner,
         methods,
         endDate,
+        direction,
+        logo,
     }: {
         benefit_id: string;
         title: string;
@@ -20,6 +22,8 @@
         partner: string;
         methods: string[];
         endDate: string;
+        direction: string;
+        logo: string;
     } = $props();
 
     let error = "";
@@ -114,7 +118,7 @@
 
             <div class="bottom">
                 <div class="business">
-                    <img loading="lazy" src={favicon} alt="" />
+                    <img loading="lazy" src={logo || favicon} alt="" />
                     <p>{partner}</p>
                 </div>
 
@@ -190,6 +194,13 @@
                     <div class="expanded-col-2">
                         <div class="map-container">
                             <p>SUCURSALES</p>
+                            <!-- <iframe -->
+                            <!--     src={`https://www.google.com/maps?q=${encodeURIComponent(direction)}&output=embed`} -->
+                            <!--     style="border:0;" -->
+                            <!--     loading="lazy" -->
+                            <!--     allowfullscreen -->
+                            <!--     title="SUCURSALES" -->
+                            <!-- ></iframe> -->
                             <div class="map"></div>
                         </div>
                         <div class="terms">

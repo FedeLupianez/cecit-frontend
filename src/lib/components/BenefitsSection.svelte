@@ -14,6 +14,10 @@
         id_partner: string;
         partner: string;
         type: string;
+        categories: string[];
+        payment_methods: string[];
+        logo: string;
+        direction: string;
         start_date: string;
         end_date: string;
         image: string;
@@ -21,8 +25,6 @@
         description: string;
         coupons: number;
         max_coupons: number;
-        categories: string[];
-        payment_methods: string[];
     }
 
     let { title = "Beneficios populares", endpoint = "/api/benefits/all" } =
@@ -202,6 +204,8 @@
                         partner={benefit.partner}
                         endDate={benefit.end_date}
                         methods={benefit.payment_methods}
+                        logo={benefit.logo}
+                        direction={benefit.direction}
                     />
                 </div>
             {/each}
