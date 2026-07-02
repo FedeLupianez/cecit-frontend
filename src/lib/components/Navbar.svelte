@@ -1,9 +1,31 @@
-<script>
+<script lang="ts">
+    import { profileStore } from "$lib/stores/profileStore";
     import User24Icon from "@iconify-svelte/qlementine-icons/user-24";
     import { Menu } from "lucide-svelte";
+    import type { Profile } from "$lib/stores/profileStore";
+    import { onMount } from "svelte";
 
     const logo =
         "http://centrodecomercioag.com.ar/wp-content/uploads/2023/07/logonuevo.png";
+
+    let profile: Profile | null | undefined = $state();
+    let avatar = $state<string>("");
+
+    onMount(() => {
+        const unsub = profileStore.subscribe((p) => {
+            profile = p;
+        });
+        console.log(profile);
+        return unsub;
+    });
+
+    $effect(() => {
+        if (!profile?.email) {
+            avatar = "";
+            return;
+        }
+        avatar = `https://ui-avatars.com/api/?background=random&name=${profile.email}`;
+    });
 </script>
 
 <nav class="navbar">
@@ -19,7 +41,11 @@
         <a href="#/contact">Contacto</a>
 
         <button class="user-btn">
-            <User24Icon height="3.0em" />
+            {#if !profile}
+                <User24Icon height="3.0em" class="profile-icon" />
+            {:else}
+                <img src={avatar} alt="profileImage" class="profile-icon" />
+            {/if}
         </button>
     </div>
 
@@ -76,6 +102,10 @@
         background: transparent;
         color: #777;
         padding: 8px;
+    }
+
+    .profile-icon {
+        border-radius: 100%;
     }
 
     @media (max-width: 768px) {

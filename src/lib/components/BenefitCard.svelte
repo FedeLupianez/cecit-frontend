@@ -26,6 +26,14 @@
         logo: string;
     } = $props();
 
+    const endDateFormated = $derived(
+        new Date(endDate).toLocaleDateString("es-ES", {
+            day: "numeric",
+            month: "long",
+            year: "numeric",
+        }),
+    );
+
     let error = "";
     let voucherToken: string = $state("");
 
@@ -62,6 +70,7 @@
         error = "";
         const data = await result.json();
         voucherToken = data.token;
+        await getFile();
     }
 
     async function getFile() {
@@ -163,7 +172,9 @@
                             <Clock size={70} class="expanded-data-icon"></Clock>
                             <div class="end-date-info">
                                 <p class="expanded-data-title">FECHA VIGENTE</p>
-                                <p class="expanded-data-var">{endDate}</p>
+                                <p class="expanded-data-var">
+                                    {endDateFormated}
+                                </p>
                             </div>
                         </div>
 
@@ -186,7 +197,7 @@
                                     MÉTODO DE PAGO
                                 </p>
                                 <p class="expanded-data-var">
-                                    {methods.concat(" ")}
+                                    {methods.concat(" ").slice(0, -1)}
                                 </p>
                             </div>
                         </div>
