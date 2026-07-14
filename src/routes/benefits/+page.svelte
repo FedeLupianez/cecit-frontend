@@ -92,6 +92,10 @@
     onMount(() => load_benefits());
 </script>
 
+<svelte:head>
+    <title>Beneficios</title>
+</svelte:head>
+
 <section class="benefits-page">
     <div class="page-inner">
         <h1>Tipos de beneficios</h1>

@@ -169,7 +169,7 @@
         <div class="title-group">
             <h2>{title}</h2>
 
-            <button class="more-btn"> Ver más </button>
+            <a class="more-btn" href="/benefits">Ver más</a>
         </div>
     </div>
 
