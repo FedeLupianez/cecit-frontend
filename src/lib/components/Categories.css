@@ -189,9 +189,12 @@ Incluye:
   opacity: 1;
 }
 
+a {
+  text-decoration: none;
+}
+
 .category-name {
     margin-top: 0.8rem;
-
     background: var(--primary);
     border-radius: 12px;
     padding: 0.5rem;

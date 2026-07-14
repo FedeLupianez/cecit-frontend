@@ -24,7 +24,7 @@
     }
 
     let benefits: Benefit[] = $state([]);
-
+    let paymentMethods: string[] = $state([]);
     let categories = $derived(getFilters());
 
     async function load_benefits() {
@@ -42,7 +42,17 @@
         }
     }
 
-    const paymentMethods = ["Tarjeta", "Efectivo", "Transferencia"];
+    async function load_payment_methods() {
+        try {
+            const response = await fetch("/api/payment-methods/all");
+            if (!response.ok) return;
+            paymentMethods = await response.json();
+            return;
+        } catch (error) {
+            console.log(error);
+        }
+    }
+
     const discounts = ["30% OFF", "40% OFF"];
 
     const initialCategory = page.url.searchParams.get("category");
@@ -89,7 +99,10 @@
         return;
     }
 
-    onMount(() => load_benefits());
+    onMount(() => {
+        load_payment_methods();
+        load_benefits();
+    });
 </script>
 
 <svelte:head>
@@ -229,6 +242,7 @@
     }
 
     .filter-buttons button {
+        cursor: pointer;
         min-width: 78px;
         height: 24px;
         padding: 0 14px;

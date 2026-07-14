@@ -15,6 +15,21 @@ export const load: LayoutServerLoad = async ({ fetch, cookies, url }) => {
 
         if (!refreshRes.ok) throw redirect(302, "/login");
 
+        const setCookie = refreshRes.headers.get("set-cookie");
+        if (setCookie) {
+            const match = setCookie.match(/refresh_token_cecit=([^;]+)/);
+            if (match) {
+                const maxAge = setCookie.match(/Max-Age=(\d+)/);
+                cookies.set("refresh_token_cecit", match[1], {
+                    path: "/",
+                    httpOnly: true,
+                    secure: true,
+                    sameSite: "lax",
+                    ...(maxAge ? { maxAge: parseInt(maxAge[1]) } : {}),
+                });
+            }
+        }
+
         const { access_token } = await refreshRes.json();
 
         const profileRes = await fetch("/api/auth/profile", {

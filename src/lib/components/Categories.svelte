@@ -101,7 +101,10 @@
             <div class="category-track">
                 {#each loopCategories as category}
                     {@const Icon = getIcon(category.icon)}
-                    <div class="category-wrapper">
+                    <a
+                        class="category-wrapper"
+                        href={`/benefits?category=${category.name}`}
+                    >
                         <button class="category-btn">
                             <Icon size={28} />
                         </button>
@@ -109,7 +112,7 @@
                         <span class="category-name">
                             {category.name}
                         </span>
-                    </div>
+                    </a>
                 {/each}
             </div>
         </div>
