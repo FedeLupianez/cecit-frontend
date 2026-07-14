@@ -4,63 +4,17 @@
 
     import Navbar from "$lib/components/Navbar.svelte";
     import Footer from "$lib/components/Footer.svelte";
-    import { onMount } from "svelte";
-    import { goto } from "$app/navigation";
     import { profileStore } from "$lib/stores/profileStore";
 
-    let { children } = $props();
-    let initialized = false;
-    let currentToken = $state(accessToken.getToken());
-
-    async function refreshProfile() {
-        const token = accessToken.getToken();
-        const res = await fetch("/api/auth/profile", {
-            method: "GET",
-            credentials: "include",
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        });
-        if (!res.ok) {
-            profileStore.clear();
-            return;
-        }
-        const data = await res.json();
-        profileStore.setProfile(data);
-    }
-
-    async function refresh() {
-        if (initialized) return;
-
-        const res = await fetch("/api/auth/refresh", {
-            method: "POST",
-            credentials: "include",
-        });
-
-        if (res.ok) {
-            const data = await res.json();
-            accessToken.setToken(data.access_token);
-            initialized = true;
-            return;
-        }
-        profileStore.clear();
-        accessToken.clear();
-
-        goto("/login");
-    }
+    let { children, data } = $props();
 
     $effect(() => {
-        if (currentToken) {
-            refreshProfile();
+        if (data?.accessToken) {
+            accessToken.setToken(data.accessToken);
         }
-    });
-
-    onMount(() => {
-        const unsub = accessToken.subscribe((value) => {
-            currentToken = value;
-        });
-        refresh();
-        return unsub;
+        if (data?.profile) {
+            profileStore.setProfile(data.profile);
+        }
     });
 </script>
 
