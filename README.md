@@ -1,42 +1,89 @@
-# sv
+# CeCIT Beneficios
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+Sistema de gestión de beneficios para los socios del **Centro de Comercio, Industria y Turismo de Alta Gracia (CeCIT)**.
 
-## Creating a project
+## 📖 Descripción
 
-If you're seeing this, you've probably already done this step. Congrats!
+Esta aplicación permite a los socios adheridos al CeCIT acceder a beneficios exclusivos ofrecidos por los comercios asociados.
 
-```sh
-# create a new project
-npx sv create my-app
+El objetivo del sistema es fortalecer la red comercial local, facilitando la administración, consulta y utilización de promociones, descuentos y otros beneficios disponibles para los miembros de la institución.
+
+## ✨ Características
+
+- Autenticación de socios.
+- Consulta de beneficios disponibles.
+- Visualización de comercios adheridos.
+- Gestión de promociones y descuentos.
+- Administración de socios.
+- Panel de administración para la gestión de beneficios.
+- Historial de beneficios utilizados (opcional).
+- Diseño responsive para dispositivos móviles.
+
+## 👥 Tipos de usuarios
+
+### Socios
+- Iniciar sesión.
+- Consultar beneficios vigentes.
+- Utilizar promociones disponibles.
+- Obtener Cupones de los beneficios vigentes.
+
+### Administradores de Negocios
+- Tienen todas las capacidades de un Socio.
+- Crear, modificar y eliminar beneficios.
+- Consultar estadísticas de uso.
+- Gestionar el perfil del negocio.
+
+## 🚀 Tecnologías
+
+- Frontend: Svelte
+- Backend: NestJS.
+- ORM: TypeORM.
+- Base de datos: MySQL.
+- Autenticación: JWT.
+
+
+## 📂 Estructura del proyecto
+
+```text
+src
+├── auth
+├── common
+├── entities
+│   ├── accounts
+│   ├── benefits
+│   ├── benefit-types
+│   ├── categories
+│   ├── partners
+│   ├── partnersadmins
+│   ├── partners_categories
+│   ├── payment_benefit
+│   ├── payment-methods
+│   ├── refresh-token.entity.ts
+│   ├── users
+│   └── vouchers
+├── pdf
+    └── pdf.service.ts
+└── ssh
+    ├── ssh-tunnel.module.ts
+    └── ssh-tunnel.service.ts
 ```
 
-To recreate this project with the same configuration:
+## 📌 Objetivo
 
-```sh
-# recreate this project
-npx sv@0.13.2 create --template minimal --types ts --install npm cecit-frontend
-```
+Promover el comercio local mediante una plataforma digital que conecte a los socios del CeCIT con los beneficios ofrecidos por los comercios adheridos, simplificando su administración y utilización.
 
-## Developing
+## 🔒 Seguridad
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+- Autenticación mediante JWT.
+- Control de acceso por roles.
+- Protección de rutas privadas.
+- Validación de datos de entrada.
 
-```sh
-npm run dev
+## 📈 Futuras mejoras
 
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
-```
+- Integración con QR para validar beneficios.
+- Estadísticas avanzadas.
 
-## Building
+## 📄 Licencia
 
-To create a production version of your app:
-
-```sh
-npm run build
-```
-
-You can preview the production build with `npm run preview`.
-
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+Este proyecto fue desarrollado para el **Centro de Comercio, Industria y Turismo de Alta Gracia (CeCIT)** por alumnos de la especialidad de programación del **Instituto Manuel de Falla**.

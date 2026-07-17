@@ -29,7 +29,10 @@
 <Categories />
 
 {#if BenefitsSection}
-    <BenefitsSection />
+    <BenefitsSection
+        title="Beneficios Populares"
+        endpoint="/api/benefits/popular"
+    />
     <BenefitsSection title="Nuevos beneficios" />
 {/if}
 
