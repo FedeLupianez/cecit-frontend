@@ -2,12 +2,14 @@
     import { accessToken } from "$lib/stores/authStore";
     import { goto } from "$app/navigation";
 
-    let email = $state("");
-    let password = $state("");
-    let showPassword = $state(false);
-    let error = $state("");
+    let partnerNumber: string = $state("");
+    let email: string = $state("");
+    let password: string = $state("");
+    let showPassword: boolean = $state(false);
+    let error: string = $state("");
     const passwdError = "Ingresa una contraseña";
     const emailError = "Ingresa un correo electrónico válido.";
+    const numberError = "Ingresa tu número de socio";
 
     async function login(e: Event) {
         e.preventDefault();
@@ -20,13 +22,21 @@
             error = passwdError;
             return;
         }
+        if (!partnerNumber) {
+            error = numberError;
+            return;
+        }
         error = "";
 
         try {
-            const response = await fetch("/api/auth/login", {
+            const response = await fetch("/api/auth/register", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email: email, password: password }),
+                body: JSON.stringify({
+                    id_user: partnerNumber,
+                    email: email,
+                    password: password,
+                }),
                 credentials: "include",
             });
             if (!response.ok)
@@ -47,11 +57,26 @@
 <section class="login-page">
     <div class="login-card">
         <div class="left">
-            <p class="title">¡Hola!</p>
-            <p class="text">Bienvenido de vuelta.</p>
-            <p class="text">Ingresa los datos para iniciar sesión</p>
+            <div
+                style="display: flex; align-items: start; justify-content: center; flex-direction: column;"
+            >
+                <p class="title">¡Hola!</p>
+                <p class="text">Ingresa los datos para acceder a beneficios</p>
+            </div>
+
+            <a href="/login">¿Ya tenés cuenta? Inicia Sesión</a>
         </div>
         <form onsubmit={login} class="right" novalidate>
+            <input
+                bind:value={partnerNumber}
+                oninput={() => (error = "")}
+                type="email"
+                placeholder="Tu número de socio..."
+                class="login"
+                class:loginerror={error === emailError}
+                required
+            />
+
             <input
                 bind:value={email}
                 oninput={() => (error = "")}
@@ -66,7 +91,7 @@
                 bind:value={password}
                 oninput={() => (error = "")}
                 type={showPassword ? "text" : "password"}
-                placeholder="Tu contraseña..."
+                placeholder="Crea una contraseña"
                 class="login"
                 class:loginerror={error === passwdError}
                 required
@@ -77,7 +102,7 @@
             </label>
 
             <p class="error" class:visible={!!error}>{error}</p>
-            <button type="submit">Iniciar Sesión</button>
+            <button type="submit">Registrarme</button>
         </form>
     </div>
 </section>
@@ -114,9 +139,15 @@
         padding-left: 4rem;
         padding-top: 5rem;
         padding-right: 1rem;
+        padding-bottom: 5rem;
         flex-wrap: wrap;
         max-width: 50%;
         align-items: flex-start;
+        justify-content: space-between;
+    }
+    a {
+        text-decoration: none;
+        color: black;
     }
 
     .right {
