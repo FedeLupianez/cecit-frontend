@@ -33,7 +33,7 @@
         title="Beneficios Populares"
         endpoint="/api/benefits/popular"
     />
-    <BenefitsSection title="Nuevos beneficios" />
+    <BenefitsSection title="Nuevos beneficios" endpoint="/api/benefits/news" />
 {/if}
 
 {#if PartnersCarousel}
