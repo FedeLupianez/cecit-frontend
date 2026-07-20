@@ -76,7 +76,7 @@
         align-items: center;
         gap: 52px;
 
-        animation: partners-scroll 24s linear infinite;
+        animation: partners-scroll 70s linear infinite;
     }
 
     .carousel:hover .track {

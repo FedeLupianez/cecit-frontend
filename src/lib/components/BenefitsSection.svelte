@@ -32,9 +32,11 @@
 
     let benefits: Benefit[] = $state([]);
     let filters = $derived(getFilters());
+    let loading: boolean = $state(true);
 
     async function load_benefits() {
         await loadCategories();
+        loading = true;
         try {
             const response = await fetch(endpoint);
             if (!response.ok) {
@@ -44,6 +46,8 @@
             benefits = await response.json();
         } catch (error) {
             console.log(error);
+        } finally {
+            loading = false;
         }
     }
 
@@ -185,40 +189,47 @@
     </div>
 
     <div class="carousel-wrapper">
-        <button
-            type="button"
-            class="arrow left"
-            onclick={prev}
-            aria-label="Ver beneficios anteriores"
-        >
-            <ChevronLeft size={24} />
-        </button>
+        {#if loading}
+            <div class="loading-container">
+                <div class="spinner"></div>
+                <p>Cargando Beneficios</p>
+            </div>
+        {:else}
+            <button
+                type="button"
+                class="arrow left"
+                onclick={prev}
+                aria-label="Ver beneficios anteriores"
+            >
+                <ChevronLeft size={24} />
+            </button>
 
-        <div class="carousel" bind:this={carousel}>
-            {#each filteredBenefits as benefit}
-                <div class="card-wrapper">
-                    <BenefitCard
-                        benefit_id={benefit.id_benefit}
-                        title={benefit.title}
-                        image={benefit.image}
-                        partner={benefit.partner}
-                        endDate={benefit.end_date}
-                        methods={benefit.payment_methods}
-                        logo={benefit.logo}
-                        direction={benefit.direction}
-                    />
-                </div>
-            {/each}
-        </div>
+            <div class="carousel" bind:this={carousel}>
+                {#each filteredBenefits as benefit}
+                    <div class="card-wrapper">
+                        <BenefitCard
+                            benefit_id={benefit.id_benefit}
+                            title={benefit.title}
+                            image={benefit.image}
+                            partner={benefit.partner}
+                            endDate={benefit.end_date}
+                            methods={benefit.payment_methods}
+                            logo={benefit.logo}
+                            direction={benefit.direction}
+                        />
+                    </div>
+                {/each}
+            </div>
 
-        <button
-            type="button"
-            class="arrow right"
-            onclick={next}
-            aria-label="Ver más beneficios"
-        >
-            <ChevronRight size={24} />
-        </button>
+            <button
+                type="button"
+                class="arrow right"
+                onclick={next}
+                aria-label="Ver más beneficios"
+            >
+                <ChevronRight size={24} />
+            </button>
+        {/if}
     </div>
 </section>
 
@@ -423,6 +434,33 @@ CARRUSEL
 
     .card-wrapper:hover {
         z-index: 100;
+    }
+
+    .loading-container {
+        grid-column: 1 / -1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+        padding: 60px 0;
+        color: #151535;
+        font-size: 16px;
+        font-weight: 600;
+    }
+
+    .spinner {
+        width: 48px;
+        height: 48px;
+        border: 5px solid #e0e0e0;
+        border-top-color: #151535;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
     }
 
     /*

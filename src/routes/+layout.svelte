@@ -14,6 +14,7 @@
         }
         if (data?.profile) {
             profileStore.setProfile(data.profile);
+            console.log(profileStore.getProfile());
         }
     });
 </script>

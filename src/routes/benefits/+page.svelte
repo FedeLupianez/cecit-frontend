@@ -25,9 +25,11 @@
 
     let benefits: Benefit[] = $state([]);
     let paymentMethods: string[] = $state([]);
+    let loading = $state(true);
     let categories = $derived(getFilters());
 
     async function load_benefits() {
+        loading = true;
         await loadCategories();
         try {
             const response = await fetch("/api/benefits/all");
@@ -39,6 +41,8 @@
             console.log($state.snapshot(benefits));
         } catch (error) {
             console.log(error);
+        } finally {
+            loading = false;
         }
     }
 
@@ -165,24 +169,31 @@
             </aside>
 
             <div class="benefits-grid" aria-live="polite">
-                {#each filteredBenefits as benefit}
-                    <div class="card-wrapper">
-                        <BenefitCard
-                            benefit_id={benefit.id_benefit}
-                            title={benefit.title}
-                            image={benefit.image}
-                            partner={benefit.partner}
-                            endDate={benefit.end_date}
-                            methods={benefit.payment_methods}
-                            logo={benefit.logo}
-                            direction={benefit.direction}
-                        />
+                {#if loading}
+                    <div class="loading-container">
+                        <div class="spinner"></div>
+                        <p>Cargando beneficios...</p>
                     </div>
                 {:else}
-                    <p class="empty-state">
-                        No hay beneficios para estos filtros.
-                    </p>
-                {/each}
+                    {#each filteredBenefits as benefit}
+                        <div class="card-wrapper">
+                            <BenefitCard
+                                benefit_id={benefit.id_benefit}
+                                title={benefit.title}
+                                image={benefit.image}
+                                partner={benefit.partner}
+                                endDate={benefit.end_date}
+                                methods={benefit.payment_methods}
+                                logo={benefit.logo}
+                                direction={benefit.direction}
+                            />
+                        </div>
+                    {:else}
+                        <p class="empty-state">
+                            No hay beneficios para estos filtros.
+                        </p>
+                    {/each}
+                {/if}
             </div>
         </div>
     </div>
@@ -293,6 +304,33 @@
         color: #151535;
         font-size: 18px;
         font-weight: 800;
+    }
+
+    .loading-container {
+        grid-column: 1 / -1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+        padding: 60px 0;
+        color: #151535;
+        font-size: 16px;
+        font-weight: 600;
+    }
+
+    .spinner {
+        width: 48px;
+        height: 48px;
+        border: 5px solid #e0e0e0;
+        border-top-color: #151535;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
     }
 
     @media (max-width: 1050px) {
