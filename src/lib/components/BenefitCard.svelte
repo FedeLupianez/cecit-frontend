@@ -530,6 +530,8 @@
 
         border-radius: 999px;
         cursor: pointer;
+        flex-shrink: 0;
+        white-space: nowrap;
     }
 
     .expanded-coupon-btn.acquired {
