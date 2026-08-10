@@ -6,7 +6,7 @@ import { env } from '$env/dynamic/private';
 export const handle: Handle = async ({ event, resolve }) => {
     const { url, request } = event;
     if (url.pathname.startsWith('/api')) {
-        const host = env.HOST ?? "http://localhost:3000"
+        const host = env.BACKEND_URL ?? "http://localhost:3000"
         const target = new URL(`${host}${url.pathname.replace(/^\/api/, '')}${url.search}`);
 
         const headers: Record<string, string> = {};
