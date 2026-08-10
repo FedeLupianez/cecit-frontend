@@ -1,11 +1,13 @@
 import type { Handle } from '@sveltejs/kit';
 import http from 'node:http';
 import type { IncomingMessage } from 'node:http';
+import { env } from '$env/dynamic/private';
 
 export const handle: Handle = async ({ event, resolve }) => {
     const { url, request } = event;
     if (url.pathname.startsWith('/api')) {
-        const target = new URL(`http://localhost:3000${url.pathname.replace(/^\/api/, '')}${url.search}`);
+        const host = env.HOST ?? "http://localhost:3000"
+        const target = new URL(`${host}${url.pathname.replace(/^\/api/, '')}${url.search}`);
 
         const headers: Record<string, string> = {};
         request.headers.forEach((value, key) => {
