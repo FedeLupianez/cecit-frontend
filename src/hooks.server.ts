@@ -24,8 +24,14 @@ export const handle: Handle = async ({ event, resolve }) => {
             });
 
             const responseHeaders = new Headers();
+            const skippedResponseHeaders = [
+                'transfer-encoding',
+                'connection',
+                'content-encoding',
+                'content-length',
+            ];
             res.headers.forEach((value, key) => {
-                if (key === 'transfer-encoding' || key === 'connection') return;
+                if (skippedResponseHeaders.includes(key.toLowerCase())) return;
                 responseHeaders.set(key, value);
             });
 
