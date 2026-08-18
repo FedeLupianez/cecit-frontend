@@ -30,10 +30,15 @@ export const handle: Handle = async ({ event, resolve }) => {
                 'content-encoding',
                 'content-length',
             ];
+            const setCookieValues = res.headers.getSetCookie?.() ?? [];
             res.headers.forEach((value, key) => {
                 if (skippedResponseHeaders.includes(key.toLowerCase())) return;
+                if (key.toLowerCase() === 'set-cookie') return;
                 responseHeaders.set(key, value);
             });
+            for (const cookie of setCookieValues) {
+                responseHeaders.append('set-cookie', cookie);
+            }
 
             const nullBodyStatuses = [101, 204, 205, 304];
             const responseBody = nullBodyStatuses.includes(res.status)

@@ -30,7 +30,6 @@
 </section>
 
 <style>
-    @import url(https://db.onlinewebfonts.com/c/eccf30d3af8a69bf0b97f01c6d46b8e2?family=Agrandir+Grand+Heavy);
     .join-section {
         min-height: 80vh;
         margin-top: 2rem;

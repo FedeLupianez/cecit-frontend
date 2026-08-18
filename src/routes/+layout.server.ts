@@ -1,4 +1,5 @@
 import { redirect } from "@sveltejs/kit";
+import { dev } from "$app/environment";
 import type { LayoutServerLoad } from "./$types";
 
 export const load: LayoutServerLoad = async ({ fetch, cookies, url }) => {
@@ -15,15 +16,18 @@ export const load: LayoutServerLoad = async ({ fetch, cookies, url }) => {
 
         if (!refreshRes.ok) throw redirect(302, "/login");
 
-        const setCookie = refreshRes.headers.get("set-cookie");
-        if (setCookie) {
-            const match = setCookie.match(/refresh_token_cecit=([^;]+)/);
+        const setCookieValues = refreshRes.headers.getSetCookie?.() ?? [];
+        const setCookieHeader = setCookieValues.length > 0
+            ? setCookieValues.join(', ')
+            : refreshRes.headers.get("set-cookie");
+        if (setCookieHeader) {
+            const match = setCookieHeader.match(/refresh_token_cecit=([^;]+)/);
             if (match) {
-                const maxAge = setCookie.match(/Max-Age=(\d+)/);
+                const maxAge = setCookieHeader.match(/Max-Age=(\d+)/);
                 cookies.set("refresh_token_cecit", match[1], {
                     path: "/",
                     httpOnly: true,
-                    secure: true,
+                    secure: !dev,
                     sameSite: "lax",
                     ...(maxAge ? { maxAge: parseInt(maxAge[1]) } : {}),
                 });

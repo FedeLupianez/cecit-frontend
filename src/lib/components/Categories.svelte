@@ -1,13 +1,6 @@
 <script>
-    /*
-  ==========================================
-  IMPORTS
-  ==========================================
-  */
-
     import "./Categories.css";
 
-    import { onMount } from "svelte";
     import { ChevronRight, ChevronLeft } from "lucide-svelte";
     import * as iconMap from "lucide-svelte";
     import { getCategories } from "$lib/stores/categories.svelte";
@@ -19,69 +12,15 @@
         );
     }
 
-    const LOOP_COPIES = 33;
-    const START_COPY = 16;
-    const RECYCLE_DISTANCE = 12;
+    const COPIES = 6;
 
     let categories = $derived(getCategories());
 
     const loopCategories = $derived(
-        Array.from({ length: LOOP_COPIES }, () => categories).flat(),
+        Array.from({ length: COPIES }, () => categories).flat(),
     );
 
-    const SCROLL_AMOUNT = 288;
-
-    let carousel = $state(/** @type {HTMLDivElement | null} */ (null));
-
-    onMount(() => {
-        if (!carousel) return;
-
-        const sectionWidth = carousel.scrollWidth / LOOP_COPIES;
-
-        carousel.scrollLeft = sectionWidth * START_COPY;
-    });
-
-    function keepInfiniteLoop() {
-        if (!carousel) return;
-
-        const sectionWidth = carousel.scrollWidth / LOOP_COPIES;
-
-        if (carousel.scrollLeft < sectionWidth * 6) {
-            carousel.scrollLeft += sectionWidth * RECYCLE_DISTANCE;
-        }
-
-        if (carousel.scrollLeft > sectionWidth * (LOOP_COPIES - 7)) {
-            carousel.scrollLeft -= sectionWidth * RECYCLE_DISTANCE;
-        }
-    }
-
-    /**
-     * @param {-1 | 1} direction
-     */
-    function moveCategories(direction) {
-        if (!carousel) return;
-
-        carousel.scrollBy({
-            left: direction * SCROLL_AMOUNT,
-            behavior: "smooth",
-        });
-
-        setTimeout(keepInfiniteLoop, 420);
-    }
-
-    /*
-  ==========================================
-  FUNCIONES
-  ==========================================
-  */
-
-    function next() {
-        moveCategories(1);
-    }
-
-    function prev() {
-        moveCategories(-1);
-    }
+    let paused = $state(false);
 </script>
 
 <section class="categories">
@@ -91,14 +30,20 @@
         <button
             type="button"
             class="category-arrow"
-            onclick={prev}
+            onmouseenter={() => (paused = true)}
+            onmouseleave={() => (paused = false)}
             aria-label="Ver categorías anteriores"
         >
             <ChevronLeft size={24} />
         </button>
 
-        <div class="category-carousel" bind:this={carousel}>
-            <div class="category-track">
+        <!-- svelte-ignore a11y_no_static_element_interactions -->
+        <div
+            class="category-carousel"
+            onmouseenter={() => (paused = true)}
+            onmouseleave={() => (paused = false)}
+        >
+            <div class="category-track" class:paused>
                 {#each loopCategories as category}
                     {@const Icon = getIcon(category.icon)}
                     <a
@@ -120,7 +65,8 @@
         <button
             type="button"
             class="category-arrow"
-            onclick={next}
+            onmouseenter={() => (paused = true)}
+            onmouseleave={() => (paused = false)}
             aria-label="Ver más categorías"
         >
             <ChevronRight size={24} />
