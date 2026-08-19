@@ -34,11 +34,11 @@
     </div>
 
     <div class="links">
-        <a href="#/home">Institucional</a>
+        <a href="http://centrodecomercioag.com.ar/">Institucional</a>
         <span class="separator" aria-hidden="true">|</span>
-        <a href="#/become-member">Hacete socio</a>
+        <a href="http://centrodecomercioag.com.ar/hacete-socio/">Hacete socio</a>
         <span class="separator" aria-hidden="true">|</span>
-        <a href="#/contact">Contacto</a>
+        <a href="http://centrodecomercioag.com.ar/contacto/">Contacto</a>
 
         <button class="user-btn">
             {#if !profile}
