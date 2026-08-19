@@ -330,7 +330,7 @@
 
         overflow-x: auto;
         overflow-y: hidden;
-        padding: 0 0 8px;
+        padding-top: 0.5rem;
 
         scrollbar-width: none;
         -webkit-overflow-scrolling: touch;

@@ -86,6 +86,10 @@
      * @param {string} category
      */
     function selectCategory(category: string) {
+        if (selectedCategory == category) {
+            selectedCategory = "Todo";
+            return;
+        }
         selectedCategory = selectedCategory === category ? "Todo" : category;
     }
 
@@ -93,6 +97,10 @@
      * @param {string} payment
      */
     function selectPayment(payment: string) {
+        if (selectedPayment == payment) {
+            selectedPayment = "Todo";
+            return;
+        }
         selectedPayment = selectedPayment === payment ? "Todo" : payment;
     }
 
@@ -224,7 +232,7 @@
     .content-layout {
         margin-top: 44px;
         display: grid;
-        grid-template-columns: 180px minmax(0, 1fr);
+        grid-template-columns: 240px minmax(0, 1fr);
         gap: 38px;
         align-items: start;
     }
@@ -235,6 +243,8 @@
         display: flex;
         flex-direction: column;
         gap: 28px;
+        max-height: calc(100vh - 40px);
+        overflow-y: auto;
     }
 
     .filter-group h2 {

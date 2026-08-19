@@ -38,8 +38,6 @@
             goto("/");
         } catch (error) {
             console.log(error);
-        } finally {
-            loading = false;
         }
     }
 </script>
@@ -134,6 +132,8 @@
 
         background: white;
 
+        padding: 1rem;
+        height: 23rem;
         border-radius: 20px;
         border: solid 1px black;
         display: flex;
@@ -149,9 +149,9 @@
     }
 
     .left {
-        padding-left: 4rem;
-        padding-top: 5rem;
-        padding-right: 1rem;
+        padding-left: 2rem;
+        padding-top: 1rem;
+        padding-right: 2rem;
         flex-wrap: wrap;
         max-width: 50%;
         align-items: flex-start;
