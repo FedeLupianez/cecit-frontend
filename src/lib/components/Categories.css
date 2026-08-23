@@ -38,8 +38,12 @@ LAYOUT
 
 .category-carousel {
   width: min(900px, calc(100vw - 150px));
-  overflow: hidden;
+
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
   scroll-behavior: smooth;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
 
   position: relative;
 
@@ -72,17 +76,6 @@ LAYOUT
   display: flex;
   align-items: center;
   gap: 18px;
-
-  animation: categories-scroll 40s linear infinite;
-}
-
-.category-track.paused {
-  animation-play-state: paused;
-}
-
-@keyframes categories-scroll {
-  from { transform: translateX(0); }
-  to { transform: translateX(calc(-100% / 6)); }
 }
 
 /*

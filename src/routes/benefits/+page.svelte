@@ -21,6 +21,7 @@
         description: string;
         coupons: number;
         max_coupons: number;
+        max_per_user: number;
     }
 
     let benefits: Benefit[] = $state([]);
@@ -196,6 +197,7 @@
                                 direction={benefit.direction}
                                 coupons={benefit.coupons}
                                 max_coupons={benefit.max_coupons}
+                                max_per_user={benefit.max_per_user}
                             />
                         </div>
                     {:else}

@@ -12,15 +12,19 @@
         );
     }
 
-    const COPIES = 6;
-
     let categories = $derived(getCategories());
 
-    const loopCategories = $derived(
-        Array.from({ length: COPIES }, () => categories).flat(),
-    );
+    /** @type {HTMLElement | undefined} */
+    let carousel;
 
-    let paused = $state(false);
+    const SCROLL_STEP = 300;
+
+    function scrollCarousel(direction) {
+        carousel?.scrollBy({
+            left: direction * SCROLL_STEP,
+            behavior: "smooth",
+        });
+    }
 </script>
 
 <section class="categories">
@@ -30,21 +34,15 @@
         <button
             type="button"
             class="category-arrow"
-            onmouseenter={() => (paused = true)}
-            onmouseleave={() => (paused = false)}
+            onclick={() => scrollCarousel(-1)}
             aria-label="Ver categorías anteriores"
         >
             <ChevronLeft size={24} />
         </button>
 
-        <!-- svelte-ignore a11y_no_static_element_interactions -->
-        <div
-            class="category-carousel"
-            onmouseenter={() => (paused = true)}
-            onmouseleave={() => (paused = false)}
-        >
-            <div class="category-track" class:paused>
-                {#each loopCategories as category}
+        <div class="category-carousel" bind:this={carousel}>
+            <div class="category-track">
+                {#each categories as category}
                     {@const Icon = getIcon(category.icon)}
                     <a
                         class="category-wrapper"
@@ -65,8 +63,7 @@
         <button
             type="button"
             class="category-arrow"
-            onmouseenter={() => (paused = true)}
-            onmouseleave={() => (paused = false)}
+            onclick={() => scrollCarousel(1)}
             aria-label="Ver más categorías"
         >
             <ChevronRight size={24} />
