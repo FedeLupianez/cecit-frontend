@@ -194,6 +194,8 @@
                                 methods={benefit.payment_methods}
                                 logo={benefit.logo}
                                 direction={benefit.direction}
+                                coupons={benefit.coupons}
+                                max_coupons={benefit.max_coupons}
                             />
                         </div>
                     {:else}
