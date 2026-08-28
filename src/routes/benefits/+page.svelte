@@ -21,6 +21,7 @@
         description: string;
         coupons: number;
         max_coupons: number;
+        max_per_user: number;
     }
 
     let benefits: Benefit[] = $state([]);
@@ -86,6 +87,10 @@
      * @param {string} category
      */
     function selectCategory(category: string) {
+        if (selectedCategory == category) {
+            selectedCategory = "Todo";
+            return;
+        }
         selectedCategory = selectedCategory === category ? "Todo" : category;
     }
 
@@ -93,6 +98,10 @@
      * @param {string} payment
      */
     function selectPayment(payment: string) {
+        if (selectedPayment == payment) {
+            selectedPayment = "Todo";
+            return;
+        }
         selectedPayment = selectedPayment === payment ? "Todo" : payment;
     }
 
@@ -186,6 +195,9 @@
                                 methods={benefit.payment_methods}
                                 logo={benefit.logo}
                                 direction={benefit.direction}
+                                coupons={benefit.coupons}
+                                max_coupons={benefit.max_coupons}
+                                max_per_user={benefit.max_per_user}
                             />
                         </div>
                     {:else}
@@ -224,7 +236,7 @@
     .content-layout {
         margin-top: 44px;
         display: grid;
-        grid-template-columns: 180px minmax(0, 1fr);
+        grid-template-columns: 240px minmax(0, 1fr);
         gap: 38px;
         align-items: start;
     }
@@ -235,6 +247,8 @@
         display: flex;
         flex-direction: column;
         gap: 28px;
+        max-height: calc(100vh - 40px);
+        overflow-y: auto;
     }
 
     .filter-group h2 {

@@ -1,10 +1,9 @@
 <script lang="ts">
     import { onMount } from "svelte";
-    import { Clock, Download, X, HandCoins, Info, Wallet } from "lucide-svelte";
+    import { Clock, X, Info, Wallet, Ticket, Users } from "lucide-svelte";
     import favicon from "$lib/assets/favicon.svg";
     import { profileStore } from "$lib/stores/profileStore";
     import { accessToken } from "$lib/stores/authStore";
-    import { slide } from "svelte/transition";
 
     let {
         benefit_id,
@@ -15,6 +14,9 @@
         endDate,
         direction,
         logo,
+        coupons,
+        max_coupons,
+        max_per_user,
     }: {
         benefit_id: string;
         title: string;
@@ -24,6 +26,9 @@
         endDate: string;
         direction: string;
         logo: string;
+        coupons: number;
+        max_coupons: number;
+        max_per_user: number;
     } = $props();
 
     const endDateFormated = $derived(
@@ -34,13 +39,18 @@
         }),
     );
 
-    let error = "";
+    let user_vouchers = $state<number>(0);
+    let error = $state("");
     let voucherToken: string = $state("");
-
     let isExpanded = $state(false);
+    let isLoading = $state(false);
+    let isRedeemed = $state(false);
+
+    const maxReached = $derived(user_vouchers >= max_per_user);
 
     function openExpanded() {
         isExpanded = true;
+        getUserVouchers();
     }
 
     function closeExpanded() {
@@ -48,29 +58,46 @@
     }
 
     async function getCopoun() {
-        const profile = profileStore.getProfile();
-        const tmpAccessToken = accessToken.getToken();
-        const result = await fetch("/api/vouchers/create", {
-            method: "POST",
-            credentials: "include",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${tmpAccessToken}`,
-            },
-            body: JSON.stringify({
-                id_user: profile?.user_id,
-                id_benefit: benefit_id,
-            }),
-        });
-        if (!result.ok) {
-            error = "Error getting voucher";
-            voucherToken = "";
-            return;
+        if (isLoading) return;
+        isLoading = true;
+        try {
+            const profile = profileStore.getProfile();
+            const tmpAccessToken = accessToken.getToken();
+            const result = await fetch("/api/vouchers/create", {
+                method: "POST",
+                credentials: "include",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${tmpAccessToken}`,
+                },
+                body: JSON.stringify({
+                    id_user: profile?.user_id,
+                    id_benefit: benefit_id,
+                }),
+            });
+            if (!result.ok) {
+                if (result.status === 409) {
+                    error =
+                        "Alcanzaste el máximo de cupones para este beneficio";
+                    user_vouchers = max_per_user;
+                } else {
+                    error = "Error al obtener el voucher";
+                }
+                voucherToken = "";
+                return;
+            }
+            error = "";
+            const data = await result.json();
+            voucherToken = data.token;
+            await getUserVouchers();
+            await getFile();
+            isRedeemed = true;
+            setTimeout(() => {
+                isRedeemed = false;
+            }, 3000);
+        } finally {
+            isLoading = false;
         }
-        error = "";
-        const data = await result.json();
-        voucherToken = data.token;
-        await getFile();
     }
 
     async function getFile() {
@@ -96,6 +123,33 @@
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
+    }
+
+    async function getUserVouchers() {
+        const tmpAccessToken = accessToken.getToken();
+        const tmpProfile = profileStore.getProfile();
+        if (!tmpAccessToken || !tmpProfile?.user_id) return;
+
+        try {
+            const params = new URLSearchParams({
+                id_account: tmpProfile.user_id,
+                id_benefit: benefit_id,
+            });
+            const res = await fetch(`/api/vouchers/userbenefit?${params}`, {
+                method: "GET",
+                credentials: "include",
+                headers: {
+                    Authorization: `Bearer ${tmpAccessToken}`,
+                },
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+            user_vouchers = data.coupons ?? 0;
+            error = "";
+        } catch (e) {
+            console.error("Error fetching user vouchers:", e);
+            user_vouchers = 0;
+        }
     }
 
     onMount(() => {
@@ -178,16 +232,16 @@
                             </div>
                         </div>
 
-                        <div class="expanded-data-container">
-                            <HandCoins size={70} class="expanded-data-icon"
-                            ></HandCoins>
-                            <div class="refund-limit-info">
-                                <p class="expanded-data-title">
-                                    TOPE DE REINTEGRO
-                                </p>
-                                <p class="expanded-data-var">{endDate}</p>
-                            </div>
-                        </div>
+                        <!-- <div class="expanded-data-container"> -->
+                        <!--     <HandCoins size={70} class="expanded-data-icon" -->
+                        <!--     ></HandCoins> -->
+                        <!--     <div class="refund-limit-info"> -->
+                        <!--         <p class="expanded-data-title"> -->
+                        <!--             TOPE DE REINTEGRO -->
+                        <!--         </p> -->
+                        <!--         <p class="expanded-data-var">{endDate}</p> -->
+                        <!--     </div> -->
+                        <!-- </div> -->
 
                         <div class="expanded-data-container">
                             <Wallet size={70} class="expanded-data-icon"
@@ -198,6 +252,27 @@
                                 </p>
                                 <p class="expanded-data-var">
                                     {methods.concat(" ").slice(0, -1)}
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="expanded-data-container">
+                            <Ticket size={70} class="expanded-data-icon"
+                            ></Ticket>
+                            <div class="coupons-info">
+                                <p class="expanded-data-title">DISPONIBLES</p>
+                                <p class="expanded-data-var">
+                                    {max_coupons - coupons}
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="expanded-data-container">
+                            <Users size={70} class="expanded-data-icon"></Users>
+                            <div class="user-coupons-info">
+                                <p class="expanded-data-title">TUS CUPONES</p>
+                                <p class="expanded-data-var">
+                                    {user_vouchers} / {max_per_user}
                                 </p>
                             </div>
                         </div>
@@ -229,28 +304,28 @@
                     </div>
                 </div>
 
-                <div class="voucher-buttons">
-                    <button
-                        class="expanded-coupon-btn"
-                        class:acquired={voucherToken}
-                        onclick={getCopoun}
-                    >
-                        {#if voucherToken}
-                            <span>Adquirido</span>
-                        {:else}
-                            <span>Adquirir Cupón</span>
-                        {/if}
-                    </button>
-                    {#if voucherToken}
-                        <button
-                            class="download-btn"
-                            onclick={getFile}
-                            transition:slide
-                        >
-                            <Download size={28}></Download>
-                        </button>
+                <button
+                    class="expanded-coupon-btn"
+                    class:acquired={maxReached}
+                    class:loading={isLoading}
+                    class:redeemed={isRedeemed}
+                    onclick={getCopoun}
+                    disabled={maxReached || isLoading || isRedeemed}
+                >
+                    {#if isLoading}
+                        <span class="spinner"></span>
+                        <span>Canjeando…</span>
+                    {:else if isRedeemed}
+                        <span>Canjeado</span>
+                    {:else if maxReached}
+                        <span>Máximo alcanzado</span>
+                    {:else}
+                        <span>Adquirir Cupón</span>
                     {/if}
-                </div>
+                </button>
+                {#if error}
+                    <p class="voucher-error">{error}</p>
+                {/if}
             </div>
         </div>
     </div>
@@ -482,7 +557,7 @@
         flex-direction: column;
         align-items: flex-start;
         justify-content: center;
-        gap: 5rem;
+        gap: 1.5rem;
         overflow: hidden;
     }
 
@@ -502,14 +577,20 @@
         font-size: 2rem;
     }
 
-    .voucher-buttons {
-        transform: translateY(35%);
-        display: flex;
-        flex-direction: row;
-        gap: 1rem;
+    .voucher-error {
+        color: #c0392b;
+        font-size: 1rem;
+        margin-top: 0.5rem;
+    }
+
+    .expanded-coupon-btn:disabled {
+        cursor: default;
+        background: #4b4b4b;
+        padding: 1.5rem 3rem;
     }
 
     .expanded-coupon-btn {
+        transform: translateY(35%);
         background: #151535;
         color: white;
         padding: 1.5rem 4.5rem;
@@ -522,6 +603,32 @@
             padding 0.6s ease;
     }
 
+    .expanded-coupon-btn.loading {
+        cursor: progress;
+        opacity: 0.85;
+    }
+
+    .expanded-coupon-btn.redeemed {
+        background: #2ecc71;
+    }
+
+    .spinner {
+        display: inline-block;
+        vertical-align: middle;
+        width: 30px;
+        height: 30px;
+        border: 5px solid #e0e0e0;
+        border-top-color: #151535;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
     .coupon-btn {
         background: #151535;
         color: white;
@@ -532,19 +639,6 @@
         cursor: pointer;
         flex-shrink: 0;
         white-space: nowrap;
-    }
-
-    .expanded-coupon-btn.acquired {
-        background: #4b4b4b;
-        padding: 1.5rem 3rem;
-    }
-
-    .download-btn {
-        background: #151535;
-        color: white;
-        border-radius: 100%;
-        cursor: pointer;
-        padding: 1.5rem;
     }
 
     .expanded-info p {

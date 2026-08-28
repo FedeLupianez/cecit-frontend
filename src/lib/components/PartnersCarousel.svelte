@@ -15,7 +15,7 @@
         });
         if (!result.ok) return;
         const data = await result.json();
-        partners = [...data, ...data, ...data, ...data]; // Partners Repetidos
+        partners = [...data, ...data];
     }
     onMount(load_partners);
 </script>

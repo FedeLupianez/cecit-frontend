@@ -72,6 +72,38 @@ src
 
 Promover el comercio local mediante una plataforma digital que conecte a los socios del CeCIT con los beneficios ofrecidos por los comercios adheridos, simplificando su administración y utilización.
 
+## Instalación
+
+### Requisitos
+- bun >= 1.3.14
+- node >= v26.7.0
+- git
+
+### Clonar repositorio
+```bash
+    git clone https://github.com/FedeLupianez/cecit-frontend
+    cd cecit-backend
+```
+
+### Instalar dependencias
+¡Tener en cuenta la rama en la que se está trabajando!
+```bash
+    bun install
+```
+o
+```bash
+    npm install
+```
+
+## Correr el Proyecto
+```bash
+    bun run dev
+```
+o
+```bash
+    npm run dev
+```
+
 ## 🔒 Seguridad
 
 - Autenticación mediante JWT.

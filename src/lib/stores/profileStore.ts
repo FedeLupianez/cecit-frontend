@@ -3,6 +3,7 @@ import { get, writable } from "svelte/store";
 export interface Profile {
     user_id: string;
     email: string;
+    role?: "USER" | "CECIT_ADMIN" | "PARTNER_ADMIN";
 }
 
 function createProfileStore() {

@@ -1,13 +1,6 @@
 <script>
-    /*
-  ==========================================
-  IMPORTS
-  ==========================================
-  */
-
     import "./Categories.css";
 
-    import { onMount } from "svelte";
     import { ChevronRight, ChevronLeft } from "lucide-svelte";
     import * as iconMap from "lucide-svelte";
     import { getCategories } from "$lib/stores/categories.svelte";
@@ -19,68 +12,18 @@
         );
     }
 
-    const LOOP_COPIES = 33;
-    const START_COPY = 16;
-    const RECYCLE_DISTANCE = 12;
-
     let categories = $derived(getCategories());
 
-    const loopCategories = $derived(
-        Array.from({ length: LOOP_COPIES }, () => categories).flat(),
-    );
+    /** @type {HTMLElement | undefined} */
+    let carousel;
 
-    const SCROLL_AMOUNT = 288;
+    const SCROLL_STEP = 300;
 
-    let carousel = $state(/** @type {HTMLDivElement | null} */ (null));
-
-    onMount(() => {
-        if (!carousel) return;
-
-        const sectionWidth = carousel.scrollWidth / LOOP_COPIES;
-
-        carousel.scrollLeft = sectionWidth * START_COPY;
-    });
-
-    function keepInfiniteLoop() {
-        if (!carousel) return;
-
-        const sectionWidth = carousel.scrollWidth / LOOP_COPIES;
-
-        if (carousel.scrollLeft < sectionWidth * 6) {
-            carousel.scrollLeft += sectionWidth * RECYCLE_DISTANCE;
-        }
-
-        if (carousel.scrollLeft > sectionWidth * (LOOP_COPIES - 7)) {
-            carousel.scrollLeft -= sectionWidth * RECYCLE_DISTANCE;
-        }
-    }
-
-    /**
-     * @param {-1 | 1} direction
-     */
-    function moveCategories(direction) {
-        if (!carousel) return;
-
-        carousel.scrollBy({
-            left: direction * SCROLL_AMOUNT,
+    function scrollCarousel(direction) {
+        carousel?.scrollBy({
+            left: direction * SCROLL_STEP,
             behavior: "smooth",
         });
-
-        setTimeout(keepInfiniteLoop, 420);
-    }
-
-    /*
-  ==========================================
-  FUNCIONES
-  ==========================================
-  */
-
-    function next() {
-        moveCategories(1);
-    }
-
-    function prev() {
-        moveCategories(-1);
     }
 </script>
 
@@ -91,7 +34,7 @@
         <button
             type="button"
             class="category-arrow"
-            onclick={prev}
+            onclick={() => scrollCarousel(-1)}
             aria-label="Ver categorías anteriores"
         >
             <ChevronLeft size={24} />
@@ -99,7 +42,7 @@
 
         <div class="category-carousel" bind:this={carousel}>
             <div class="category-track">
-                {#each loopCategories as category}
+                {#each categories as category}
                     {@const Icon = getIcon(category.icon)}
                     <a
                         class="category-wrapper"
@@ -120,7 +63,7 @@
         <button
             type="button"
             class="category-arrow"
-            onclick={next}
+            onclick={() => scrollCarousel(1)}
             aria-label="Ver más categorías"
         >
             <ChevronRight size={24} />

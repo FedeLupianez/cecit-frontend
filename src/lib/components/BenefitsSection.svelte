@@ -25,6 +25,7 @@
         description: string;
         coupons: number;
         max_coupons: number;
+        max_per_user: number;
     }
 
     let { title = "Beneficios populares", endpoint = "/api/benefits/all" } =
@@ -216,6 +217,9 @@
                             methods={benefit.payment_methods}
                             logo={benefit.logo}
                             direction={benefit.direction}
+                            max_coupons={benefit.max_coupons}
+                            coupons={benefit.coupons}
+                            max_per_user={benefit.max_per_user}
                         />
                     </div>
                 {/each}
@@ -330,7 +334,7 @@
 
         overflow-x: auto;
         overflow-y: hidden;
-        padding: 0 0 8px;
+        padding-top: 0.5rem;
 
         scrollbar-width: none;
         -webkit-overflow-scrolling: touch;

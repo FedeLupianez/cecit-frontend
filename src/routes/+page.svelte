@@ -1,23 +1,9 @@
 <script lang="ts">
-    import { onMount } from "svelte";
-    import type { Component } from "svelte";
     import HeroCarousel from "$lib/components/HeroCarousel.svelte";
     import Categories from "$lib/components/Categories.svelte";
-
-    let BenefitsSection: Component | undefined = $state();
-    let PartnersCarousel: Component | undefined = $state();
-    let JoinSection: Component | undefined = $state();
-
-    onMount(async () => {
-        BenefitsSection = (
-            await import("$lib/components/BenefitsSection.svelte")
-        ).default;
-        PartnersCarousel = (
-            await import("$lib/components/PartnersCarousel.svelte")
-        ).default;
-        JoinSection = (await import("$lib/components/JoinSection.svelte"))
-            .default;
-    });
+    import BenefitsSection from "$lib/components/BenefitsSection.svelte";
+    import PartnersCarousel from "$lib/components/PartnersCarousel.svelte";
+    import JoinSection from "$lib/components/JoinSection.svelte";
 </script>
 
 <svelte:head>
@@ -28,18 +14,12 @@
 
 <Categories />
 
-{#if BenefitsSection}
-    <BenefitsSection
-        title="Beneficios Populares"
-        endpoint="/api/benefits/popular"
-    />
-    <BenefitsSection title="Nuevos beneficios" endpoint="/api/benefits/news" />
-{/if}
+<BenefitsSection
+    title="Beneficios Populares"
+    endpoint="/api/benefits/popular"
+/>
+<BenefitsSection title="Nuevos beneficios" endpoint="/api/benefits/news" />
 
-{#if PartnersCarousel}
-    <PartnersCarousel />
-{/if}
+<PartnersCarousel />
 
-{#if JoinSection}
-    <JoinSection />
-{/if}
+<JoinSection />

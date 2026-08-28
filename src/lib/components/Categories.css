@@ -38,8 +38,12 @@ LAYOUT
 
 .category-carousel {
   width: min(900px, calc(100vw - 150px));
-  overflow: hidden;
+
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
   scroll-behavior: smooth;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
 
   position: relative;
 

@@ -25,12 +25,13 @@
     <div class="content">
         <h2>¡HACETE SOCIO!</h2>
 
-        <button type="button">Contactanos</button>
+        <a href="http://centrodecomercioag.com.ar/contacto/" id="contact-btn"
+            >Contactanos</a
+        >
     </div>
 </section>
 
 <style>
-    @import url(https://db.onlinewebfonts.com/c/eccf30d3af8a69bf0b97f01c6d46b8e2?family=Agrandir+Grand+Heavy);
     .join-section {
         min-height: 80vh;
         margin-top: 2rem;
@@ -65,13 +66,14 @@
         letter-spacing: 0;
     }
 
-    button {
+    #contact-btn {
         margin-top: 12px;
         width: 15rem;
         padding: 1rem;
 
         border: 1px solid #c8ccd4;
         border-radius: 999px;
+        text-align: center;
 
         background: #f8f9fb;
         color: #050505;
@@ -122,7 +124,7 @@
             text-align: center;
         }
 
-        button {
+        #contact-btn {
             min-width: 170px;
             height: 40px;
             font-size: 18px;

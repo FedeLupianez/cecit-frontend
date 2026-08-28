@@ -8,6 +8,7 @@
     let error = $state("");
     const passwdError = "Ingresa una contraseña";
     const emailError = "Ingresa un correo electrónico válido.";
+    let loading: boolean = $state(false);
 
     async function login(e: Event) {
         e.preventDefault();
@@ -23,6 +24,7 @@
         error = "";
 
         try {
+            loading = true;
             const response = await fetch("/api/auth/login", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -77,12 +79,46 @@
             </label>
 
             <p class="error" class:visible={!!error}>{error}</p>
-            <button type="submit">Iniciar Sesión</button>
+            {#if loading}
+                <div class="loading-container">
+                    <div class="spinner"></div>
+                    <p>Iniciando Sesión...</p>
+                </div>
+            {:else}
+                <button type="submit">Iniciar Sesión</button>
+            {/if}
         </form>
     </div>
 </section>
 
 <style>
+    .loading-container {
+        grid-column: 1 / -1;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+        color: #151535;
+        font-size: 16px;
+        font-weight: 600;
+    }
+
+    .spinner {
+        width: 48px;
+        height: 48px;
+        border: 5px solid #e0e0e0;
+        border-top-color: #151535;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
     .login-page {
         min-height: 90vh;
         display: flex;
@@ -96,6 +132,8 @@
 
         background: white;
 
+        padding: 1rem;
+        height: 23rem;
         border-radius: 20px;
         border: solid 1px black;
         display: flex;
@@ -111,9 +149,9 @@
     }
 
     .left {
-        padding-left: 4rem;
-        padding-top: 5rem;
-        padding-right: 1rem;
+        padding-left: 2rem;
+        padding-top: 1rem;
+        padding-right: 2rem;
         flex-wrap: wrap;
         max-width: 50%;
         align-items: flex-start;
