@@ -31,9 +31,15 @@ const accessByRole: Record<AccountRole, RoleAccess> = {
     PARTNER_ADMIN: {
         label: "Negociante",
         actions: [
+<<<<<<< HEAD
             { label: "Panel de negocio", href: "/business-panel" },
             { label: "Canjear Beneficio", href: "/redeem" },
             { label: "Configuración", href: "/profile#configuration" }
+=======
+            { label: "Configuración", href: "/profile#configuration" },
+            { label: "Panel de negocio", href: "/business-panel" },
+            { label: "Crear beneficio", href: "/create-benefit" }
+>>>>>>> 26b57d9 (Crear Beneficio)
         ]
     }
 };
