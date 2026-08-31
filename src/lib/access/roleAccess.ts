@@ -23,16 +23,17 @@ const accessByRole: Record<AccountRole, RoleAccess> = {
     CECIT_ADMIN: {
         label: "Administrador",
         actions: [
-            { label: "Configuración", href: "/profile#configuration" },
             { label: "Panel de administrador", href: "/profile#admin-panel" },
-            { label: "Crear beneficio", href: "/profile#create-benefit" }
+            { label: "Crear beneficio", href: "/profile#create-benefit" },
+            { label: "Configuración", href: "/profile#configuration" }
         ]
     },
     PARTNER_ADMIN: {
         label: "Negociante",
         actions: [
-            { label: "Configuración", href: "/profile#configuration" },
-            { label: "Panel de negocio", href: "/business-panel" }
+            { label: "Panel de negocio", href: "/business-panel" },
+            { label: "Canjear Beneficio", href: "/redeem" },
+            { label: "Configuración", href: "/profile#configuration" }
         ]
     }
 };

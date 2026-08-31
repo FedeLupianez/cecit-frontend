@@ -1,8 +1,20 @@
 import { redirect } from "@sveltejs/kit";
 import { dev } from "$app/environment";
+import { env } from "$env/dynamic/private";
 import type { LayoutServerLoad } from "./$types";
 
 export const load: LayoutServerLoad = async ({ fetch, cookies, url }) => {
+    if (env.AUTH_DISABLED === "true") {
+        return {
+            accessToken: "dev-mode-token",
+            profile: {
+                user_id: "dev-user",
+                email: "dev@cecit.local",
+                role: env.DEV_USER_ROLE ?? "USER",
+            },
+        };
+    }
+
     if (url.pathname === "/login") return {};
 
     const refreshToken = cookies.get("refresh_token_cecit");

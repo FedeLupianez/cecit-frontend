@@ -139,32 +139,106 @@
     }
 
     .role-card.compact {
-        width: 12rem;
-        min-height: 10rem;
-        padding: 9px 11px 12px;
-        border-radius: 5px;
-        box-shadow: 0 4px 12px rgb(0 0 0 / 13%);
+        position: relative;
+        align-items: stretch;
+        justify-content: flex-start;
+        width: 15.5rem;
+        min-height: 0;
+        padding: 10px;
+        border: 1px solid #d2d4da;
+        border-radius: 14px;
+        box-shadow: 0 12px 32px rgb(0 0 0 / 16%);
+        transform-origin: top right;
+        animation: role-drop-in 0.16s ease;
+    }
+
+    .role-card.compact::before {
+        content: "";
+        position: absolute;
+        top: -7px;
+        right: 24px;
+        width: 14px;
+        height: 14px;
+        background: #fff;
+        border-top: 1px solid #d2d4da;
+        border-left: 1px solid #d2d4da;
+        transform: rotate(45deg);
+    }
+
+    @keyframes role-drop-in {
+        from {
+            opacity: 0;
+            transform: translateY(-8px) scale(0.97);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
     }
 
     .compact header {
         gap: 7px;
+        padding: 2px 4px 10px;
     }
     .compact header span {
-        text-align: center;
-        display: inline-block;
         width: fit-content;
-        padding: 0;
-        border: 0;
-        border-radius: 0;
-        font-size: 0.9rem;
-        line-height: 1.05;
+        padding: 4px 12px;
+        border: 1px solid #e1e3e8;
+        border-radius: 999px;
+        background: #f4f5f7;
+        color: #19194f;
+        font-size: 0.72rem;
+        font-weight: 700;
+        line-height: 1;
+        letter-spacing: 0.4px;
+        text-transform: uppercase;
     }
     .compact nav {
-        gap: 4px;
-        margin-top: 9px;
+        gap: 2px;
+        margin-top: 0;
     }
     .compact a,
     .compact button {
-        font-size: 11px;
+        font-size: 13px;
+    }
+    .compact .option-btn {
+        width: 100%;
+        padding: 10px 12px;
+        border-radius: 10px;
+        color: #050505;
+        font-weight: 600;
+        line-height: 1.25;
+        transition:
+            background-color 0.15s ease,
+            color 0.15s ease;
+    }
+    .compact .option-btn:hover,
+    .compact .option-btn:focus-visible {
+        background-color: #eef0f4;
+        color: #19194f;
+        text-decoration: none;
+    }
+    .compact .logout {
+        margin-top: 6px;
+        padding-top: 4px;
+        border-top: 1px solid #ececf0;
+    }
+    .compact .logout button {
+        justify-content: flex-start;
+        border-radius: 10px;
+        background-color: transparent;
+        color: #c0392b;
+        font-weight: 600;
+    }
+    .compact .logout button:hover {
+        background-color: #fdf0f0;
+        color: #b91c1c;
+    }
+    .compact .logout button:active {
+        background-color: #fbe2e2;
+    }
+    .compact .logout button:focus-visible {
+        outline: 2px solid #f5b8b8;
+        outline-offset: 2px;
     }
 </style>
