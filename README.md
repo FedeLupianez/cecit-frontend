@@ -104,6 +104,27 @@ o
     npm run dev
 ```
 
+## 🧪 Modo desarrollo sin autenticación
+
+Para probar la página sin tener que iniciar sesión (ni tener el backend corriendo), se puede
+desactivar la autenticación mediante variables de entorno:
+
+```bash
+    AUTH_DISABLED=true bun run dev
+```
+
+o configurarlas en el archivo `.env` (ver `.env.example`):
+
+```dotenv
+AUTH_DISABLED=true
+DEV_USER_ROLE=USER
+```
+
+- `AUTH_DISABLED=true`: saltea el login y las llamadas de autenticación al backend, usando un perfil de prueba.
+- `DEV_USER_ROLE`: rol del perfil de prueba para probar las distintas vistas (`USER`, `CECIT_ADMIN` o `PARTNER_ADMIN`).
+
+⚠️ Nunca activarlo en producción.
+
 ## 🔒 Seguridad
 
 - Autenticación mediante JWT.
