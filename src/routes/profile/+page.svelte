@@ -4,13 +4,7 @@
     import { profileStore } from "$lib/stores/profileStore";
     import RoleCard from "$lib/components/RoleCard.svelte";
     import { getRoleAccess } from "$lib/access/roleAccess";
-    import {
-        Pencil,
-        Mail,
-        Lock,
-        BadgeCheck,
-        Hash,
-    } from "lucide-svelte";
+    import { Pencil, Mail, Lock, BadgeCheck, Hash } from "lucide-svelte";
 
     const profile = $derived(
         page.data.profile as
@@ -98,14 +92,19 @@
         emailError = "";
         emailSuccess = "";
         try {
-            const response = await fetch("/api/auth/email", {
+            const response = await fetch("/api/auth/update", {
                 method: "PATCH",
                 headers: {
                     ...authHeaders(),
                     "Content-Type": "application/json",
                 },
                 credentials: "include",
-                body: JSON.stringify({ new_email, password: currentPassword }),
+                body: JSON.stringify({
+                    process: "EMAIL",
+                    email: profile.email,
+                    new_email: emailInput,
+                    current_password: currentPassword,
+                }),
             });
             if (!response.ok) {
                 emailError = await parseError(response);
@@ -173,7 +172,7 @@
         passwordError = "";
         passwordSuccess = "";
         try {
-            const response = await fetch("/api/auth/password", {
+            const response = await fetch("/api/auth/update", {
                 method: "PATCH",
                 headers: {
                     ...authHeaders(),
@@ -181,6 +180,7 @@
                 },
                 credentials: "include",
                 body: JSON.stringify({
+                    process: "PASSWD",
                     current_password: currentPassword,
                     new_password: newPassword,
                 }),
@@ -233,9 +233,7 @@
             {:else}
                 <div class="state-card" role="alert">
                     <h3>Sin rol disponible</h3>
-                    <p>
-                        No fue posible obtener un rol válido para tu cuenta.
-                    </p>
+                    <p>No fue posible obtener un rol válido para tu cuenta.</p>
                 </div>
             {/if}
 
@@ -401,8 +399,8 @@
                     <section id="admin-panel" class="detail-section tile">
                         <h3>Panel de administrador</h3>
                         <p>
-                            Los accesos de administración están habilitados
-                            para tu rol.
+                            Los accesos de administración están habilitados para
+                            tu rol.
                         </p>
                     </section>
                     <section id="create-benefit" class="detail-section tile">
@@ -435,7 +433,12 @@
     }
 
     .hero {
-        background: linear-gradient(120deg, #19194f 0%, #26266f 55%, #3434a0 100%);
+        background: linear-gradient(
+            120deg,
+            #19194f 0%,
+            #26266f 55%,
+            #3434a0 100%
+        );
         padding: 44px clamp(16px, 6vw, 48px);
         color: #fff;
     }
@@ -641,7 +644,9 @@
         font: inherit;
         font-size: 14px;
         background: #fbfbfd;
-        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        transition:
+            border-color 0.15s ease,
+            box-shadow 0.15s ease;
     }
     .edit-field input:focus {
         outline: none;
@@ -667,7 +672,9 @@
         border-radius: 999px;
         flex-shrink: 0;
         font-weight: 600;
-        transition: background-color 0.15s ease, border-color 0.15s ease;
+        transition:
+            background-color 0.15s ease,
+            border-color 0.15s ease;
     }
     .save-btn {
         padding: 9px 18px;
