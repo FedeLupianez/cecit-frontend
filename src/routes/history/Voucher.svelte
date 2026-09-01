@@ -12,6 +12,7 @@
         direction,
         logo,
         voucherToken,
+        status,
     }: {
         title: string;
         image: string;
@@ -21,9 +22,14 @@
         direction: string;
         logo: string;
         voucherToken: string;
+        status: "PENDING" | "DELIVERED" | "EXPIRED" | "REJECTED";
     } = $props();
 
-    const isExpired = $derived(new Date(endDate).getTime() < Date.now());
+    const isExpired = $derived(
+        status !== "DELIVERED" &&
+            status !== "REJECTED" &&
+            new Date(endDate).getTime() < Date.now(),
+    );
 
     const endDateFormated = $derived(
         new Date(endDate).toLocaleDateString("es-ES", {
@@ -78,15 +84,25 @@
         <div class="content">
             <div class="title-row">
                 <h2>{title}</h2>
-                <span class="redeemed-badge">CANJEADO</span>
+                {#if status === "DELIVERED"}
+                    <span class="redeemed-badge">CANJEADO</span>
+                {:else if status === "REJECTED"}
+                    <span class="redeemed-badge rejected">RECHAZADO</span>
+                {/if}
             </div>
 
             <div class="voucher-data">
                 <div class="validity-row">
                     <p class="data-label">VIGENTE HASTA</p>
-                    <span class="status-badge" class:expired={isExpired}>
-                        {isExpired ? "EXPIRADO" : "VIGENTE"}
-                    </span>
+                    {#if status === "DELIVERED"}
+                        <span class="status-badge delivered">CANJEADO</span>
+                    {:else if status === "REJECTED"}
+                        <span class="status-badge rejected">RECHAZADO</span>
+                    {:else if isExpired}
+                        <span class="status-badge expired">EXPIRADO</span>
+                    {:else}
+                        <span class="status-badge">VIGENTE</span>
+                    {/if}
                 </div>
                 <p class="data-var">{endDateFormated}</p>
 
@@ -200,6 +216,10 @@
         font-weight: 500;
     }
 
+    .redeemed-badge.rejected {
+        background: #e67e22;
+    }
+
     .voucher-data {
         margin-top: 10px;
 
@@ -234,6 +254,14 @@
 
     .status-badge.expired {
         background: #c0392b;
+    }
+
+    .status-badge.delivered {
+        background: #2ecc71;
+    }
+
+    .status-badge.rejected {
+        background: #e67e22;
     }
 
     .data-label {

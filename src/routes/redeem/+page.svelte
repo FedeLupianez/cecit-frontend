@@ -99,7 +99,7 @@
             }
             const data = await response.json();
             voucher = data;
-            voucherState = "PENDING";
+            voucherState = data.status;
         } catch (cause) {
             voucher = undefined;
             voucherState = undefined;

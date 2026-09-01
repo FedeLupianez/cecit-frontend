@@ -12,6 +12,7 @@
         direction: string;
         logo: string;
         voucherToken: string;
+        status: "PENDING" | "DELIVERED" | "EXPIRED" | "REJECTED";
     }
 
     let loading: boolean = $state(false);
@@ -65,6 +66,7 @@
                     direction={voucher.direction}
                     logo={voucher.logo}
                     voucherToken={voucher.voucherToken}
+                    status={voucher.status}
                 ></Voucher>
             {/each}
         </div>

@@ -446,10 +446,6 @@
         cursor: pointer;
     }
 
-    .info-btn {
-        display: none;
-    }
-
     .expanded-backdrop {
         position: fixed;
         inset: 0;
@@ -739,10 +735,6 @@
 
         p {
             font-size: 15px;
-        }
-
-        .info-btn {
-            display: none;
         }
 
         .coupon-btn {
