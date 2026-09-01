@@ -9,6 +9,7 @@
     const passwdError = "Ingresa una contraseña";
     const emailError = "Ingresa un correo electrónico válido.";
     let loading: boolean = $state(false);
+    let errorTimeout: ReturnType<typeof setTimeout> | undefined;
 
     async function login(e: Event) {
         e.preventDefault();
@@ -36,8 +37,14 @@
             const result = await response.json();
             accessToken.setToken(result.access_token);
             goto("/");
-        } catch (error) {
-            console.log(error);
+        } catch (rerror) {
+            error = "Credenciales Inválidas";
+            loading = false;
+            console.log(rerror);
+            if (errorTimeout) clearTimeout(errorTimeout);
+            errorTimeout = setTimeout(() => {
+                error = "";
+            }, 3000);
         }
     }
 </script>
@@ -78,12 +85,13 @@
                 Mostrar contraseña
             </label>
 
-            <p class="error" class:visible={!!error}>{error}</p>
             {#if loading}
                 <div class="loading-container">
                     <div class="spinner"></div>
                     <p>Iniciando Sesión...</p>
                 </div>
+            {:else if !loading && error}
+                <span class="error-box">{error}</span>
             {:else}
                 <button type="submit">Iniciar Sesión</button>
             {/if}
@@ -217,6 +225,36 @@
         margin: 0;
         min-height: 1.2rem;
         visibility: hidden;
+    }
+
+    .error-box {
+        color: #b71c1c;
+        font-weight: 500;
+        font-size: 0.95rem;
+        padding: 0.6rem 1rem;
+        border-radius: 10px;
+        background: #ffebee;
+        border: 1px solid #ef9a9a;
+        display: inline-block;
+        animation: shake 0.4s ease;
+        max-width: 100%;
+        word-break: break-word;
+    }
+
+    @keyframes shake {
+        0%,
+        100% {
+            transform: translateX(0);
+        }
+        25% {
+            transform: translateX(-4px);
+        }
+        50% {
+            transform: translateX(4px);
+        }
+        75% {
+            transform: translateX(-2px);
+        }
     }
 
     .loginerror {
