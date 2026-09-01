@@ -175,8 +175,6 @@
         <div class="content">
             <div class="title-row">
                 <h2>{title}</h2>
-
-                <button class="info-btn">Más información</button>
             </div>
 
             <div class="bottom">
@@ -352,6 +350,10 @@
 
     .compact-card {
         overflow: hidden;
+
+        display: flex;
+        flex-direction: column;
+        height: 310px;
     }
 
     .compact-card > img {
@@ -360,10 +362,16 @@
         object-fit: cover;
 
         display: block;
+        flex-shrink: 0;
     }
 
     .content {
         padding: 8px 10px 14px;
+
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-height: 0;
     }
 
     .title-row {
@@ -382,7 +390,10 @@
         line-height: 1.1;
         letter-spacing: 0;
 
-        white-space: nowrap;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
         overflow: hidden;
         text-overflow: ellipsis;
     }
@@ -394,6 +405,8 @@
         justify-content: space-between;
         align-items: center;
         gap: 12px;
+
+        margin-top: auto;
     }
 
     .business {
@@ -434,18 +447,7 @@
     }
 
     .info-btn {
-        min-width: max-content;
-
-        padding: 6px 13px;
-
-        border: 1px solid #c4c7cf;
-        border-radius: 999px;
-
-        background: transparent;
-        color: #8a8d95;
-
-        font-size: 14px;
-        font-weight: 500;
+        display: none;
     }
 
     .expanded-backdrop {
@@ -708,29 +710,30 @@
         .content {
             padding: 10px 12px 14px;
             display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
+            flex-direction: column;
+            flex-wrap: nowrap;
+            gap: 0;
         }
 
         .title-row {
-            display: contents;
+            display: flex;
         }
 
         h2 {
-            order: 1;
             width: 100%;
             max-width: 100%;
             font-size: 20px;
             line-height: 1.05;
-            white-space: nowrap;
         }
 
         .bottom {
-            display: contents;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: auto;
         }
 
         .business {
-            order: 2;
             width: 100%;
         }
 
@@ -739,19 +742,10 @@
         }
 
         .info-btn {
-            order: 3;
-        }
-
-        .info-btn,
-        .coupon-btn {
-            width: auto;
-            min-width: 0;
-            padding: 8px 13px;
-            font-size: 13px;
+            display: none;
         }
 
         .coupon-btn {
-            order: 4;
             margin-left: auto;
         }
 

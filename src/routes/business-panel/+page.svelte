@@ -7,7 +7,7 @@
         id_partner: string;
         name: string;
         logo: string;
-        direction: string;
+        direction: string[];
         active: boolean;
     }
 
@@ -26,7 +26,7 @@
     }
 
     interface LocationItem {
-        id_location: string;
+        id_location: number;
         id_partner: string;
         direction: string;
     }
@@ -89,7 +89,7 @@
         }
 
         try {
-            const partnerResponse = await fetch("/api/partners/me", {
+            const partnerResponse = await fetch("/api/partners-admins/me", {
                 headers: authHeaders(),
                 credentials: "include",
             });
@@ -103,6 +103,7 @@
             if (!partnerResponse.ok)
                 throw new Error("No se pudo obtener el negocio.");
             partner = await partnerResponse.json();
+            console.log(partner);
 
             const benefitsResponse = await fetch("/api/benefits/all");
             if (!benefitsResponse.ok)
@@ -141,7 +142,7 @@
         if (!token) return;
         try {
             const response = await fetch(
-                `/api/partners/locations?id_partner=${encodeURIComponent(partner.id_partner)}`,
+                `/api/partners/locations?id_partner=${partner.id_partner}`,
                 { headers: authHeaders(), credentials: "include" },
             );
             if (!response.ok) {
@@ -945,4 +946,3 @@
         }
     }
 </style>
-
