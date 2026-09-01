@@ -142,7 +142,7 @@
         if (!token) return;
         try {
             const response = await fetch(
-                `/api/partners/locations?id_partner=${partner.id_partner}`,
+                `/api/partners/locations?id_partner=${encodeURIComponent(partner.id_partner)}`,
                 { headers: authHeaders(), credentials: "include" },
             );
             if (!response.ok) {

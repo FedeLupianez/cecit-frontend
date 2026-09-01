@@ -42,7 +42,7 @@
         try {
             const tmpAccessToken = accessToken.getToken();
             const res = await fetch(
-                `/api/vouchers/file?token=${voucherToken}`,
+                `/api/vouchers/file?token=${encodeURIComponent(voucherToken)}`,
                 {
                     method: "GET",
                     credentials: "include",

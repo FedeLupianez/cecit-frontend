@@ -21,7 +21,7 @@
         loading = true;
         try {
             const response = await fetch(
-                `/api/vouchers/byuser?id_user=${idUser}`,
+                `/api/vouchers/byuser?id_user=${encodeURIComponent(idUser)}`,
                 {
                     method: "GET",
                     credentials: "include",
