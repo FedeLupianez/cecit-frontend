@@ -103,9 +103,13 @@
             if (!partnerResponse.ok)
                 throw new Error("No se pudo obtener el negocio.");
             partner = await partnerResponse.json();
-            console.log(partner);
 
-            const benefitsResponse = await fetch("/api/benefits/actives");
+            const benefitsResponse = await fetch(`/api/benefits/partner?id_partner=${encodeURIComponent(partner?.id_partner || '')}`,
+                {
+                    headers: authHeaders(),
+                    credentials: "include",
+                },
+            );
             if (!benefitsResponse.ok)
                 throw new Error("No se pudieron obtener los beneficios.");
             benefits = (await benefitsResponse.json()).filter(
