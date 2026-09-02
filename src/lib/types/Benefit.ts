@@ -1,3 +1,17 @@
+export interface BenefitsCreateDTO {
+    id_admin: string;
+    id_partner: string;
+    id_type: number;
+    start_date: string;
+    end_date: string;
+    image: string;
+    title: string;
+    description: string;
+    coupons: number;
+    max_coupons: number;
+    max_per_user: number;
+}
+
 export interface Benefit {
     id_benefit: string;
     id_admin: string;

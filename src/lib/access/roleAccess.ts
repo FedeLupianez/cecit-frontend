@@ -24,6 +24,7 @@ const accessByRole: Record<AccountRole, RoleAccess> = {
         label: "Administrador",
         actions: [
             { label: "Panel de administrador", href: "/admin-panel" },
+            { label: "Crear Beneficio", href: "/create-benefit" },
             { label: "Configuración", href: "/profile#configuration" }
         ]
     },
