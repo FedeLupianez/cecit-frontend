@@ -20,10 +20,26 @@
     const SCROLL_STEP = 300;
 
     function scrollCarousel(direction) {
-        carousel?.scrollBy({
+        if (!carousel) return;
+
+        carousel.scrollBy({
             left: direction * SCROLL_STEP,
             behavior: "smooth",
         });
+
+        setTimeout(() => {
+            if (!carousel) return;
+
+            const maxScroll = carousel.scrollWidth - carousel.clientWidth;
+
+            if (direction > 0 && carousel.scrollLeft >= maxScroll - 5) {
+                carousel.scrollLeft = 0;
+            }
+
+            if (direction < 0 && carousel.scrollLeft <= 5) {
+                carousel.scrollLeft = maxScroll;
+            }
+        }, 350);
     }
 </script>
 
