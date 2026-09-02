@@ -13,6 +13,7 @@
         BadgePercent,
         XCircle,
         CheckCircle2,
+        Tags,
     } from "lucide-svelte";
 
     type AccountRole = "USER" | "CECIT_ADMIN" | "PARTNER_ADMIN";
@@ -68,6 +69,13 @@
         name: string;
     }
 
+    interface Category {
+        id_category: number;
+        name: string;
+        icon_url: string;
+        active: boolean;
+    }
+
     interface Voucher {
         token: string;
         id_user: string;
@@ -91,13 +99,14 @@
         methods: string[];
     }
 
-    type Tab = "usuarios" | "negocios" | "beneficios" | "vouchers";
+    type Tab = "usuarios" | "negocios" | "beneficios" | "vouchers" | "categorias";
 
     const tabs: { id: Tab; label: string; icon: any }[] = [
         { id: "usuarios", label: "Usuarios", icon: Users },
         { id: "negocios", label: "Negocios", icon: Store },
         { id: "beneficios", label: "Beneficios", icon: BadgePercent },
         { id: "vouchers", label: "Vouchers", icon: Ticket },
+        { id: "categorias", label: "Categorías", icon: Tags },
     ];
 
     let activeTab: Tab = $state("usuarios");
@@ -111,6 +120,7 @@
     let benefits: Benefit[] = $state([]);
     let benefitTypes: BenefitType[] = $state([]);
     let vouchers: Voucher[] = $state([]);
+    let categories: Category[] = $state([]);
 
     function authHeaders() {
         return { Authorization: `Bearer ${accessToken.getToken()}` };
@@ -156,7 +166,7 @@
                 setError("Tu sesión expiró. Volvé a iniciar sesión.");
                 return;
             }
-            const [accountsRes, partnersRes, benefitsRes, typesRes, vouchersRes] =
+            const [accountsRes, partnersRes, benefitsRes, typesRes, vouchersRes, categoriesRes] =
                 await Promise.all([
                     fetch("/api/accounts/all", {
                         headers: authHeaders(),
@@ -169,6 +179,7 @@
                     fetch("/api/benefits/all"),
                     fetch("/api/benefit-types/all"),
                     fetch("/api/vouchers/all"),
+                    fetch("/api/categories/all"),
                 ]);
             if (accountsRes.status === 401 || accountsRes.status === 403) {
                 setError("No tenés permiso para ver el panel de administrador.");
@@ -183,6 +194,7 @@
             benefits = await benefitsRes.json();
             benefitTypes = typesRes.ok ? await typesRes.json() : [];
             vouchers = vouchersRes.ok ? await vouchersRes.json() : [];
+            categories = categoriesRes.ok ? await categoriesRes.json() : [];
         } catch (cause) {
             setError(
                 cause instanceof Error
@@ -789,6 +801,51 @@
                 cause instanceof Error ? cause.message : "No se pudo crear.";
         } finally {
             savingBenefit = false;
+        }
+    }
+
+    /* ------------------------------------------------------------------ */
+    /*  CATEGORÍAS                                                         */
+    /* ------------------------------------------------------------------ */
+
+    let categoryBusy = $state(0);
+    let categoryErrors = $state<Record<number, string>>({});
+    let categorySuccess = $state<Record<number, string>>({});
+
+    async function toggleCategory(category: Category) {
+        categoryBusy = category.id_category;
+        categoryErrors[category.id_category] = "";
+        categorySuccess[category.id_category] = "";
+        try {
+            const response = await fetch(
+                `/api/categories/${category.id_category}`,
+                {
+                    method: "PATCH",
+                    headers: {
+                        ...authHeaders(),
+                        "Content-Type": "application/json",
+                    },
+                    credentials: "include",
+                    body: JSON.stringify({ active: !category.active }),
+                },
+            );
+            if (!response.ok) {
+                categoryErrors[category.id_category] = await parseError(response);
+                return;
+            }
+            const updated = await response.json();
+            const index = categories.findIndex(
+                (c) => c.id_category === updated.id_category,
+            );
+            if (index >= 0) categories[index] = updated;
+            categorySuccess[category.id_category] = updated.active
+                ? "Categoría activada."
+                : "Categoría desactivada.";
+        } catch (cause) {
+            categoryErrors[category.id_category] =
+                cause instanceof Error ? cause.message : "No se pudo actualizar.";
+        } finally {
+            categoryBusy = 0;
         }
     }
 
@@ -1731,6 +1788,96 @@
                             <p class="empty">No hay beneficios para mostrar.</p>
                         {/each}
                     </div>
+                </section>
+
+            {:else if activeTab === "categorias"}
+                <section class="section">
+                    <header class="section-head">
+                        <div>
+                            <h2>Categorías</h2>
+                            <p>
+                                Activá o desactivá las categorías de cupones.
+                            </p>
+                        </div>
+                    </header>
+
+                    {#if categories.length === 0}
+                        <p class="empty">No hay categorías para mostrar.</p>
+                    {:else}
+                        <div class="table-wrap">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Categoría</th>
+                                        <th>Estado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {#each categories as category (category.id_category)}
+                                        <tr>
+                                            <td>
+                                                <strong>{category.name}</strong>
+                                            </td>
+                                            <td>
+                                                <button
+                                                    class="status-btn"
+                                                    class:on={category.active}
+                                                    type="button"
+                                                    onclick={() =>
+                                                        toggleCategory(category)}
+                                                    disabled={categoryBusy ===
+                                                        category.id_category}
+                                                >
+                                                    {category.active
+                                                        ? "ACTIVA"
+                                                        : "INACTIVA"}
+                                                </button>
+                                            </td>
+                                            <td>
+                                                <button
+                                                    class="ico-btn"
+                                                    class:ok={!category.active}
+                                                    type="button"
+                                                    title={
+                                                        category.active
+                                                            ? "Desactivar"
+                                                            : "Activar"
+                                                    }
+                                                    onclick={() =>
+                                                        toggleCategory(category)}
+                                                    disabled={categoryBusy ===
+                                                        category.id_category}
+                                                >
+                                                    {#if category.active}
+                                                        <XCircle size={15} />
+                                                    {:else}
+                                                        <CheckCircle2 size={15} />
+                                                    {/if}
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        {#if categoryErrors[category.id_category] || categorySuccess[category.id_category]}
+                                            <tr class="msg-row">
+                                                <td colspan="3">
+                                                    {#if categoryErrors[category.id_category]}
+                                                        <p class="field-error" role="alert">
+                                                            {categoryErrors[category.id_category]}
+                                                        </p>
+                                                    {/if}
+                                                    {#if categorySuccess[category.id_category]}
+                                                        <p class="field-success" role="status">
+                                                            {categorySuccess[category.id_category]}
+                                                        </p>
+                                                    {/if}
+                                                </td>
+                                            </tr>
+                                        {/if}
+                                    {/each}
+                                </tbody>
+                            </table>
+                        </div>
+                    {/if}
                 </section>
 
             {:else if activeTab === "vouchers"}
