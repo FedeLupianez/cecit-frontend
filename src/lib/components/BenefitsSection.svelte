@@ -10,7 +10,7 @@
     import { loadCategories, getFilters } from "$lib/stores/categories.svelte";
     import type { Benefit } from "$lib/types/Benefit";
 
-    let { title = "Beneficios populares", endpoint = "/api/benefits/all" } =
+    let { title = "Beneficios populares", endpoint = "/api/benefits/actives" } =
         $props();
 
     let benefits: Benefit[] = $state([]);

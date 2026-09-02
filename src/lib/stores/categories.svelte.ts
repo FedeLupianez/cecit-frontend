@@ -12,7 +12,7 @@ export async function loadCategories() {
     if (loaded) return;
     loaded = true;
     try {
-        const res = await fetch("/api/categories/all");
+        const res = await fetch("/api/categories/actives");
         if (res.ok) {
             const data = await res.json();
             filters = ["Todo", ...data.map((c: { name: string }) => c.name)];

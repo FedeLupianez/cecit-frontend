@@ -14,7 +14,7 @@
         loading = true;
         await loadCategories();
         try {
-            const response = await fetch("/api/benefits/all");
+            const response = await fetch("/api/benefits/actives");
             if (!response.ok) {
                 console.log("Response does not ok");
                 return;

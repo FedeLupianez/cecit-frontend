@@ -105,7 +105,7 @@
             partner = await partnerResponse.json();
             console.log(partner);
 
-            const benefitsResponse = await fetch("/api/benefits/all");
+            const benefitsResponse = await fetch("/api/benefits/actives");
             if (!benefitsResponse.ok)
                 throw new Error("No se pudieron obtener los beneficios.");
             benefits = (await benefitsResponse.json()).filter(
