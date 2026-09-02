@@ -216,7 +216,9 @@
             >
                 <X size={28} />
             </button>
-            <h3 class="expanded-title">{title}</h3>
+            <div class="expanded-title-wrap">
+                <h3 class="expanded-title">{title}</h3>
+            </div>
             <div class="expanded-info">
                 <div class="expanded-data">
                     <div class="expanded-col-1">
@@ -498,18 +500,33 @@
         z-index: 1;
     }
 
-    .expanded-title {
-        color: white;
-        font-size: 2rem;
-        white-space: nowrap;
-        z-index: 1;
-        margin: 0;
-        text-transform: uppercase;
-        width: 80px;
+    .expanded-title-wrap {
+        width: 4rem;
+        flex: 0 0 4rem;
+
         display: flex;
         align-items: center;
         justify-content: center;
-        transform: rotate(-90deg);
+
+        z-index: 1;
+    }
+
+    .expanded-title {
+        color: white;
+        font-size: 1.6rem;
+        margin: 0;
+        text-transform: uppercase;
+
+        height: 100%;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        /* stylelint-disable-next-line */
+        writing-mode: vertical-rl;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .close-btn {
