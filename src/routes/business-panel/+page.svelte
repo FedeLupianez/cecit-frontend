@@ -53,7 +53,7 @@
     let locationInput = $state("");
     let addingLocation = $state(false);
     let addingLocationError = $state("");
-    let removingLocationId: string | null = $state(null);
+    let removingLocationId: number | null = $state(null);
 
     const used = $derived(
         benefits.reduce((total, benefit) => total + benefit.coupons, 0),
@@ -320,7 +320,7 @@
         }
     }
 
-    async function removeLocation(id: string) {
+    async function removeLocation(id: number) {
         if (!partner || removingLocationId) return;
         if (!accessToken.getToken()) {
             locationsError = "Tu sesión expiró. Volvé a iniciar sesión.";
