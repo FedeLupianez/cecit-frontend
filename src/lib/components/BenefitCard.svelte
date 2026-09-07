@@ -17,6 +17,7 @@
         coupons,
         max_coupons,
         max_per_user,
+        description,
     }: {
         benefit_id: string;
         title: string;
@@ -29,6 +30,7 @@
         coupons: number;
         max_coupons: number;
         max_per_user: number;
+        description: string;
     } = $props();
 
     const endDateFormated = $derived(
@@ -223,7 +225,7 @@
                 <div class="expanded-data">
                     <div class="expanded-col-1">
                         <div class="expanded-data-container">
-                            <Clock size={70} class="expanded-data-icon"></Clock>
+                            <Clock size={40} class="expanded-data-icon"></Clock>
                             <div class="end-date-info">
                                 <p class="expanded-data-title">FECHA VIGENTE</p>
                                 <p class="expanded-data-var">
@@ -244,7 +246,7 @@
                         <!-- </div> -->
 
                         <div class="expanded-data-container">
-                            <Wallet size={70} class="expanded-data-icon"
+                            <Wallet size={40} class="expanded-data-icon"
                             ></Wallet>
                             <div class="payment-method-info">
                                 <p class="expanded-data-title">
@@ -257,7 +259,7 @@
                         </div>
 
                         <div class="expanded-data-container">
-                            <Ticket size={70} class="expanded-data-icon"
+                            <Ticket size={40} class="expanded-data-icon"
                             ></Ticket>
                             <div class="coupons-info">
                                 <p class="expanded-data-title">DISPONIBLES</p>
@@ -268,7 +270,7 @@
                         </div>
 
                         <div class="expanded-data-container">
-                            <Users size={70} class="expanded-data-icon"></Users>
+                            <Users size={40} class="expanded-data-icon"></Users>
                             <div class="user-coupons-info">
                                 <p class="expanded-data-title">TUS CUPONES</p>
                                 <p class="expanded-data-var">
@@ -276,18 +278,34 @@
                                 </p>
                             </div>
                         </div>
+
+                        <div class="description">
+                            <div class="terms-header">
+                                <Info size={28}></Info>
+                                <p>DESCRIPCIÓN</p>
+                            </div>
+                            <p class="terms-text">
+                                {description}
+                            </p>
+                        </div>
                     </div>
                     <div class="expanded-col-2">
                         <div class="map-container">
                             <p>SUCURSALES</p>
-                            <!-- <iframe -->
-                            <!--     src={`https://www.google.com/maps?q=${encodeURIComponent(direction)}&output=embed`} -->
-                            <!--     style="border:0;" -->
-                            <!--     loading="lazy" -->
-                            <!--     allowfullscreen -->
-                            <!--     title="SUCURSALES" -->
-                            <!-- ></iframe> -->
-                            <div class="map"></div>
+                            {#if direction && direction.trim() !== ""}
+                                <iframe
+                                    src={`https://www.google.com/maps?q=${encodeURIComponent(direction)}&output=embed`}
+                                    style="border:0;"
+                                    loading="lazy"
+                                    allowfullscreen
+                                    title="SUCURSALES"
+                                    class="map"
+                                ></iframe>
+                            {:else}
+                                <div class="map no-location">
+                                    <p>No hay ubicación disponible</p>
+                                </div>
+                            {/if}
                         </div>
                         <div class="terms">
                             <div class="terms-header">
@@ -572,7 +590,7 @@
         flex-direction: column;
         align-items: flex-start;
         justify-content: center;
-        gap: 1.5rem;
+        gap: 0.8rem;
         overflow: hidden;
     }
 
@@ -581,15 +599,15 @@
         flex-direction: row;
         align-items: center;
         justify-content: center;
-        gap: 1rem;
-        transform: translateX(-1rem);
+        gap: 0.6rem;
+        transform: translateX(-0.5rem);
     }
 
     .expanded-data-title {
-        font-size: 2.5rem;
+        font-size: 1.8rem;
     }
     .expanded-data-var {
-        font-size: 2rem;
+        font-size: 1.4rem;
     }
 
     .voucher-error {
@@ -685,8 +703,14 @@
         display: flex;
         width: 100%;
         height: 18rem;
-        background-color: red;
+        background-color: #e5e7eb;
         border-radius: 16px;
+        align-items: center;
+        justify-content: center;
+        color: #6b7280;
+        font-size: 1.2rem;
+        font-weight: 600;
+        overflow: hidden;
     }
 
     .terms {
@@ -694,6 +718,15 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
+        gap: 1rem;
+    }
+
+    .description {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
         gap: 1rem;
     }
 

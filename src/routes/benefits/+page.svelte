@@ -14,13 +14,15 @@
         loading = true;
         await loadCategories();
         try {
-            const response = await fetch("/api/benefits/actives");
+            const url = initialSearch
+                ? `/api/benefits/search?text=${encodeURIComponent(initialSearch)}`
+                : "/api/benefits/actives";
+            const response = await fetch(url);
             if (!response.ok) {
                 console.log("Response does not ok");
                 return;
             }
             benefits = await response.json();
-            console.log($state.snapshot(benefits));
         } catch (error) {
             console.log(error);
         } finally {
@@ -42,6 +44,7 @@
     const discounts = ["30% OFF", "40% OFF"];
 
     const initialCategory = page.url.searchParams.get("category");
+    const initialSearch = page.url.searchParams.get("search");
 
     let selectedCategory = $derived(
         initialCategory && categories.includes(initialCategory)
@@ -179,6 +182,7 @@
                                 coupons={benefit.coupons}
                                 max_coupons={benefit.max_coupons}
                                 max_per_user={benefit.max_per_user}
+                                description={benefit.description}
                             />
                         </div>
                     {:else}

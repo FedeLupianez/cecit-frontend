@@ -99,7 +99,12 @@
         methods: string[];
     }
 
-    type Tab = "usuarios" | "negocios" | "beneficios" | "vouchers" | "categorias";
+    type Tab =
+        | "usuarios"
+        | "negocios"
+        | "beneficios"
+        | "vouchers"
+        | "categorias";
 
     const tabs: { id: Tab; label: string; icon: any }[] = [
         { id: "usuarios", label: "Usuarios", icon: Users },
@@ -166,23 +171,31 @@
                 setError("Tu sesión expiró. Volvé a iniciar sesión.");
                 return;
             }
-            const [accountsRes, partnersRes, benefitsRes, typesRes, vouchersRes, categoriesRes] =
-                await Promise.all([
-                    fetch("/api/accounts/all", {
-                        headers: authHeaders(),
-                        credentials: "include",
-                    }),
-                    fetch("/api/partners/all", {
-                        headers: authHeaders(),
-                        credentials: "include",
-                    }),
-                    fetch("/api/benefits/all"),
-                    fetch("/api/benefit-types/all"),
-                    fetch("/api/vouchers/all"),
-                    fetch("/api/categories/all"),
-                ]);
+            const [
+                accountsRes,
+                partnersRes,
+                benefitsRes,
+                typesRes,
+                vouchersRes,
+                categoriesRes,
+            ] = await Promise.all([
+                fetch("/api/accounts/all", {
+                    headers: authHeaders(),
+                    credentials: "include",
+                }),
+                fetch("/api/partners/all", {
+                    headers: authHeaders(),
+                    credentials: "include",
+                }),
+                fetch("/api/benefits/all"),
+                fetch("/api/benefit-types/all"),
+                fetch("/api/vouchers/all"),
+                fetch("/api/categories/all"),
+            ]);
             if (accountsRes.status === 401 || accountsRes.status === 403) {
-                setError("No tenés permiso para ver el panel de administrador.");
+                setError(
+                    "No tenés permiso para ver el panel de administrador.",
+                );
                 return;
             }
             if (!accountsRes.ok || !partnersRes.ok || !benefitsRes.ok) {
@@ -264,7 +277,8 @@
     async function saveEmail(account: Account) {
         const new_email = (emailInputs[account.id_user] ?? "").trim();
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(new_email)) {
-            userErrors[account.id_user] = "Ingresá un correo electrónico válido.";
+            userErrors[account.id_user] =
+                "Ingresá un correo electrónico válido.";
             return;
         }
         if (new_email.toLowerCase() === (account.email ?? "").toLowerCase()) {
@@ -277,9 +291,15 @@
         try {
             const response = await fetch("/api/accounts", {
                 method: "PATCH",
-                headers: { ...authHeaders(), "Content-Type": "application/json" },
+                headers: {
+                    ...authHeaders(),
+                    "Content-Type": "application/json",
+                },
                 credentials: "include",
-                body: JSON.stringify({ id_user: account.id_user, email: new_email }),
+                body: JSON.stringify({
+                    id_user: account.id_user,
+                    email: new_email,
+                }),
             });
             if (!response.ok) {
                 userErrors[account.id_user] = await parseError(response);
@@ -295,7 +315,9 @@
             successGlobal = "";
         } catch (cause) {
             userErrors[account.id_user] =
-                cause instanceof Error ? cause.message : "No se pudo actualizar.";
+                cause instanceof Error
+                    ? cause.message
+                    : "No se pudo actualizar.";
         } finally {
             savingUser = "";
         }
@@ -318,7 +340,10 @@
         try {
             const response = await fetch("/api/accounts", {
                 method: "PATCH",
-                headers: { ...authHeaders(), "Content-Type": "application/json" },
+                headers: {
+                    ...authHeaders(),
+                    "Content-Type": "application/json",
+                },
                 credentials: "include",
                 body: JSON.stringify({ id_user: account.id_user, password }),
             });
@@ -327,10 +352,13 @@
                 return;
             }
             editingUser[account.id_user] = null;
-            userSuccess[account.id_user] = "Contraseña actualizada correctamente.";
+            userSuccess[account.id_user] =
+                "Contraseña actualizada correctamente.";
         } catch (cause) {
             userErrors[account.id_user] =
-                cause instanceof Error ? cause.message : "No se pudo actualizar.";
+                cause instanceof Error
+                    ? cause.message
+                    : "No se pudo actualizar.";
         } finally {
             savingUser = "";
         }
@@ -342,7 +370,10 @@
         try {
             const response = await fetch("/api/accounts", {
                 method: "PATCH",
-                headers: { ...authHeaders(), "Content-Type": "application/json" },
+                headers: {
+                    ...authHeaders(),
+                    "Content-Type": "application/json",
+                },
                 credentials: "include",
                 body: JSON.stringify({
                     id_user: account.id_user,
@@ -363,7 +394,9 @@
                 : "Cuenta desactivada.";
         } catch (cause) {
             userErrors[account.id_user] =
-                cause instanceof Error ? cause.message : "No se pudo actualizar.";
+                cause instanceof Error
+                    ? cause.message
+                    : "No se pudo actualizar.";
         } finally {
             savingUser = "";
         }
@@ -397,7 +430,8 @@
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     async function ensureLocations(partnerId: string) {
-        if (locationsByPartner[partnerId] || locationsLoading[partnerId]) return;
+        if (locationsByPartner[partnerId] || locationsLoading[partnerId])
+            return;
         locationsByPartner[partnerId] = [];
         locationsLoading[partnerId] = true;
         try {
@@ -440,9 +474,15 @@
         try {
             const response = await fetch("/api/partners/name", {
                 method: "PATCH",
-                headers: { ...authHeaders(), "Content-Type": "application/json" },
+                headers: {
+                    ...authHeaders(),
+                    "Content-Type": "application/json",
+                },
                 credentials: "include",
-                body: JSON.stringify({ id_partner: partner.id_partner, new_name }),
+                body: JSON.stringify({
+                    id_partner: partner.id_partner,
+                    new_name,
+                }),
             });
             if (!response.ok) {
                 partnerErrors[partner.id_partner] = await parseError(response);
@@ -453,7 +493,9 @@
             partnerSuccess[partner.id_partner] = "Nombre actualizado.";
         } catch (cause) {
             partnerErrors[partner.id_partner] =
-                cause instanceof Error ? cause.message : "No se pudo actualizar.";
+                cause instanceof Error
+                    ? cause.message
+                    : "No se pudo actualizar.";
         } finally {
             partnerBusy[partner.id_partner] = false;
         }
@@ -470,9 +512,15 @@
         try {
             const response = await fetch("/api/partners/logo", {
                 method: "PATCH",
-                headers: { ...authHeaders(), "Content-Type": "application/json" },
+                headers: {
+                    ...authHeaders(),
+                    "Content-Type": "application/json",
+                },
                 credentials: "include",
-                body: JSON.stringify({ id_partner: partner.id_partner, new_logo }),
+                body: JSON.stringify({
+                    id_partner: partner.id_partner,
+                    new_logo,
+                }),
             });
             if (!response.ok) {
                 partnerErrors[partner.id_partner] = await parseError(response);
@@ -483,7 +531,9 @@
             partnerSuccess[partner.id_partner] = "Imagen actualizada.";
         } catch (cause) {
             partnerErrors[partner.id_partner] =
-                cause instanceof Error ? cause.message : "No se pudo actualizar.";
+                cause instanceof Error
+                    ? cause.message
+                    : "No se pudo actualizar.";
         } finally {
             partnerBusy[partner.id_partner] = false;
         }
@@ -507,7 +557,10 @@
         try {
             const response = await fetch("/api/partners/locations", {
                 method: "POST",
-                headers: { ...authHeaders(), "Content-Type": "application/json" },
+                headers: {
+                    ...authHeaders(),
+                    "Content-Type": "application/json",
+                },
                 credentials: "include",
                 body: JSON.stringify({
                     id_partner: partner.id_partner,
@@ -532,7 +585,10 @@
         }
     }
 
-    async function removePartnerLocation(partnerId: string, id_location: number) {
+    async function removePartnerLocation(
+        partnerId: string,
+        id_location: number,
+    ) {
         partnerBusy[partnerId] = true;
         partnerErrors[partnerId] = "";
         try {
@@ -564,11 +620,14 @@
         partnerBusy[partner.id_partner] = true;
         partnerErrors[partner.id_partner] = "";
         try {
-            const response = await fetch(`/api/partners/${partner.id_partner}`, {
-                method: "DELETE",
-                headers: authHeaders(),
-                credentials: "include",
-            });
+            const response = await fetch(
+                `/api/partners/${partner.id_partner}`,
+                {
+                    method: "DELETE",
+                    headers: authHeaders(),
+                    credentials: "include",
+                },
+            );
             if (!response.ok) {
                 partnerErrors[partner.id_partner] = await parseError(response);
                 return;
@@ -611,7 +670,10 @@
         try {
             const response = await fetch("/api/partners", {
                 method: "POST",
-                headers: { ...authHeaders(), "Content-Type": "application/json" },
+                headers: {
+                    ...authHeaders(),
+                    "Content-Type": "application/json",
+                },
                 credentials: "include",
                 body: JSON.stringify({
                     partner_name: newPartner.partner_name.trim(),
@@ -697,9 +759,15 @@
         try {
             const response = await fetch("/api/benefits", {
                 method: "PATCH",
-                headers: { ...authHeaders(), "Content-Type": "application/json" },
+                headers: {
+                    ...authHeaders(),
+                    "Content-Type": "application/json",
+                },
                 credentials: "include",
-                body: JSON.stringify({ id_benefit: benefit.id_benefit, ...draft }),
+                body: JSON.stringify({
+                    id_benefit: benefit.id_benefit,
+                    ...draft,
+                }),
             });
             if (!response.ok) {
                 benefitErrors[benefit.id_benefit] = await parseError(response);
@@ -714,7 +782,9 @@
             benefitSuccess[benefit.id_benefit] = "Beneficio actualizado.";
         } catch (cause) {
             benefitErrors[benefit.id_benefit] =
-                cause instanceof Error ? cause.message : "No se pudo actualizar.";
+                cause instanceof Error
+                    ? cause.message
+                    : "No se pudo actualizar.";
         } finally {
             benefitBusy = "";
         }
@@ -727,7 +797,10 @@
         try {
             const response = await fetch("/api/benefits", {
                 method: "DELETE",
-                headers: { ...authHeaders(), "Content-Type": "application/json" },
+                headers: {
+                    ...authHeaders(),
+                    "Content-Type": "application/json",
+                },
                 credentials: "include",
                 body: JSON.stringify({ id_benefit: benefit.id_benefit }),
             });
@@ -762,7 +835,10 @@
         try {
             const response = await fetch("/api/benefits", {
                 method: "POST",
-                headers: { ...authHeaders(), "Content-Type": "application/json" },
+                headers: {
+                    ...authHeaders(),
+                    "Content-Type": "application/json",
+                },
                 credentials: "include",
                 body: JSON.stringify({
                     id_admin: page.data.profile?.user_id ?? "",
@@ -830,7 +906,8 @@
                 },
             );
             if (!response.ok) {
-                categoryErrors[category.id_category] = await parseError(response);
+                categoryErrors[category.id_category] =
+                    await parseError(response);
                 return;
             }
             const updated = await response.json();
@@ -843,7 +920,9 @@
                 : "Categoría desactivada.";
         } catch (cause) {
             categoryErrors[category.id_category] =
-                cause instanceof Error ? cause.message : "No se pudo actualizar.";
+                cause instanceof Error
+                    ? cause.message
+                    : "No se pudo actualizar.";
         } finally {
             categoryBusy = 0;
         }
@@ -876,7 +955,8 @@
                 const needle = voucherSearch.trim().toLowerCase();
                 if (voucher.token.toLowerCase().includes(needle)) return true;
                 if (voucher.id_user.toLowerCase().includes(needle)) return true;
-                if (voucher.id_benefit.toLowerCase().includes(needle)) return true;
+                if (voucher.id_benefit.toLowerCase().includes(needle))
+                    return true;
                 const benefit = benefitsById.get(voucher.id_benefit);
                 if (benefit?.title.toLowerCase().includes(needle)) return true;
                 const account = accountsById.get(voucher.id_user);
@@ -947,9 +1027,7 @@
                 voucherErrors[target.token] = await parseError(response);
                 return;
             }
-            const index = vouchers.findIndex(
-                (v) => v.token === target.token,
-            );
+            const index = vouchers.findIndex((v) => v.token === target.token);
             if (index >= 0) {
                 const current = vouchers[index];
                 vouchers[index] = {
@@ -983,7 +1061,10 @@
         try {
             const response = await fetch("/api/vouchers", {
                 method: "DELETE",
-                headers: { ...authHeaders(), "Content-Type": "application/json" },
+                headers: {
+                    ...authHeaders(),
+                    "Content-Type": "application/json",
+                },
                 credentials: "include",
                 body: JSON.stringify({
                     token: voucher.token,
@@ -1014,7 +1095,10 @@
         try {
             const response = await fetch("/api/vouchers/create", {
                 method: "POST",
-                headers: { ...authHeaders(), "Content-Type": "application/json" },
+                headers: {
+                    ...authHeaders(),
+                    "Content-Type": "application/json",
+                },
                 credentials: "include",
                 body: JSON.stringify({
                     id_user: newVoucher.id_user,
@@ -1102,1066 +1186,1192 @@
 
         {#if loadingGlobal}
             <p class="state">Cargando información del panel...</p>
-        {:else}
-            {#if activeTab === "usuarios"}
-                <section class="section">
-                    <header class="section-head">
-                        <div>
-                            <h2>Usuarios</h2>
-                            <p>
-                                Visualizá las cuentas y modificá su correo o
-                                contraseña.
-                            </p>
-                        </div>
-                        <input
-                            class="search"
-                            type="search"
-                            placeholder="Buscar por nombre, DNI o email…"
-                            bind:value={userFilter}
-                        />
-                    </header>
+        {:else if activeTab === "usuarios"}
+            <section class="section">
+                <header class="section-head">
+                    <div>
+                        <h2>Usuarios</h2>
+                        <p>
+                            Visualizá las cuentas y modificá su correo o
+                            contraseña.
+                        </p>
+                    </div>
+                    <input
+                        class="search"
+                        type="search"
+                        placeholder="Buscar por nombre, DNI o email…"
+                        bind:value={userFilter}
+                    />
+                </header>
 
-                    <div class="table-wrap">
-                        <table class="data-table">
-                            <thead>
+                <div class="table-wrap">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Socio</th>
+                                <th>Email</th>
+                                <th>Rol</th>
+                                <th>Estado</th>
+                                <th>Última actividad</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {#each filteredAccounts as account (account.id_user)}
                                 <tr>
-                                    <th>Socio</th>
-                                    <th>Email</th>
-                                    <th>Rol</th>
-                                    <th>Estado</th>
-                                    <th>Última actividad</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {#each filteredAccounts as account (account.id_user)}
-                                    <tr>
-                                        <td>
-                                            <strong>{account.name} {account.lastname}</strong>
-                                            <span class="sub"
-                                                >{account.dni} · {account.id_user}</span
+                                    <td>
+                                        <strong
+                                            >{account.name}
+                                            {account.lastname}</strong
+                                        >
+                                        <span class="sub"
+                                            >{account.dni} · {account.id_user}</span
+                                        >
+                                    </td>
+                                    <td>
+                                        {#if editingUser[account.id_user] === "email"}
+                                            <div class="inline-edit">
+                                                <input
+                                                    type="email"
+                                                    bind:value={
+                                                        emailInputs[
+                                                            account.id_user
+                                                        ]
+                                                    }
+                                                    onkeydown={(e) =>
+                                                        e.key === "Enter" &&
+                                                        saveEmail(account)}
+                                                />
+                                                <div class="edit-actions">
+                                                    <button
+                                                        class="save-btn"
+                                                        type="button"
+                                                        onclick={() =>
+                                                            saveEmail(account)}
+                                                        disabled={savingUser ===
+                                                            account.id_user}
+                                                        >Guardar</button
+                                                    >
+                                                    <button
+                                                        class="cancel-btn"
+                                                        type="button"
+                                                        onclick={() =>
+                                                            cancelEditUser(
+                                                                account.id_user,
+                                                            )}>Cancelar</button
+                                                    >
+                                                </div>
+                                            </div>
+                                        {:else}
+                                            <span class="mono"
+                                                >{account.email ?? "—"}</span
                                             >
-                                        </td>
-                                        <td>
-                                            {#if editingUser[account.id_user] === "email"}
+                                        {/if}
+                                    </td>
+                                    <td>
+                                        <span class="role-badge"
+                                            >{account.role}</span
+                                        >
+                                    </td>
+                                    <td>
+                                        <button
+                                            class="status-btn"
+                                            class:on={account.active}
+                                            type="button"
+                                            onclick={() =>
+                                                toggleActive(account)}
+                                            disabled={savingUser ===
+                                                account.id_user}
+                                        >
+                                            {account.active
+                                                ? "ACTIVA"
+                                                : "INACTIVA"}
+                                        </button>
+                                    </td>
+                                    <td>
+                                        <span class="mono"
+                                            >{formatLastActivity(
+                                                account.last_activity,
+                                            )}</span
+                                        >
+                                    </td>
+                                    <td>
+                                        <div class="row-actions">
+                                            {#if editingUser[account.id_user] === "password"}
                                                 <div class="inline-edit">
                                                     <input
-                                                        type="email"
-                                                        bind:value={emailInputs[account.id_user]}
+                                                        type="password"
+                                                        placeholder="Nueva contraseña"
+                                                        bind:value={
+                                                            passwordInputs[
+                                                                account.id_user
+                                                            ]
+                                                        }
                                                         onkeydown={(e) =>
                                                             e.key === "Enter" &&
-                                                            saveEmail(account)}
+                                                            savePassword(
+                                                                account,
+                                                            )}
                                                     />
                                                     <div class="edit-actions">
                                                         <button
                                                             class="save-btn"
                                                             type="button"
                                                             onclick={() =>
-                                                                saveEmail(account)}
-                                                            disabled={savingUser === account.id_user}
-                                                        >Guardar</button>
+                                                                savePassword(
+                                                                    account,
+                                                                )}
+                                                            disabled={savingUser ===
+                                                                account.id_user}
+                                                            >Guardar</button
+                                                        >
                                                         <button
                                                             class="cancel-btn"
                                                             type="button"
                                                             onclick={() =>
-                                                                cancelEditUser(account.id_user)}
-                                                        >Cancelar</button>
+                                                                cancelEditUser(
+                                                                    account.id_user,
+                                                                )}
+                                                            >Cancelar</button
+                                                        >
                                                     </div>
                                                 </div>
-                                            {:else}
-                                                <span class="mono">{account.email ?? "—"}</span>
+                                            {:else if editingUser[account.id_user] !== "email"}
+                                                <button
+                                                    class="ico-btn"
+                                                    type="button"
+                                                    title="Cambiar email"
+                                                    onclick={() =>
+                                                        startEditEmail(account)}
+                                                >
+                                                    <Pencil size={14} />
+                                                </button>
+                                                <button
+                                                    class="ico-btn"
+                                                    type="button"
+                                                    title="Cambiar contraseña"
+                                                    onclick={() =>
+                                                        startEditPassword(
+                                                            account,
+                                                        )}
+                                                >
+                                                    <Eye size={14} />
+                                                </button>
+                                            {/if}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {#if userErrors[account.id_user] || userSuccess[account.id_user]}
+                                    <tr class="msg-row">
+                                        <td colspan="6">
+                                            {#if userErrors[account.id_user]}
+                                                <p
+                                                    class="field-error"
+                                                    role="alert"
+                                                >
+                                                    {userErrors[
+                                                        account.id_user
+                                                    ]}
+                                                </p>
+                                            {/if}
+                                            {#if userSuccess[account.id_user]}
+                                                <p
+                                                    class="field-success"
+                                                    role="status"
+                                                >
+                                                    {userSuccess[
+                                                        account.id_user
+                                                    ]}
+                                                </p>
                                             {/if}
                                         </td>
-                                        <td>
-                                            <span class="role-badge"
-                                                >{account.role}</span
-                                            >
-                                        </td>
-                                        <td>
-                                            <button
-                                                class="status-btn"
-                                                class:on={account.active}
-                                                type="button"
-                                                onclick={() => toggleActive(account)}
-                                                disabled={savingUser === account.id_user}
-                                            >
-                                                {account.active ? "ACTIVA" : "INACTIVA"}
-                                            </button>
-                                        </td>
-                                        <td>
-                                            <span class="mono">{formatLastActivity(account.last_activity)}</span>
-                                        </td>
-                                        <td>
-                                            <div class="row-actions">
-                                                {#if editingUser[account.id_user] === "password"}
-                                                    <div class="inline-edit">
-                                                        <input
-                                                            type="password"
-                                                            placeholder="Nueva contraseña"
-                                                            bind:value={passwordInputs[account.id_user]}
-                                                            onkeydown={(e) =>
-                                                                e.key === "Enter" &&
-                                                                savePassword(account)}
-                                                        />
-                                                        <div class="edit-actions">
-                                                            <button
-                                                                class="save-btn"
-                                                                type="button"
-                                                                onclick={() =>
-                                                                    savePassword(account)}
-                                                                disabled={savingUser === account.id_user}
-                                                            >Guardar</button>
-                                                            <button
-                                                                class="cancel-btn"
-                                                                type="button"
-                                                                onclick={() =>
-                                                                    cancelEditUser(account.id_user)}
-                                                            >Cancelar</button>
-                                                        </div>
-                                                    </div>
-                                                {:else if editingUser[account.id_user] !== "email"}
-                                                    <button
-                                                        class="ico-btn"
-                                                        type="button"
-                                                        title="Cambiar email"
-                                                        onclick={() =>
-                                                            startEditEmail(account)}
-                                                    >
-                                                        <Pencil size={14} />
-                                                    </button>
-                                                    <button
-                                                        class="ico-btn"
-                                                        type="button"
-                                                        title="Cambiar contraseña"
-                                                        onclick={() =>
-                                                            startEditPassword(account)}
-                                                    >
-                                                        <Eye size={14} />
-                                                    </button>
-                                                {/if}
-                                            </div>
-                                        </td>
                                     </tr>
-                                    {#if userErrors[account.id_user] || userSuccess[account.id_user]}
-                                        <tr class="msg-row">
-                                            <td colspan="6">
-                                                {#if userErrors[account.id_user]}
-                                                    <p class="field-error" role="alert">
-                                                        {userErrors[account.id_user]}
-                                                    </p>
-                                                {/if}
-                                                {#if userSuccess[account.id_user]}
-                                                    <p class="field-success" role="status">
-                                                        {userSuccess[account.id_user]}
-                                                    </p>
-                                                {/if}
-                                            </td>
-                                        </tr>
-                                    {/if}
-                                {:else}
-                                    <tr>
-                                        <td colspan="6" class="empty-cell">
-                                            No hay usuarios para mostrar.
-                                        </td>
-                                    </tr>
-                                {/each}
-                            </tbody>
-                        </table>
-                    </div>
-                </section>
-
-            {:else if activeTab === "negocios"}
-                <section class="section">
-                    <header class="section-head">
-                        <div>
-                            <h2>Negocios</h2>
-                            <p>
-                                Administrá los negocios asociados tal como un
-                                negociante.
-                            </p>
-                        </div>
-                        <button
-                            class="add-btn"
-                            type="button"
-                            onclick={() => (creatingPartner = !creatingPartner)}
-                        >
-                            <Plus size={16} />
-                            {creatingPartner ? "Cancelar" : "Nuevo negocio"}
-                        </button>
-                    </header>
-
-                    {#if creatingPartner}
-                        <form
-                            class="create-form"
-                            onsubmit={(e) => {
-                                e.preventDefault();
-                                createPartner();
-                            }}
-                        >
-                            <h3>Nuevo negocio</h3>
-                            <div class="form-grid">
-                                <label>
-                                    Nombre
-                                    <input
-                                        type="text"
-                                        placeholder="Nombre del negocio"
-                                        bind:value={newPartner.partner_name}
-                                    />
-                                </label>
-                                <label>
-                                    Email del admin
-                                    <input
-                                        type="email"
-                                        placeholder="admin@negocio.com"
-                                        bind:value={newPartner.email}
-                                    />
-                                </label>
-                                <label>
-                                    Contraseña del admin
-                                    <input
-                                        type="password"
-                                        placeholder="••••••••"
-                                        bind:value={newPartner.password}
-                                    />
-                                </label>
-                                <label>
-                                    Logo (URL)
-                                    <input
-                                        type="url"
-                                        placeholder="https://…"
-                                        bind:value={newPartner.logo}
-                                    />
-                                </label>
-                                <label class="full">
-                                    Direcciones (separadas por coma)
-                                    <input
-                                        type="text"
-                                        placeholder="Calle 1, Calle 2"
-                                        bind:value={newPartner.directions}
-                                    />
-                                </label>
-                            </div>
-                            {#if partnerCreateError}
-                                <p class="field-error" role="alert">
-                                    {partnerCreateError}
-                                </p>
-                            {/if}
-                            <div class="form-actions">
-                                <button
-                                    class="save-btn"
-                                    type="submit"
-                                    disabled={savingPartner}
-                                >
-                                    {savingPartner ? "Guardando…" : "Crear negocio"}
-                                </button>
-                            </div>
-                        </form>
-                    {/if}
-
-                    <div class="cards-grid">
-                        {#each partners as partner (partner.id_partner)}
-                            <article class="data-card">
-                                <div class="card-top">
-                                    <img
-                                        class="partner-logo"
-                                        src={partner.logo}
-                                        alt={`Logo de ${partner.name}`}
-                                    />
-                                    <div class="card-title">
-                                        <h3>{partner.name}</h3>
-                                        <span
-                                            class="role-badge"
-                                            class:off={!partner.active}
-                                            >{partner.active
-                                                ? "ACTIVO"
-                                                : "INACTIVO"}</span
-                                        >
-                                    </div>
-                                </div>
-
-                                {#if editingPartner === partner.id_partner}
-                                    <div class="edit-field">
-                                        <label>Nombre</label>
-                                        <div class="row">
-                                            <input
-                                                type="text"
-                                                bind:value={partnerNameInputs[partner.id_partner]}
-                                                onkeydown={(e) =>
-                                                    e.key === "Enter" &&
-                                                    updatePartnerName(partner)}
-                                            />
-                                            <button
-                                                class="save-btn"
-                                                type="button"
-                                                onclick={() =>
-                                                    updatePartnerName(partner)}
-                                                disabled={partnerBusy[partner.id_partner]}
-                                            >Guardar</button>
-                                        </div>
-                                    </div>
-                                    <div class="edit-field">
-                                        <label>Logo (URL)</label>
-                                        <div class="row">
-                                            <input
-                                                type="url"
-                                                bind:value={partnerLogoInputs[partner.id_partner]}
-                                                onkeydown={(e) =>
-                                                    e.key === "Enter" &&
-                                                    updatePartnerLogo(partner)}
-                                            />
-                                            <button
-                                                class="save-btn"
-                                                type="button"
-                                                onclick={() =>
-                                                    updatePartnerLogo(partner)}
-                                                disabled={partnerBusy[partner.id_partner]}
-                                            >Guardar</button>
-                                        </div>
-                                    </div>
-
-                                    <div class="edit-field">
-                                        <label>Ubicaciones</label>
-                                        {#if locationsLoading[partner.id_partner]}
-                                            <p class="muted">Cargando…</p>
-                                        {:else}
-                                            <ul class="locs-list">
-                                                {#each (locationsByPartner[partner.id_partner] ?? []) as location (location.id_location)}
-                                                    <li class="loc-item">
-                                                        <span>{location.direction}</span>
-                                                        <button
-                                                            class="remove-btn"
-                                                            type="button"
-                                                            aria-label={`Quitar ${location.direction}`}
-                                                            onclick={() =>
-                                                                removePartnerLocation(
-                                                                    partner.id_partner,
-                                                                    location.id_location,
-                                                                )}
-                                                            disabled={partnerBusy[partner.id_partner] !== undefined}
-                                                        >
-                                                            <Trash2 size={14} />
-                                                        </button>
-                                                    </li>
-                                                {:else}
-                                                    <li class="loc-empty">
-                                                        Sin ubicaciones registradas.
-                                                    </li>
-                                                {/each}
-                                            </ul>
-                                            <div class="row">
-                                                <input
-                                                    type="text"
-                                                    placeholder="Nueva dirección"
-                                                    bind:value={partnerLocationInputs[partner.id_partner]}
-                                                    onkeydown={(e) =>
-                                                        e.key === "Enter" &&
-                                                        addPartnerLocation(partner)}
-                                                />
-                                                <button
-                                                    class="add-btn"
-                                                    type="button"
-                                                    onclick={() =>
-                                                        addPartnerLocation(partner)}
-                                                    disabled={partnerBusy[partner.id_partner]}
-                                                >Agregar</button>
-                                            </div>
-                                        {/if}
-                                    </div>
-
-                                    {#if partnerErrors[partner.id_partner]}
-                                        <p class="field-error" role="alert">
-                                            {partnerErrors[partner.id_partner]}
-                                        </p>
-                                    {/if}
-                                    {#if partnerSuccess[partner.id_partner]}
-                                        <p class="field-success" role="status">
-                                            {partnerSuccess[partner.id_partner]}
-                                        </p>
-                                    {/if}
-                                {:else}
-                                    <p class="directions">
-                                        {partner.directions.length
-                                            ? partner.directions.join(" · ")
-                                            : "Sin ubicaciones registradas."}
-                                    </p>
                                 {/if}
-
-                                <div class="card-actions">
-                                    {#if editingPartner === partner.id_partner}
-                                        <button
-                                            class="cancel-btn"
-                                            type="button"
-                                            onclick={closePartnerEdit}
-                                        >Terminar</button>
-                                    {:else}
-                                        <button
-                                            class="edit-btn"
-                                            type="button"
-                                            onclick={() => openPartnerEdit(partner)}
-                                        >
-                                            <Pencil size={13} />
-                                            Editar
-                                        </button>
-                                    {/if}
-                                    <button
-                                        class="danger-btn"
-                                        type="button"
-                                        onclick={() => deletePartner(partner)}
-                                        disabled={partnerBusy[partner.id_partner] !== undefined}
-                                    >
-                                        <Trash2 size={14} />
-                                        Eliminar
-                                    </button>
-                                </div>
-                            </article>
-                        {:else}
-                            <p class="empty">No hay negocios para mostrar.</p>
-                        {/each}
+                            {:else}
+                                <tr>
+                                    <td colspan="6" class="empty-cell">
+                                        No hay usuarios para mostrar.
+                                    </td>
+                                </tr>
+                            {/each}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        {:else if activeTab === "negocios"}
+            <section class="section">
+                <header class="section-head">
+                    <div>
+                        <h2>Negocios</h2>
+                        <p>
+                            Administrá los negocios asociados tal como un
+                            negociante.
+                        </p>
                     </div>
-                </section>
+                    <button
+                        class="add-btn"
+                        type="button"
+                        onclick={() => (creatingPartner = !creatingPartner)}
+                    >
+                        <Plus size={16} />
+                        {creatingPartner ? "Cancelar" : "Nuevo negocio"}
+                    </button>
+                </header>
 
-            {:else if activeTab === "beneficios"}
-                <section class="section">
-                    <header class="section-head">
-                        <div>
-                            <h2>Beneficios</h2>
-                            <p>
-                                Creá, editá o eliminá los beneficios publicados.
-                            </p>
+                {#if creatingPartner}
+                    <form
+                        class="create-form"
+                        onsubmit={(e) => {
+                            e.preventDefault();
+                            createPartner();
+                        }}
+                    >
+                        <h3>Nuevo negocio</h3>
+                        <div class="form-grid">
+                            <label>
+                                Nombre
+                                <input
+                                    type="text"
+                                    placeholder="Nombre del negocio"
+                                    bind:value={newPartner.partner_name}
+                                />
+                            </label>
+                            <label>
+                                Email del admin
+                                <input
+                                    type="email"
+                                    placeholder="admin@negocio.com"
+                                    bind:value={newPartner.email}
+                                />
+                            </label>
+                            <label>
+                                Contraseña del admin
+                                <input
+                                    type="password"
+                                    placeholder="••••••••"
+                                    bind:value={newPartner.password}
+                                />
+                            </label>
+                            <label>
+                                Logo (URL)
+                                <input
+                                    type="url"
+                                    placeholder="https://…"
+                                    bind:value={newPartner.logo}
+                                />
+                            </label>
+                            <label class="full">
+                                Direcciones (separadas por coma)
+                                <input
+                                    type="text"
+                                    placeholder="Calle 1, Calle 2"
+                                    bind:value={newPartner.directions}
+                                />
+                            </label>
                         </div>
-                        <button
-                            class="add-btn"
-                            type="button"
-                            onclick={() =>
-                                (openingCreatingBenefit =
-                                    !openingCreatingBenefit)}
-                        >
-                            <Plus size={16} />
-                            {openingCreatingBenefit
-                                ? "Cancelar"
-                                : "Nuevo beneficio"}
-                        </button>
-                    </header>
+                        {#if partnerCreateError}
+                            <p class="field-error" role="alert">
+                                {partnerCreateError}
+                            </p>
+                        {/if}
+                        <div class="form-actions">
+                            <button
+                                class="save-btn"
+                                type="submit"
+                                disabled={savingPartner}
+                            >
+                                {savingPartner ? "Guardando…" : "Crear negocio"}
+                            </button>
+                        </div>
+                    </form>
+                {/if}
 
-                    {#if openingCreatingBenefit}
-                        <form
-                            class="create-form"
-                            onsubmit={(e) => {
-                                e.preventDefault();
-                                createBenefit();
-                            }}
-                        >
-                            <h3>Nuevo beneficio</h3>
-                            <div class="form-grid">
-                                <label>
-                                    Negocio
-                                    <select bind:value={newBenefit.id_partner}>
-                                        <option value="">Seleccionar…</option>
-                                        {#each partners as partner (partner.id_partner)}
-                                            <option value={partner.id_partner}>
-                                                {partner.name}
-                                            </option>
-                                        {/each}
-                                    </select>
-                                </label>
-                                <label>
-                                    Tipo
-                                    <select bind:value={newBenefit.id_type}>
-                                        <option value="">Seleccionar…</option>
-                                        {#each benefitTypes as type (type.id_type)}
-                                            <option value={type.id_type}>
-                                                {type.name}
-                                            </option>
-                                        {/each}
-                                    </select>
-                                </label>
-                                <label>
-                                    Título
-                                    <input
-                                        type="text"
-                                        bind:value={newBenefit.title}
-                                    />
-                                </label>
-                                <label>
-                                    Imagen (URL)
-                                    <input
-                                        type="url"
-                                        bind:value={newBenefit.image}
-                                        placeholder="https://…"
-                                    />
-                                </label>
-                                <label>
-                                    Inicio
-                                    <input
-                                        type="date"
-                                        bind:value={newBenefit.start_date}
-                                    />
-                                </label>
-                                <label>
-                                    Fin
-                                    <input
-                                        type="date"
-                                        bind:value={newBenefit.end_date}
-                                    />
-                                </label>
-                                <label>
-                                    Cupones máximos
-                                    <input
-                                        type="number"
-                                        min="1"
-                                        bind:value={newBenefit.max_coupons}
-                                    />
-                                </label>
-                                <label>
-                                    Máximo por usuario
-                                    <input
-                                        type="number"
-                                        min="1"
-                                        bind:value={newBenefit.max_per_user}
-                                    />
-                                </label>
-                                <label class="full">
-                                    Descripción
-                                    <textarea
-                                        rows="3"
-                                        bind:value={newBenefit.description}
-                                    ></textarea>
-                                </label>
-                            </div>
-                            {#if benefitCreateError}
-                                <p class="field-error" role="alert">
-                                    {benefitCreateError}
-                                </p>
-                            {/if}
-                            <div class="form-actions">
-                                <button
-                                    class="save-btn"
-                                    type="submit"
-                                    disabled={savingBenefit}
-                                >
-                                    {savingBenefit
-                                        ? "Guardando…"
-                                        : "Crear beneficio"}
-                                </button>
-                            </div>
-                        </form>
-                    {/if}
-
-                    <div class="cards-grid">
-                        {#each benefits as benefit (benefit.id_benefit)}
-                            <article class="data-card">
-                                <div class="card-top">
-                                    <img
-                                        class="benefit-img"
-                                        src={benefit.image}
-                                        alt={benefit.title}
-                                    />
-                                    <div class="card-title">
-                                        <h3>{benefit.title}</h3>
-                                        <span class="sub"
-                                            >{benefit.partner}</span
-                                        >
-                                    </div>
+                <div class="cards-grid">
+                    {#each partners as partner (partner.id_partner)}
+                        <article class="data-card">
+                            <div class="card-top">
+                                <img
+                                    class="partner-logo"
+                                    src={partner.logo}
+                                    alt={`Logo de ${partner.name}`}
+                                />
+                                <div class="card-title">
+                                    <h3>{partner.name}</h3>
+                                    <span
+                                        class="role-badge"
+                                        class:off={!partner.active}
+                                        >{partner.active
+                                            ? "ACTIVO"
+                                            : "INACTIVO"}</span
+                                    >
                                 </div>
+                            </div>
 
-                                {#if editingBenefitId === benefit.id_benefit}
-                                    <div class="edit-field">
-                                        <label>Título</label>
+                            {#if editingPartner === partner.id_partner}
+                                <div class="edit-field">
+                                    <label>Nombre</label>
+                                    <div class="row">
                                         <input
                                             type="text"
-                                            bind:value={benefitDrafts[benefit.id_benefit].title}
+                                            bind:value={
+                                                partnerNameInputs[
+                                                    partner.id_partner
+                                                ]
+                                            }
+                                            onkeydown={(e) =>
+                                                e.key === "Enter" &&
+                                                updatePartnerName(partner)}
                                         />
-                                    </div>
-                                    <div class="edit-field">
-                                        <label>Descripción</label>
-                                        <textarea
-                                            rows="2"
-                                            bind:value={benefitDrafts[benefit.id_benefit].description}
-                                        ></textarea>
-                                    </div>
-                                    <div class="edit-field">
-                                        <label>Imagen (URL)</label>
-                                        <input
-                                            type="url"
-                                            bind:value={benefitDrafts[benefit.id_benefit].image}
-                                        />
-                                    </div>
-                                    <div class="edit-field row-2">
-                                        <label>
-                                            Inicio
-                                            <input
-                                                type="date"
-                                                bind:value={benefitDrafts[benefit.id_benefit].start_date}
-                                            />
-                                        </label>
-                                        <label>
-                                            Fin
-                                            <input
-                                                type="date"
-                                                bind:value={benefitDrafts[benefit.id_benefit].end_date}
-                                            />
-                                        </label>
-                                    </div>
-                                    <div class="edit-field row-2">
-                                        <label>
-                                            Cupones máximos
-                                            <input
-                                                type="number"
-                                                min="1"
-                                                bind:value={benefitDrafts[benefit.id_benefit].max_coupons}
-                                            />
-                                        </label>
-                                        <label>
-                                            Máx. por usuario
-                                            <input
-                                                type="number"
-                                                min="1"
-                                                bind:value={benefitDrafts[benefit.id_benefit].max_per_user}
-                                            />
-                                        </label>
-                                    </div>
-                                    <div class="edit-field">
-                                        <label>Estado</label>
-                                        <select
-                                            bind:value={benefitDrafts[benefit.id_benefit].status}
-                                        >
-                                            <option value="ACTIVE">ACTIVE</option>
-                                            <option value="INACTIVE">INACTIVE</option>
-                                            <option value="PENDING">PENDING</option>
-                                        </select>
-                                    </div>
-                                {:else}
-                                    <p class="desc">{benefit.description}</p>
-                                    <p class="sub">
-                                        {benefit.type} · {benefit.coupons}/
-                                        {benefit.max_coupons} canjeados
-                                    </p>
-                                {/if}
-
-                                {#if benefitErrors[benefit.id_benefit]}
-                                    <p class="field-error" role="alert">
-                                        {benefitErrors[benefit.id_benefit]}
-                                    </p>
-                                {/if}
-                                {#if benefitSuccess[benefit.id_benefit]}
-                                    <p class="field-success" role="status">
-                                        {benefitSuccess[benefit.id_benefit]}
-                                    </p>
-                                {/if}
-
-                                <div class="card-actions">
-                                    {#if editingBenefitId === benefit.id_benefit}
                                         <button
                                             class="save-btn"
                                             type="button"
-                                            onclick={() => saveBenefit(benefit)}
-                                            disabled={benefitBusy === benefit.id_benefit}
-                                        >Guardar</button>
+                                            onclick={() =>
+                                                updatePartnerName(partner)}
+                                            disabled={partnerBusy[
+                                                partner.id_partner
+                                            ]}>Guardar</button
+                                        >
+                                    </div>
+                                </div>
+                                <div class="edit-field">
+                                    <label>Logo (URL)</label>
+                                    <div class="row">
+                                        <input
+                                            type="url"
+                                            bind:value={
+                                                partnerLogoInputs[
+                                                    partner.id_partner
+                                                ]
+                                            }
+                                            onkeydown={(e) =>
+                                                e.key === "Enter" &&
+                                                updatePartnerLogo(partner)}
+                                        />
                                         <button
-                                            class="cancel-btn"
-                                            type="button"
-                                            onclick={cancelEditBenefit}
-                                        >Cancelar</button>
-                                    {:else}
-                                        <button
-                                            class="edit-btn"
+                                            class="save-btn"
                                             type="button"
                                             onclick={() =>
-                                                startEditBenefit(benefit)}
+                                                updatePartnerLogo(partner)}
+                                            disabled={partnerBusy[
+                                                partner.id_partner
+                                            ]}>Guardar</button
                                         >
-                                            <Pencil size={13} />
-                                            Editar
-                                        </button>
-                                    {/if}
-                                    <button
-                                        class="danger-btn"
-                                        type="button"
-                                        onclick={() => deleteBenefit(benefit)}
-                                        disabled={benefitBusy === benefit.id_benefit}
-                                    >
-                                        <Trash2 size={14} />
-                                        Eliminar
-                                    </button>
+                                    </div>
                                 </div>
-                            </article>
-                        {:else}
-                            <p class="empty">No hay beneficios para mostrar.</p>
-                        {/each}
-                    </div>
-                </section>
 
-            {:else if activeTab === "categorias"}
-                <section class="section">
-                    <header class="section-head">
-                        <div>
-                            <h2>Categorías</h2>
-                            <p>
-                                Activá o desactivá las categorías de cupones.
-                            </p>
-                        </div>
-                    </header>
+                                <div class="edit-field">
+                                    <label>Ubicaciones</label>
+                                    {#if locationsLoading[partner.id_partner]}
+                                        <p class="muted">Cargando…</p>
+                                    {:else}
+                                        <ul class="locs-list">
+                                            {#each locationsByPartner[partner.id_partner] ?? [] as location (location.id_location)}
+                                                <li class="loc-item">
+                                                    <span
+                                                        >{location.direction}</span
+                                                    >
+                                                    <button
+                                                        class="remove-btn"
+                                                        type="button"
+                                                        aria-label={`Quitar ${location.direction}`}
+                                                        onclick={() =>
+                                                            removePartnerLocation(
+                                                                partner.id_partner,
+                                                                location.id_location,
+                                                            )}
+                                                        disabled={partnerBusy[
+                                                            partner.id_partner
+                                                        ] !== undefined}
+                                                    >
+                                                        <Trash2 size={14} />
+                                                    </button>
+                                                </li>
+                                            {:else}
+                                                <li class="loc-empty">
+                                                    Sin ubicaciones registradas.
+                                                </li>
+                                            {/each}
+                                        </ul>
+                                        <div class="row">
+                                            <input
+                                                type="text"
+                                                placeholder="Nueva dirección"
+                                                bind:value={
+                                                    partnerLocationInputs[
+                                                        partner.id_partner
+                                                    ]
+                                                }
+                                                onkeydown={(e) =>
+                                                    e.key === "Enter" &&
+                                                    addPartnerLocation(partner)}
+                                            />
+                                            <button
+                                                class="add-btn"
+                                                type="button"
+                                                onclick={() =>
+                                                    addPartnerLocation(partner)}
+                                                disabled={partnerBusy[
+                                                    partner.id_partner
+                                                ]}>Agregar</button
+                                            >
+                                        </div>
+                                    {/if}
+                                </div>
 
-                    {#if categories.length === 0}
-                        <p class="empty">No hay categorías para mostrar.</p>
-                    {:else}
-                        <div class="table-wrap">
-                            <table class="data-table">
-                                <thead>
-                                    <tr>
-                                        <th>Categoría</th>
-                                        <th>Estado</th>
-                                        <th>Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {#each categories as category (category.id_category)}
-                                        <tr>
-                                            <td>
-                                                <strong>{category.name}</strong>
-                                            </td>
-                                            <td>
-                                                <button
-                                                    class="status-btn"
-                                                    class:on={category.active}
-                                                    type="button"
-                                                    onclick={() =>
-                                                        toggleCategory(category)}
-                                                    disabled={categoryBusy ===
-                                                        category.id_category}
-                                                >
-                                                    {category.active
-                                                        ? "ACTIVA"
-                                                        : "INACTIVA"}
-                                                </button>
-                                            </td>
-                                            <td>
-                                                <button
-                                                    class="ico-btn"
-                                                    class:ok={!category.active}
-                                                    type="button"
-                                                    title={
-                                                        category.active
-                                                            ? "Desactivar"
-                                                            : "Activar"
-                                                    }
-                                                    onclick={() =>
-                                                        toggleCategory(category)}
-                                                    disabled={categoryBusy ===
-                                                        category.id_category}
-                                                >
-                                                    {#if category.active}
-                                                        <XCircle size={15} />
-                                                    {:else}
-                                                        <CheckCircle2 size={15} />
-                                                    {/if}
-                                                </button>
-                                            </td>
-                                        </tr>
-                                        {#if categoryErrors[category.id_category] || categorySuccess[category.id_category]}
-                                            <tr class="msg-row">
-                                                <td colspan="3">
-                                                    {#if categoryErrors[category.id_category]}
-                                                        <p class="field-error" role="alert">
-                                                            {categoryErrors[category.id_category]}
-                                                        </p>
-                                                    {/if}
-                                                    {#if categorySuccess[category.id_category]}
-                                                        <p class="field-success" role="status">
-                                                            {categorySuccess[category.id_category]}
-                                                        </p>
-                                                    {/if}
-                                                </td>
-                                            </tr>
-                                        {/if}
-                                    {/each}
-                                </tbody>
-                            </table>
-                        </div>
-                    {/if}
-                </section>
-
-            {:else if activeTab === "vouchers"}
-                <section class="section">
-                    <header class="section-head">
-                        <div>
-                            <h2>Vouchers</h2>
-                            <p>
-                                Consultá, canjeá, rechazá o creá vouchers.
-                            </p>
-                        </div>
-                        <div class="head-actions">
-                            <select bind:value={voucherStatus}>
-                                <option value="ALL">Todos los estados</option>
-                                <option value="PENDING">PENDING</option>
-                                <option value="DELIVERED">DELIVERED</option>
-                                <option value="EXPIRED">EXPIRED</option>
-                                <option value="REJECTED">REJECTED</option>
-                            </select>
-                            <button
-                                class="add-btn"
-                                type="button"
-                                onclick={() =>
-                                    (openingCreatingVoucher =
-                                        !openingCreatingVoucher)}
-                            >
-                                <Plus size={16} />
-                                {openingCreatingVoucher
-                                    ? "Cancelar"
-                                    : "Nuevo voucher"}
-                            </button>
-                        </div>
-                    </header>
-
-                    {#if openingCreatingVoucher}
-                        <form
-                            class="create-form"
-                            onsubmit={(e) => {
-                                e.preventDefault();
-                                createVoucher();
-                            }}
-                        >
-                            <h3>Nuevo voucher</h3>
-                            <div class="form-grid">
-                                <label>
-                                    Usuario
-                                    <select bind:value={newVoucher.id_user}>
-                                        <option value="">Seleccionar…</option>
-                                        {#each accounts as account (account.id_user)}
-                                            <option value={account.id_user}>
-                                                {account.name} {account.lastname}
-                                                {account.dni
-                                                    ? `· ${account.dni}`
-                                                    : ""}
-                                            </option>
-                                        {/each}
-                                    </select>
-                                </label>
-                                <label>
-                                    Beneficio
-                                    <select bind:value={newVoucher.id_benefit}>
-                                        <option value="">Seleccionar…</option>
-                                        {#each benefits as benefit (benefit.id_benefit)}
-                                            <option value={benefit.id_benefit}>
-                                                {benefit.title} · {benefit.partner}
-                                            </option>
-                                        {/each}
-                                    </select>
-                                </label>
-                            </div>
-                            {#if voucherCreateError}
-                                <p class="field-error" role="alert">
-                                    {voucherCreateError}
+                                {#if partnerErrors[partner.id_partner]}
+                                    <p class="field-error" role="alert">
+                                        {partnerErrors[partner.id_partner]}
+                                    </p>
+                                {/if}
+                                {#if partnerSuccess[partner.id_partner]}
+                                    <p class="field-success" role="status">
+                                        {partnerSuccess[partner.id_partner]}
+                                    </p>
+                                {/if}
+                            {:else}
+                                <p class="directions">
+                                    {partner.directions.length
+                                        ? partner.directions.join(" · ")
+                                        : "Sin ubicaciones registradas."}
                                 </p>
                             {/if}
-                            <div class="form-actions">
+
+                            <div class="card-actions">
+                                {#if editingPartner === partner.id_partner}
+                                    <button
+                                        class="cancel-btn"
+                                        type="button"
+                                        onclick={closePartnerEdit}
+                                        >Terminar</button
+                                    >
+                                {:else}
+                                    <button
+                                        class="edit-btn"
+                                        type="button"
+                                        onclick={() => openPartnerEdit(partner)}
+                                    >
+                                        <Pencil size={13} />
+                                        Editar
+                                    </button>
+                                {/if}
                                 <button
-                                    class="save-btn"
-                                    type="submit"
-                                    disabled={savingVoucher}
+                                    class="danger-btn"
+                                    type="button"
+                                    onclick={() => deletePartner(partner)}
+                                    disabled={partnerBusy[
+                                        partner.id_partner
+                                    ] !== undefined}
                                 >
-                                    {savingVoucher ? "Guardando…" : "Crear voucher"}
+                                    <Trash2 size={14} />
+                                    Eliminar
                                 </button>
                             </div>
-                        </form>
-                    {/if}
-
-                    <div class="search-box search-voucher">
-                        <input
-                            type="text"
-                            placeholder="Buscar por token, socio o beneficio…"
-                            bind:value={voucherSearch}
-                        />
+                        </article>
+                    {:else}
+                        <p class="empty">No hay negocios para mostrar.</p>
+                    {/each}
+                </div>
+            </section>
+        {:else if activeTab === "beneficios"}
+            <section class="section">
+                <header class="section-head">
+                    <div>
+                        <h2>Beneficios</h2>
+                        <p>Creá, editá o eliminá los beneficios publicados.</p>
                     </div>
+                    <button
+                        class="add-btn"
+                        type="button"
+                        onclick={() =>
+                            (openingCreatingBenefit = !openingCreatingBenefit)}
+                    >
+                        <Plus size={16} />
+                        {openingCreatingBenefit
+                            ? "Cancelar"
+                            : "Nuevo beneficio"}
+                    </button>
+                </header>
 
-                    <div class="lookup-box">
-                        <label for="voucherLookupInput">
-                            Consultar voucher por token
-                        </label>
-                        <div class="lookup-row">
-                            <input
-                                id="voucherLookupInput"
-                                type="text"
-                                placeholder="Ingresá el token…"
-                                bind:value={voucherFilter}
-                                onkeydown={(e) => {
-                                    if (e.key === "Enter") {
-                                        e.preventDefault();
-                                        searchVoucher();
-                                    }
-                                }}
-                            />
+                {#if openingCreatingBenefit}
+                    <form
+                        class="create-form"
+                        onsubmit={(e) => {
+                            e.preventDefault();
+                            createBenefit();
+                        }}
+                    >
+                        <h3>Nuevo beneficio</h3>
+                        <div class="form-grid">
+                            <label>
+                                Negocio
+                                <select bind:value={newBenefit.id_partner}>
+                                    <option value="">Seleccionar…</option>
+                                    {#each partners as partner (partner.id_partner)}
+                                        <option value={partner.id_partner}>
+                                            {partner.name}
+                                        </option>
+                                    {/each}
+                                </select>
+                            </label>
+                            <label>
+                                Tipo
+                                <select bind:value={newBenefit.id_type}>
+                                    <option value="">Seleccionar…</option>
+                                    {#each benefitTypes as type (type.id_type)}
+                                        <option value={type.id_type}>
+                                            {type.name}
+                                        </option>
+                                    {/each}
+                                </select>
+                            </label>
+                            <label>
+                                Título
+                                <input
+                                    type="text"
+                                    bind:value={newBenefit.title}
+                                />
+                            </label>
+                            <label>
+                                Imagen (URL)
+                                <input
+                                    type="url"
+                                    bind:value={newBenefit.image}
+                                    placeholder="https://…"
+                                />
+                            </label>
+                            <label>
+                                Inicio
+                                <input
+                                    type="date"
+                                    bind:value={newBenefit.start_date}
+                                />
+                            </label>
+                            <label>
+                                Fin
+                                <input
+                                    type="date"
+                                    bind:value={newBenefit.end_date}
+                                />
+                            </label>
+                            <label>
+                                Cupones máximos
+                                <input
+                                    type="number"
+                                    min="1"
+                                    bind:value={newBenefit.max_coupons}
+                                />
+                            </label>
+                            <label>
+                                Máximo por usuario
+                                <input
+                                    type="number"
+                                    min="1"
+                                    bind:value={newBenefit.max_per_user}
+                                />
+                            </label>
+                            <label class="full">
+                                Descripción
+                                <textarea
+                                    rows="3"
+                                    bind:value={newBenefit.description}
+                                ></textarea>
+                            </label>
+                        </div>
+                        {#if benefitCreateError}
+                            <p class="field-error" role="alert">
+                                {benefitCreateError}
+                            </p>
+                        {/if}
+                        <div class="form-actions">
                             <button
-                                class="search-btn"
-                                type="button"
-                                onclick={searchVoucher}
-                                disabled={voucherBusy === "_search"}
+                                class="save-btn"
+                                type="submit"
+                                disabled={savingBenefit}
                             >
-                                {voucherBusy === "_search"
-                                    ? "Buscando…"
-                                    : "Buscar"}
+                                {savingBenefit
+                                    ? "Guardando…"
+                                    : "Crear beneficio"}
                             </button>
                         </div>
-                    </div>
+                    </form>
+                {/if}
 
-                    {#if voucherErrors._search}
-                        <p class="field-error" role="alert">
-                            {voucherErrors._search}
-                        </p>
-                    {/if}
-
-                    {#if searchedVoucher}
-                        <div class="voucher-lookup">
-                            <h3>Voucher {searchedVoucher.token}</h3>
-                            <p class="sub">{voucherLabel(searchedVoucher)}</p>
-                            <dl class="lookup-grid">
-                                <div>
-                                    <dt>BENEFICIO</dt>
-                                    <dd>{searchedVoucher.title}</dd>
+                <div class="cards-grid">
+                    {#each benefits as benefit (benefit.id_benefit)}
+                        <article class="data-card">
+                            <div class="card-top">
+                                <img
+                                    class="benefit-img"
+                                    src={benefit.image}
+                                    alt={benefit.title}
+                                />
+                                <div class="card-title">
+                                    <h3>{benefit.title}</h3>
+                                    <span class="sub">{benefit.partner}</span>
                                 </div>
-                                <div>
-                                    <dt>NEGOCIO</dt>
-                                    <dd>{searchedVoucher.partner}</dd>
-                                </div>
-                                <div>
-                                    <dt>SOCIO</dt>
-                                    <dd>
-                                        {searchedVoucher.user_name}
-                                        {searchedVoucher.user_dni
-                                            ? `(${searchedVoucher.user_dni})`
-                                            : ""}
-                                    </dd>
-                                </div>
-                                <div>
-                                    <dt>VIGENTE HASTA</dt>
-                                    <dd>{formatDate(searchedVoucher.endDate)}</dd>
-                                </div>
-                            </dl>
-                            <div class="state-bar">
-                                <span class="status-chip" class:resolved={searchedVoucher.status !== "PENDING"}>
-                                    {searchedVoucher.status}
-                                </span>
                             </div>
-                        </div>
-                        <div class="card-actions">
-                            <button
-                                class="success-btn"
-                                type="button"
-                                onclick={() => {
-                                    if (searchedVoucher)
-                                        voucherAction(searchedVoucher, "redeem");
-                                }}
-                                disabled={!searchedVoucher || searchedVoucher.status !== "PENDING" || voucherBusy === searchedVoucher.token}
-                            >
-                                <CheckCircle2 size={14} />
-                                Canjear
-                            </button>
-                            <button
-                                class="danger-btn"
-                                type="button"
-                                onclick={() => {
-                                    if (searchedVoucher)
-                                        voucherAction(searchedVoucher, "reject");
-                                }}
-                                disabled={!searchedVoucher || searchedVoucher.status !== "PENDING" || voucherBusy === searchedVoucher.token}
-                            >
-                                <XCircle size={14} />
-                                Rechazar
-                            </button>
-                        </div>
-                    {/if}
 
+                            {#if editingBenefitId === benefit.id_benefit}
+                                <div class="edit-field">
+                                    <label>Título</label>
+                                    <input
+                                        type="text"
+                                        bind:value={
+                                            benefitDrafts[benefit.id_benefit]
+                                                .title
+                                        }
+                                    />
+                                </div>
+                                <div class="edit-field">
+                                    <label>Descripción</label>
+                                    <textarea
+                                        rows="2"
+                                        bind:value={
+                                            benefitDrafts[benefit.id_benefit]
+                                                .description
+                                        }
+                                    ></textarea>
+                                </div>
+                                <div class="edit-field">
+                                    <label>Imagen (URL)</label>
+                                    <input
+                                        type="url"
+                                        bind:value={
+                                            benefitDrafts[benefit.id_benefit]
+                                                .image
+                                        }
+                                    />
+                                </div>
+                                <div class="edit-field row-2">
+                                    <label>
+                                        Inicio
+                                        <input
+                                            type="date"
+                                            bind:value={
+                                                benefitDrafts[
+                                                    benefit.id_benefit
+                                                ].start_date
+                                            }
+                                        />
+                                    </label>
+                                    <label>
+                                        Fin
+                                        <input
+                                            type="date"
+                                            bind:value={
+                                                benefitDrafts[
+                                                    benefit.id_benefit
+                                                ].end_date
+                                            }
+                                        />
+                                    </label>
+                                </div>
+                                <div class="edit-field row-2">
+                                    <label>
+                                        Cupones máximos
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            bind:value={
+                                                benefitDrafts[
+                                                    benefit.id_benefit
+                                                ].max_coupons
+                                            }
+                                        />
+                                    </label>
+                                    <label>
+                                        Máx. por usuario
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            bind:value={
+                                                benefitDrafts[
+                                                    benefit.id_benefit
+                                                ].max_per_user
+                                            }
+                                        />
+                                    </label>
+                                </div>
+                                <div class="edit-field">
+                                    <label>Estado</label>
+                                    <select
+                                        bind:value={
+                                            benefitDrafts[benefit.id_benefit]
+                                                .status
+                                        }
+                                    >
+                                        <option value="ACTIVE">ACTIVE</option>
+                                        <option value="INACTIVE"
+                                            >INACTIVE</option
+                                        >
+                                        <option value="PENDING">PENDING</option>
+                                    </select>
+                                </div>
+                            {:else}
+                                <p class="desc">{benefit.description}</p>
+                                <p class="sub">
+                                    {benefit.type} · {benefit.coupons}/
+                                    {benefit.max_coupons} canjeados
+                                </p>
+                            {/if}
+
+                            {#if benefitErrors[benefit.id_benefit]}
+                                <p class="field-error" role="alert">
+                                    {benefitErrors[benefit.id_benefit]}
+                                </p>
+                            {/if}
+                            {#if benefitSuccess[benefit.id_benefit]}
+                                <p class="field-success" role="status">
+                                    {benefitSuccess[benefit.id_benefit]}
+                                </p>
+                            {/if}
+
+                            <div class="card-actions">
+                                {#if editingBenefitId === benefit.id_benefit}
+                                    <button
+                                        class="save-btn"
+                                        type="button"
+                                        onclick={() => saveBenefit(benefit)}
+                                        disabled={benefitBusy ===
+                                            benefit.id_benefit}>Guardar</button
+                                    >
+                                    <button
+                                        class="cancel-btn"
+                                        type="button"
+                                        onclick={cancelEditBenefit}
+                                        >Cancelar</button
+                                    >
+                                {:else}
+                                    <button
+                                        class="edit-btn"
+                                        type="button"
+                                        onclick={() =>
+                                            startEditBenefit(benefit)}
+                                    >
+                                        <Pencil size={13} />
+                                        Editar
+                                    </button>
+                                {/if}
+                                <button
+                                    class="danger-btn"
+                                    type="button"
+                                    onclick={() => deleteBenefit(benefit)}
+                                    disabled={benefitBusy ===
+                                        benefit.id_benefit}
+                                >
+                                    <Trash2 size={14} />
+                                    Eliminar
+                                </button>
+                            </div>
+                        </article>
+                    {:else}
+                        <p class="empty">No hay beneficios para mostrar.</p>
+                    {/each}
+                </div>
+            </section>
+        {:else if activeTab === "categorias"}
+            <section class="section">
+                <header class="section-head">
+                    <div>
+                        <h2>Categorías</h2>
+                        <p>Activá o desactivá las categorías de cupones.</p>
+                    </div>
+                </header>
+
+                {#if categories.length === 0}
+                    <p class="empty">No hay categorías para mostrar.</p>
+                {:else}
                     <div class="table-wrap">
                         <table class="data-table">
                             <thead>
                                 <tr>
-                                    <th>Fecha</th>
-                                    <th>Token</th>
-                                    <th>Socio</th>
-                                    <th>Beneficio</th>
+                                    <th>Categoría</th>
                                     <th>Estado</th>
                                     <th>Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {#each filteredVouchers as voucher (voucher.token)}
+                                {#each categories as category (category.id_category)}
                                     <tr>
-                                        <td>{formatDate(voucher.application_date)}</td>
-                                        <td class="mono token">{voucher.token}</td>
                                         <td>
-                                            {(() => {
-                                                const account = accountsById.get(voucher.id_user);
-                                                return account
-                                                    ? `${account.name} ${account.lastname}`
-                                                    : voucher.id_user;
-                                            })()}
+                                            <strong>{category.name}</strong>
                                         </td>
                                         <td>
-                                            {benefitsById.get(voucher.id_benefit)?.title ?? voucher.id_benefit}
-                                        </td>
-                                        <td>
-                                            <span
+                                            <button
                                                 class="status-btn"
-                                                class:on={voucher.status === "PENDING" || voucher.status === "DELIVERED"}
+                                                class:on={category.active}
+                                                type="button"
+                                                onclick={() =>
+                                                    toggleCategory(category)}
+                                                disabled={categoryBusy ===
+                                                    category.id_category}
                                             >
-                                                {voucher.status}
-                                            </span>
+                                                {category.active
+                                                    ? "ACTIVA"
+                                                    : "INACTIVA"}
+                                            </button>
                                         </td>
                                         <td>
-                                            <div class="row-actions">
-                                                <button
-                                                    class="ico-btn ok"
-                                                    type="button"
-                                                    title="Canjear"
-                                                    onclick={() =>
-                                                        voucherAction(voucher, "redeem")}
-                                                    disabled={voucher.status !== "PENDING" || voucherBusy === voucher.token}
-                                                >
-                                                    <CheckCircle2 size={15} />
-                                                </button>
-                                                <button
-                                                    class="ico-btn bad"
-                                                    type="button"
-                                                    title="Rechazar"
-                                                    onclick={() =>
-                                                        voucherAction(voucher, "reject")}
-                                                    disabled={voucher.status !== "PENDING" || voucherBusy === voucher.token}
-                                                >
+                                            <button
+                                                class="ico-btn"
+                                                class:ok={!category.active}
+                                                type="button"
+                                                title={category.active
+                                                    ? "Desactivar"
+                                                    : "Activar"}
+                                                onclick={() =>
+                                                    toggleCategory(category)}
+                                                disabled={categoryBusy ===
+                                                    category.id_category}
+                                            >
+                                                {#if category.active}
                                                     <XCircle size={15} />
-                                                </button>
-                                                <button
-                                                    class="ico-btn"
-                                                    type="button"
-                                                    title="Eliminar"
-                                                    onclick={() =>
-                                                        deleteVoucher(voucher)}
-                                                    disabled={voucherBusy === voucher.token}
-                                                >
-                                                    <Trash2 size={15} />
-                                                </button>
-                                            </div>
+                                                {:else}
+                                                    <CheckCircle2 size={15} />
+                                                {/if}
+                                            </button>
                                         </td>
                                     </tr>
-                                    {#if voucherErrors[voucher.token]}
+                                    {#if categoryErrors[category.id_category] || categorySuccess[category.id_category]}
                                         <tr class="msg-row">
-                                            <td colspan="6">
-                                                <p class="field-error" role="alert">
-                                                    {voucherErrors[voucher.token]}
-                                                </p>
+                                            <td colspan="3">
+                                                {#if categoryErrors[category.id_category]}
+                                                    <p
+                                                        class="field-error"
+                                                        role="alert"
+                                                    >
+                                                        {categoryErrors[
+                                                            category.id_category
+                                                        ]}
+                                                    </p>
+                                                {/if}
+                                                {#if categorySuccess[category.id_category]}
+                                                    <p
+                                                        class="field-success"
+                                                        role="status"
+                                                    >
+                                                        {categorySuccess[
+                                                            category.id_category
+                                                        ]}
+                                                    </p>
+                                                {/if}
                                             </td>
                                         </tr>
                                     {/if}
-                                {:else}
-                                    <tr>
-                                        <td colspan="6" class="empty-cell">
-                                            No hay vouchers para mostrar.
-                                        </td>
-                                    </tr>
                                 {/each}
                             </tbody>
                         </table>
                     </div>
-                </section>
-            {/if}
+                {/if}
+            </section>
+        {:else if activeTab === "vouchers"}
+            <section class="section">
+                <header class="section-head">
+                    <div>
+                        <h2>Vouchers</h2>
+                        <p>Consultá, canjeá, rechazá o creá vouchers.</p>
+                    </div>
+                    <div class="head-actions">
+                        <select bind:value={voucherStatus}>
+                            <option value="ALL">Todos los estados</option>
+                            <option value="PENDING">PENDING</option>
+                            <option value="DELIVERED">DELIVERED</option>
+                            <option value="EXPIRED">EXPIRED</option>
+                            <option value="REJECTED">REJECTED</option>
+                        </select>
+                        <button
+                            class="add-btn"
+                            type="button"
+                            onclick={() =>
+                                (openingCreatingVoucher =
+                                    !openingCreatingVoucher)}
+                        >
+                            <Plus size={16} />
+                            {openingCreatingVoucher
+                                ? "Cancelar"
+                                : "Nuevo voucher"}
+                        </button>
+                    </div>
+                </header>
+
+                {#if openingCreatingVoucher}
+                    <form
+                        class="create-form"
+                        onsubmit={(e) => {
+                            e.preventDefault();
+                            createVoucher();
+                        }}
+                    >
+                        <h3>Nuevo voucher</h3>
+                        <div class="form-grid">
+                            <label>
+                                Usuario
+                                <select bind:value={newVoucher.id_user}>
+                                    <option value="">Seleccionar…</option>
+                                    {#each accounts as account (account.id_user)}
+                                        <option value={account.id_user}>
+                                            {account.name}
+                                            {account.lastname}
+                                            {account.dni
+                                                ? `· ${account.dni}`
+                                                : ""}
+                                        </option>
+                                    {/each}
+                                </select>
+                            </label>
+                            <label>
+                                Beneficio
+                                <select bind:value={newVoucher.id_benefit}>
+                                    <option value="">Seleccionar…</option>
+                                    {#each benefits as benefit (benefit.id_benefit)}
+                                        <option value={benefit.id_benefit}>
+                                            {benefit.title} · {benefit.partner}
+                                        </option>
+                                    {/each}
+                                </select>
+                            </label>
+                        </div>
+                        {#if voucherCreateError}
+                            <p class="field-error" role="alert">
+                                {voucherCreateError}
+                            </p>
+                        {/if}
+                        <div class="form-actions">
+                            <button
+                                class="save-btn"
+                                type="submit"
+                                disabled={savingVoucher}
+                            >
+                                {savingVoucher ? "Guardando…" : "Crear voucher"}
+                            </button>
+                        </div>
+                    </form>
+                {/if}
+
+                <div class="search-box search-voucher">
+                    <input
+                        type="text"
+                        placeholder="Buscar por token, socio o beneficio…"
+                        bind:value={voucherSearch}
+                    />
+                </div>
+
+                <div class="lookup-box">
+                    <label for="voucherLookupInput">
+                        Consultar voucher por token
+                    </label>
+                    <div class="lookup-row">
+                        <input
+                            id="voucherLookupInput"
+                            type="text"
+                            placeholder="Ingresá el token…"
+                            bind:value={voucherFilter}
+                            onkeydown={(e) => {
+                                if (e.key === "Enter") {
+                                    e.preventDefault();
+                                    searchVoucher();
+                                }
+                            }}
+                        />
+                        <button
+                            class="search-btn"
+                            type="button"
+                            onclick={searchVoucher}
+                            disabled={voucherBusy === "_search"}
+                        >
+                            {voucherBusy === "_search" ? "Buscando…" : "Buscar"}
+                        </button>
+                    </div>
+                </div>
+
+                {#if voucherErrors._search}
+                    <p class="field-error" role="alert">
+                        {voucherErrors._search}
+                    </p>
+                {/if}
+
+                {#if searchedVoucher}
+                    <div class="voucher-lookup">
+                        <h3>Voucher {searchedVoucher.token}</h3>
+                        <p class="sub">{voucherLabel(searchedVoucher)}</p>
+                        <dl class="lookup-grid">
+                            <div>
+                                <dt>BENEFICIO</dt>
+                                <dd>{searchedVoucher.title}</dd>
+                            </div>
+                            <div>
+                                <dt>NEGOCIO</dt>
+                                <dd>{searchedVoucher.partner}</dd>
+                            </div>
+                            <div>
+                                <dt>SOCIO</dt>
+                                <dd>
+                                    {searchedVoucher.user_name}
+                                    {searchedVoucher.user_dni
+                                        ? `(${searchedVoucher.user_dni})`
+                                        : ""}
+                                </dd>
+                            </div>
+                            <div>
+                                <dt>VIGENTE HASTA</dt>
+                                <dd>{formatDate(searchedVoucher.endDate)}</dd>
+                            </div>
+                        </dl>
+                        <div class="state-bar">
+                            <span
+                                class="status-chip"
+                                class:resolved={searchedVoucher.status !==
+                                    "PENDING"}
+                            >
+                                {searchedVoucher.status}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="card-actions">
+                        <button
+                            class="success-btn"
+                            type="button"
+                            onclick={() => {
+                                if (searchedVoucher)
+                                    voucherAction(searchedVoucher, "redeem");
+                            }}
+                            disabled={!searchedVoucher ||
+                                searchedVoucher.status !== "PENDING" ||
+                                voucherBusy === searchedVoucher.token}
+                        >
+                            <CheckCircle2 size={14} />
+                            Canjear
+                        </button>
+                        <button
+                            class="danger-btn"
+                            type="button"
+                            onclick={() => {
+                                if (searchedVoucher)
+                                    voucherAction(searchedVoucher, "reject");
+                            }}
+                            disabled={!searchedVoucher ||
+                                searchedVoucher.status !== "PENDING" ||
+                                voucherBusy === searchedVoucher.token}
+                        >
+                            <XCircle size={14} />
+                            Rechazar
+                        </button>
+                    </div>
+                {/if}
+
+                <div class="table-wrap">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Token</th>
+                                <th>Socio</th>
+                                <th>Beneficio</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {#each filteredVouchers as voucher (voucher.token)}
+                                <tr>
+                                    <td
+                                        >{formatDate(
+                                            voucher.application_date,
+                                        )}</td
+                                    >
+                                    <td class="mono token">{voucher.token}</td>
+                                    <td>
+                                        {(() => {
+                                            const account = accountsById.get(
+                                                voucher.id_user,
+                                            );
+                                            return account
+                                                ? `${account.name} ${account.lastname}`
+                                                : voucher.id_user;
+                                        })()}
+                                    </td>
+                                    <td>
+                                        {benefitsById.get(voucher.id_benefit)
+                                            ?.title ?? voucher.id_benefit}
+                                    </td>
+                                    <td>
+                                        <span
+                                            class="status-btn"
+                                            class:on={voucher.status ===
+                                                "PENDING" ||
+                                                voucher.status === "DELIVERED"}
+                                        >
+                                            {voucher.status}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="row-actions">
+                                            <button
+                                                class="ico-btn ok"
+                                                type="button"
+                                                title="Canjear"
+                                                onclick={() =>
+                                                    voucherAction(
+                                                        voucher,
+                                                        "redeem",
+                                                    )}
+                                                disabled={voucher.status !==
+                                                    "PENDING" ||
+                                                    voucherBusy ===
+                                                        voucher.token}
+                                            >
+                                                <CheckCircle2 size={15} />
+                                            </button>
+                                            <button
+                                                class="ico-btn bad"
+                                                type="button"
+                                                title="Rechazar"
+                                                onclick={() =>
+                                                    voucherAction(
+                                                        voucher,
+                                                        "reject",
+                                                    )}
+                                                disabled={voucher.status !==
+                                                    "PENDING" ||
+                                                    voucherBusy ===
+                                                        voucher.token}
+                                            >
+                                                <XCircle size={15} />
+                                            </button>
+                                            <button
+                                                class="ico-btn"
+                                                type="button"
+                                                title="Eliminar"
+                                                onclick={() =>
+                                                    deleteVoucher(voucher)}
+                                                disabled={voucherBusy ===
+                                                    voucher.token}
+                                            >
+                                                <Trash2 size={15} />
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {#if voucherErrors[voucher.token]}
+                                    <tr class="msg-row">
+                                        <td colspan="6">
+                                            <p class="field-error" role="alert">
+                                                {voucherErrors[voucher.token]}
+                                            </p>
+                                        </td>
+                                    </tr>
+                                {/if}
+                            {:else}
+                                <tr>
+                                    <td colspan="6" class="empty-cell">
+                                        No hay vouchers para mostrar.
+                                    </td>
+                                </tr>
+                            {/each}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
         {/if}
     </div>
 </section>
@@ -2806,3 +3016,4 @@
         }
     }
 </style>
+

@@ -1,17 +1,27 @@
 <script>
+    import { goto } from "$app/navigation";
     import { Search } from "lucide-svelte";
 
     const banner =
         "https://www.fotorevista.com.ar/SFotos/16/10/22/161022142707g.jpg";
+    let search_text = $state("");
+
+    function to_search() {
+        if (!search_text) return;
+        goto("/benefits?search");
+    }
 </script>
 
 <section class="hero">
     <img loading="lazy" src={banner} alt="banner" />
 
     <div class="search-box">
-        <input placeholder="Busca por palabra clave o marca" />
+        <input
+            placeholder="Busca por palabra clave o marca"
+            bind:value={search_text}
+        />
 
-        <button>
+        <button onclick={to_search}>
             <Search size={20} />
         </button>
     </div>

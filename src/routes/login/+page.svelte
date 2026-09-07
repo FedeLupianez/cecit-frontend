@@ -219,13 +219,6 @@
         background: var(--primary-blue-light);
         border: 1px solid var(--primary-blue-light);
     }
-    .error {
-        color: #d32f2f;
-        font-size: 0.9rem;
-        margin: 0;
-        min-height: 1.2rem;
-        visibility: hidden;
-    }
 
     .error-box {
         color: #b71c1c;
@@ -260,9 +253,5 @@
     .loginerror {
         color: #d32f2f;
         border: 1px solid #d32f2f;
-    }
-
-    .error.visible {
-        visibility: visible;
     }
 </style>
