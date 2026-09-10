@@ -54,16 +54,22 @@
     async function loadOptions() {
         const token = accessToken.getToken();
 
-        const [typesResponse, categoriesResponse, paymentsResponse, partnersResponse] =
-            await Promise.all([
-                fetch("/api/benefit-types/all"),
-                fetch("/api/categories/actives"),
-                fetch("/api/payment-methods/all"),
-                fetch("/api/partners/all", {
-                    credentials: "include",
-                    ...(token ? { headers: { Authorization: `Bearer ${token}` } } : {}),
-                }),
-            ]);
+        const [
+            typesResponse,
+            categoriesResponse,
+            paymentsResponse,
+            partnersResponse,
+        ] = await Promise.all([
+            fetch("/api/benefit-types/all"),
+            fetch("/api/categories/actives"),
+            fetch("/api/payment-methods/all"),
+            fetch("/api/partners/all", {
+                credentials: "include",
+                ...(token
+                    ? { headers: { Authorization: `Bearer ${token}` } }
+                    : {}),
+            }),
+        ]);
 
         if (typesResponse.ok) types = await typesResponse.json();
 
@@ -116,6 +122,8 @@
                 image: imagePreview,
                 title: title.trim(),
                 description: description.trim() || title.trim(),
+
+                payment_methods: paymentMethods,
 
                 coupons: 0,
                 max_coupons: Number(maxCoupons) || 100,
@@ -189,8 +197,7 @@
                     aria-label="Negocio"
                     ><option value="">Seleccionar</option
                     >{#each partners as partner (partner.id_partner)}<option
-                            value={partner.id_partner}
-                            >{partner.name}</option
+                            value={partner.id_partner}>{partner.name}</option
                         >{/each}</select
                 ></label
             >

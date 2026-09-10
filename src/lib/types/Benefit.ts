@@ -10,6 +10,7 @@ export interface BenefitsCreateDTO {
     coupons: number;
     max_coupons: number;
     max_per_user: number;
+    payment_methods: string[];
 }
 
 export interface Benefit {
