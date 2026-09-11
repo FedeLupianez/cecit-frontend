@@ -36,7 +36,7 @@
 
     onMount(() => load_benefits());
 
-    import { ChevronLeft, ChevronRight } from "lucide-svelte";
+    import { ChevronLeft, ChevronRight, TicketX } from "lucide-svelte";
 
     /*
   ==========================================
@@ -160,22 +160,36 @@
         </div>
     </div>
 
-    <div class="filters">
-        {#each filters as filter}
-            <button
-                class:active={activeFilter === filter}
-                onclick={() => selectFilter(filter)}
-            >
-                {filter}
-            </button>
-        {/each}
+    <div class="filters" aria-busy={filters.length === 0}>
+        {#if filters.length === 0}
+            {#each Array(6) as _, i (i)}
+                <div class="filter-skeleton" aria-hidden="true"></div>
+            {/each}
+        {:else}
+            {#each filters as filter}
+                <button
+                    class:active={activeFilter === filter}
+                    onclick={() => selectFilter(filter)}
+                >
+                    {filter}
+                </button>
+            {/each}
+        {/if}
     </div>
 
-    <div class="carousel-wrapper">
+    <div class="carousel-wrapper" aria-busy={loading}>
         {#if loading}
-            <div class="loading-container">
+            <div class="loading-container" role="status" aria-label="Cargando beneficios">
                 <div class="spinner"></div>
                 <p>Cargando Beneficios</p>
+            </div>
+        {:else if filteredBenefits.length === 0}
+            <div class="empty-state" role="status">
+                <TicketX size={48} strokeWidth={1.5} />
+                <p class="empty-title">No hay beneficios para mostrar</p>
+                <p class="empty-subtitle">
+                    Por el momento no hay beneficios en esta sección
+                </p>
             </div>
         {:else}
             <button
@@ -311,9 +325,11 @@
 
     .filters {
         margin-top: 11px;
+        min-height: 32px;
 
         display: flex;
         gap: 9px;
+        align-items: center;
 
         overflow-x: auto;
         overflow-y: hidden;
@@ -321,6 +337,25 @@
 
         scrollbar-width: none;
         -webkit-overflow-scrolling: touch;
+    }
+
+    .filter-skeleton {
+        flex: 0 0 auto;
+        min-width: 111px;
+        height: 32px;
+        border-radius: 999px;
+        background: #e1e3e8;
+        animation: skeleton-pulse 1.4s ease-in-out infinite;
+    }
+
+    @keyframes skeleton-pulse {
+        0%,
+        100% {
+            opacity: 1;
+        }
+        50% {
+            opacity: 0.45;
+        }
     }
 
     .filters::-webkit-scrollbar {
@@ -389,6 +424,7 @@ CARRUSEL
         position: relative;
 
         width: calc(100% + 120px);
+        min-height: 20rem;
     }
 
     .carousel {
@@ -428,11 +464,44 @@ CARRUSEL
         display: flex;
         flex-direction: column;
         align-items: center;
+        justify-content: center;
         gap: 16px;
+        min-height: 20rem;
         padding: 60px 0;
         color: #151535;
         font-size: 16px;
         font-weight: 600;
+    }
+
+    .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        min-height: 20rem;
+        margin: 0 60px;
+        padding: 40px 16px;
+        text-align: center;
+        color: #b8bcc4;
+    }
+
+    .empty-state :global(svg) {
+        color: #c9ccd3;
+    }
+
+    .empty-state .empty-title {
+        margin: 8px 0 0;
+        font-size: 17px;
+        font-weight: 700;
+        color: #b8bcc4;
+    }
+
+    .empty-state .empty-subtitle {
+        margin: 0;
+        font-size: 14px;
+        font-weight: 500;
+        color: #c9ccd3;
     }
 
     .spinner {
@@ -515,6 +584,16 @@ CARRUSEL
         .carousel-wrapper {
             margin-left: 0;
             width: 100%;
+            min-height: 20rem;
+        }
+
+        .loading-container,
+        .empty-state {
+            min-height: 20rem;
+        }
+
+        .empty-state {
+            margin: 0;
         }
 
         h2 {
@@ -544,6 +623,11 @@ CARRUSEL
             padding: 0 18px;
 
             font-size: 15px;
+        }
+
+        .filter-skeleton {
+            min-width: 92px;
+            height: 34px;
         }
 
         .carousel {

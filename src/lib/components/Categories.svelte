@@ -1,9 +1,13 @@
 <script>
     import "./Categories.css";
 
+    import { onMount } from "svelte";
     import { ChevronRight, ChevronLeft } from "lucide-svelte";
     import * as iconMap from "lucide-svelte";
-    import { getCategories } from "$lib/stores/categories.svelte";
+    import {
+        getCategories,
+        loadCategories,
+    } from "$lib/stores/categories.svelte";
 
     /** @param {string} name */
     function getIcon(name) {
@@ -13,6 +17,13 @@
     }
 
     let categories = $derived(getCategories());
+    let isLoading = $derived(categories.length === 0);
+
+    const SKELETON_COUNT = 10;
+
+    onMount(() => {
+        loadCategories();
+    });
 
     /** @type {HTMLElement | undefined} */
     let carousel;
@@ -57,22 +68,34 @@
         </button>
 
         <div class="category-carousel" bind:this={carousel}>
-            <div class="category-track">
-                {#each categories as category}
-                    {@const Icon = getIcon(category.icon)}
-                    <a
-                        class="category-wrapper"
-                        href={`/benefits?category=${category.name}`}
-                    >
-                        <button class="category-btn">
-                            <Icon size={28} />
-                        </button>
+            <div class="category-track" aria-busy={isLoading}>
+                {#if isLoading}
+                    {#each Array(SKELETON_COUNT) as _, i (i)}
+                        <div
+                            class="category-wrapper skeleton"
+                            aria-hidden="true"
+                        >
+                            <div class="skeleton-circle"></div>
+                            <div class="skeleton-pill"></div>
+                        </div>
+                    {/each}
+                {:else}
+                    {#each categories as category}
+                        {@const Icon = getIcon(category.icon)}
+                        <a
+                            class="category-wrapper"
+                            href={`/benefits?category=${category.name}`}
+                        >
+                            <button class="category-btn">
+                                <Icon size={28} />
+                            </button>
 
-                        <span class="category-name">
-                            {category.name}
-                        </span>
-                    </a>
-                {/each}
+                            <span class="category-name">
+                                {category.name}
+                            </span>
+                        </a>
+                    {/each}
+                {/if}
             </div>
         </div>
 
