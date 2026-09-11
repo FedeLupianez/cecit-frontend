@@ -28,35 +28,43 @@ export const load: LayoutServerLoad = async ({ fetch, cookies, url }) => {
 
         if (!refreshRes.ok) throw redirect(302, "/login");
 
+        // El backend rota el refresh token en cada refresh: hay que propagar
+        // la cookie nueva. Se busca por nombre en el array (unir con join es
+        // frágil porque Expires contiene comas).
         const setCookieValues = refreshRes.headers.getSetCookie?.() ?? [];
-        const setCookieHeader = setCookieValues.length > 0
-            ? setCookieValues.join(', ')
-            : refreshRes.headers.get("set-cookie");
-        if (setCookieHeader) {
-            const match = setCookieHeader.match(/refresh_token_cecit=([^;]+)/);
+        let newRefresh: string | null = null;
+        let newMaxAge: number | undefined;
+        for (const entry of setCookieValues) {
+            const match = entry.match(/^refresh_token_cecit=([^;]+)/);
+            if (!match) continue;
+            newRefresh = match[1];
+            const maxAge = entry.match(/Max-Age=(\d+)/i);
+            if (maxAge) newMaxAge = parseInt(maxAge[1]);
+            break;
+        }
+        if (!newRefresh) {
+            const single = refreshRes.headers.get("set-cookie");
+            const match = single?.match(/refresh_token_cecit=([^;]+)/);
             if (match) {
-                const maxAge = setCookieHeader.match(/Max-Age=(\d+)/);
-                cookies.set("refresh_token_cecit", match[1], {
-                    path: "/",
-                    httpOnly: true,
-                    secure: !dev,
-                    sameSite: "lax",
-                    ...(maxAge ? { maxAge: parseInt(maxAge[1]) } : {}),
-                });
+                newRefresh = match[1];
+                const maxAge = single?.match(/Max-Age=(\d+)/i);
+                if (maxAge) newMaxAge = parseInt(maxAge[1]);
             }
         }
+        if (newRefresh) {
+            cookies.set("refresh_token_cecit", newRefresh, {
+                path: "/",
+                httpOnly: true,
+                secure: !dev,
+                sameSite: "lax",
+                ...(newMaxAge ? { maxAge: newMaxAge } : {}),
+            });
+        }
 
-        const { access_token } = await refreshRes.json();
+        const { access_token, profile } = await refreshRes.json();
 
-        const profileRes = await fetch("/api/auth/profile", {
-            method: "GET",
-            headers: { Authorization: `Bearer ${access_token}` },
-        });
-
-        if (!profileRes.ok) throw redirect(302, "/login");
-
-        const profile = await profileRes.json();
-
+        // El backend ya devuelve el perfil en el refresh: una sola llamada
+        // por navegación en vez de refresh + profile.
         return { accessToken: access_token, profile };
     } catch (e) {
         if (e && typeof e === "object" && "status" in e && "location" in e) {

@@ -1,7 +1,7 @@
 <script lang="ts">
     import { Download } from "lucide-svelte";
     import favicon from "$lib/assets/favicon.svg";
-    import { accessToken } from "$lib/stores/authStore";
+    import { apiFetch } from "$lib/api";
 
     let {
         title,
@@ -46,16 +46,9 @@
         if (isLoading) return;
         isLoading = true;
         try {
-            const tmpAccessToken = accessToken.getToken();
-            const res = await fetch(
+            const res = await apiFetch(
                 `/api/vouchers/file?token=${encodeURIComponent(voucherToken)}`,
-                {
-                    method: "GET",
-                    credentials: "include",
-                    headers: {
-                        Authorization: `Bearer ${tmpAccessToken}`,
-                    },
-                },
+                { method: "GET" },
             );
             if (!res.ok) {
                 error = "Error al descargar el voucher";

@@ -5,6 +5,7 @@
     import { page } from "$app/state";
 
     import { accessToken } from "$lib/stores/authStore";
+    import { apiFetch } from "$lib/api";
     import type { BenefitsCreateDTO } from "$lib/types/Benefit";
 
     let title = $state("");
@@ -50,18 +51,11 @@
     }
 
     async function loadOptions() {
-        const token = accessToken.getToken();
-
         const [typesResponse, paymentsResponse, partnersResponse] =
             await Promise.all([
                 fetch("/api/benefit-types/all"),
                 fetch("/api/payment-methods/all"),
-                fetch("/api/partners/all", {
-                    credentials: "include",
-                    ...(token
-                        ? { headers: { Authorization: `Bearer ${token}` } }
-                        : {}),
-                }),
+                apiFetch("/api/partners/all"),
             ]);
 
         if (typesResponse.ok) types = await typesResponse.json();
@@ -118,15 +112,11 @@
                 max_per_user: Math.max(Number(maxPerUser) || 1, 1),
             };
 
-            const response = await fetch("/api/benefits", {
+            const response = await apiFetch("/api/benefits", {
                 method: "POST",
-                credentials: "include",
-
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
                 },
-
                 body: JSON.stringify(payload),
             });
 

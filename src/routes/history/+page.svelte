@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { accessToken } from "$lib/stores/authStore";
+    import { apiFetch } from "$lib/api";
     import { profileStore } from "$lib/stores/profileStore";
     import Voucher from "./Voucher.svelte";
 
@@ -21,15 +21,9 @@
     async function loadVouchers(idUser: string) {
         loading = true;
         try {
-            const response = await fetch(
+            const response = await apiFetch(
                 `/api/vouchers/byuser?id_user=${encodeURIComponent(idUser)}`,
-                {
-                    method: "GET",
-                    credentials: "include",
-                    headers: {
-                        Authorization: `Bearer ${accessToken.getToken()}`,
-                    },
-                },
+                { method: "GET" },
             );
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
             vouchers = await response.json();

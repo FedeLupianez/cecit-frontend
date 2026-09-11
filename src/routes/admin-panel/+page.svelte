@@ -3,6 +3,9 @@
     import { fly, slide } from "svelte/transition";
     import { page } from "$app/state";
     import { accessToken } from "$lib/stores/authStore";
+    // Alias: todos los fetch de este panel pasan por el wrapper con
+    // Authorization automática y reintento tras refresh ante 401.
+    import { apiFetch as fetch } from "$lib/api";
     import {
         Pencil,
         Plus,

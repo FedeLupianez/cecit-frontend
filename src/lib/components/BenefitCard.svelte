@@ -4,6 +4,7 @@
     import favicon from "$lib/assets/favicon.svg";
     import { profileStore } from "$lib/stores/profileStore";
     import { accessToken } from "$lib/stores/authStore";
+    import { apiFetch } from "$lib/api";
 
     let {
         benefit_id,
@@ -68,13 +69,10 @@
         isLoading = true;
         try {
             const profile = profileStore.getProfile();
-            const tmpAccessToken = accessToken.getToken();
-            const result = await fetch("/api/vouchers/create", {
+            const result = await apiFetch("/api/vouchers/create", {
                 method: "POST",
-                credentials: "include",
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization: `Bearer ${tmpAccessToken}`,
                 },
                 body: JSON.stringify({
                     id_user: profile?.user_id,
@@ -107,13 +105,8 @@
     }
 
     async function getFile() {
-        const tmpAccessToken = accessToken.getToken();
-        const res = await fetch(`/api/vouchers/file?token=${voucherToken}`, {
+        const res = await apiFetch(`/api/vouchers/file?token=${voucherToken}`, {
             method: "GET",
-            credentials: "include",
-            headers: {
-                Authorization: `Bearer ${tmpAccessToken}`,
-            },
         });
         if (!res.ok) {
             error = "error getting file";
@@ -141,12 +134,8 @@
                 id_account: tmpProfile.user_id,
                 id_benefit: benefit_id,
             });
-            const res = await fetch(`/api/vouchers/userbenefit?${params}`, {
+            const res = await apiFetch(`/api/vouchers/userbenefit?${params}`, {
                 method: "GET",
-                credentials: "include",
-                headers: {
-                    Authorization: `Bearer ${tmpAccessToken}`,
-                },
             });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const data = await res.json();

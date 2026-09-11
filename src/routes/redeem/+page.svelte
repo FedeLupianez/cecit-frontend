@@ -1,5 +1,6 @@
 <script lang="ts">
     import { accessToken } from "$lib/stores/authStore";
+    import { apiFetch } from "$lib/api";
 
     interface VoucherInfo {
         token: string;
@@ -75,12 +76,8 @@
         error = "";
         message = "";
         try {
-            const response = await fetch(
+            const response = await apiFetch(
                 `/api/vouchers/bytoken?token=${encodeURIComponent(token)}`,
-                {
-                    headers: { Authorization: `Bearer ${authToken}` },
-                    credentials: "include",
-                },
             );
             if (response.status === 401 || response.status === 403) {
                 error = "No tenés permiso para canjear beneficios.";
@@ -123,13 +120,9 @@
         error = "";
         message = "";
         try {
-            const response = await fetch(
+            const response = await apiFetch(
                 `/api/vouchers?action=${action}&token=${encodeURIComponent(voucher.token)}`,
-                {
-                    method: "PATCH",
-                    headers: { Authorization: `Bearer ${authToken}` },
-                    credentials: "include",
-                },
+                { method: "PATCH" },
             );
             if (!response.ok) {
                 error = await parseErrorMessage(response);

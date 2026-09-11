@@ -2,6 +2,7 @@
     import { onMount } from "svelte";
     import { slide } from "svelte/transition";
     import { accessToken } from "$lib/stores/authStore";
+    import { apiFetch } from "$lib/api";
     import { Pencil, Plus, Trash2 } from "lucide-svelte";
 
     interface Partner {
@@ -63,8 +64,9 @@
         benefits.filter((benefit) => benefit.status === "ACTIVE").length,
     );
 
-    function authHeaders() {
-        return { Authorization: `Bearer ${accessToken.getToken()}` };
+    function authHeaders(): Record<string, string> {
+        // apiFetch inyecta el Authorization automáticamente.
+        return {};
     }
 
     async function parseError(response: Response) {
@@ -90,7 +92,7 @@
         }
 
         try {
-            const partnerResponse = await fetch("/api/partners-admins/me", {
+            const partnerResponse = await apiFetch("/api/partners-admins/me", {
                 headers: authHeaders(),
                 credentials: "include",
             });
@@ -105,7 +107,7 @@
                 throw new Error("No se pudo obtener el negocio.");
             partner = await partnerResponse.json();
 
-            const benefitsResponse = await fetch(
+            const benefitsResponse = await apiFetch(
                 `/api/benefits/partner?id_partner=${encodeURIComponent(partner?.id_partner || "")}`,
                 {
                     headers: authHeaders(),
@@ -147,7 +149,7 @@
         const token = accessToken.getToken();
         if (!token) return;
         try {
-            const response = await fetch(
+            const response = await apiFetch(
                 `/api/partners/locations?id_partner=${encodeURIComponent(partner.id_partner)}`,
                 { headers: authHeaders(), credentials: "include" },
             );
@@ -194,7 +196,7 @@
         savingName = true;
         nameError = "";
         try {
-            const response = await fetch("/api/partners/name", {
+            const response = await apiFetch("/api/partners/name", {
                 method: "PATCH",
                 headers: {
                     ...authHeaders(),
@@ -254,7 +256,7 @@
         savingLogo = true;
         logoError = "";
         try {
-            const response = await fetch("/api/partners/logo", {
+            const response = await apiFetch("/api/partners/logo", {
                 method: "PATCH",
                 headers: {
                     ...authHeaders(),
@@ -297,7 +299,7 @@
         addingLocation = true;
         addingLocationError = "";
         try {
-            const response = await fetch("/api/partners/locations", {
+            const response = await apiFetch("/api/partners/locations", {
                 method: "POST",
                 headers: {
                     ...authHeaders(),
@@ -335,7 +337,7 @@
         removingLocationId = id;
         locationsError = "";
         try {
-            const response = await fetch(
+            const response = await apiFetch(
                 `/api/partners/locations?id_location=${encodeURIComponent(id)}`,
                 {
                     method: "DELETE",

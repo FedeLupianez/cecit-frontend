@@ -2,6 +2,7 @@
     import { page } from "$app/state";
     import { slide } from "svelte/transition";
     import { accessToken } from "$lib/stores/authStore";
+    import { apiFetch } from "$lib/api";
     import { profileStore } from "$lib/stores/profileStore";
     import RoleCard from "$lib/components/RoleCard.svelte";
     import { getRoleAccess } from "$lib/access/roleAccess";
@@ -43,7 +44,7 @@
     let passwordSuccess = $state("");
 
     function authHeaders() {
-        return { Authorization: `Bearer ${accessToken.getToken()}` };
+        return { "Content-Type": "application/json" };
     }
 
     async function parseError(response: Response) {
@@ -93,13 +94,11 @@
         emailError = "";
         emailSuccess = "";
         try {
-            const response = await fetch("/api/auth/update", {
+            const response = await apiFetch("/api/auth/update", {
                 method: "PATCH",
                 headers: {
                     ...authHeaders(),
-                    "Content-Type": "application/json",
                 },
-                credentials: "include",
                 body: JSON.stringify({
                     process: "EMAIL",
                     email: profile.email,
@@ -173,13 +172,11 @@
         passwordError = "";
         passwordSuccess = "";
         try {
-            const response = await fetch("/api/auth/update", {
+            const response = await apiFetch("/api/auth/update", {
                 method: "PATCH",
                 headers: {
                     ...authHeaders(),
-                    "Content-Type": "application/json",
                 },
-                credentials: "include",
                 body: JSON.stringify({
                     process: "PASSWD",
                     current_password: currentPassword,
