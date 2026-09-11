@@ -35,6 +35,8 @@
 
     let sending = $state(false);
 
+    let cancelling = $state(false);
+
     let types = $state<{ id_type: number; name: string }[]>([]);
 
     let payments = $state<string[]>([]);
@@ -142,6 +144,16 @@
     }
 
     onMount(loadOptions);
+
+    async function cancelCreate() {
+        if (sending || cancelling) return;
+        cancelling = true;
+        try {
+            await goto("/business-panel");
+        } finally {
+            cancelling = false;
+        }
+    }
 </script>
 
 <svelte:head><title>Crear beneficio | CeCIT</title></svelte:head>
@@ -346,9 +358,17 @@
                 <button
                     class="ghost-button"
                     type="button"
-                    onclick={() => goto("/business-panel")}>Cancelar</button
+                    onclick={cancelCreate}
+                    disabled={sending || cancelling}
+                    aria-busy={cancelling || undefined}
                 >
-                <button class="create-button" type="submit" disabled={sending}
+                    {cancelling ? "Volviendo…" : "Cancelar"}
+                </button>
+                <button
+                    class="create-button"
+                    type="submit"
+                    disabled={sending || cancelling}
+                    aria-busy={sending || undefined}
                     >{sending ? "Creando..." : "Crear beneficio"}</button
                 >
             </div>
@@ -753,7 +773,12 @@
 
     .create-button:disabled {
         opacity: 0.65;
-        cursor: wait;
+        cursor: progress;
+    }
+
+    .ghost-button:disabled {
+        opacity: 0.65;
+        cursor: progress;
     }
 
     @media (max-width: 900px) {

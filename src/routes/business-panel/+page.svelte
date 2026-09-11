@@ -1,5 +1,6 @@
 <script lang="ts">
     import { onMount } from "svelte";
+    import { slide } from "svelte/transition";
     import { accessToken } from "$lib/stores/authStore";
     import { Pencil, Plus, Trash2 } from "lucide-svelte";
 
@@ -406,7 +407,10 @@
                     />
 
                     {#if editingLogo}
-                        <div class="edit-field">
+                        <div
+                            class="edit-field expand-panel"
+                            transition:slide={{ duration: 200 }}
+                        >
                             <input
                                 type="text"
                                 placeholder="URL de la imagen"
@@ -464,7 +468,10 @@
                     </div>
 
                     {#if editingName}
-                        <div class="edit-field">
+                        <div
+                            class="edit-field expand-panel"
+                            transition:slide={{ duration: 200 }}
+                        >
                             <input
                                 type="text"
                                 placeholder="Nombre del negocio"
@@ -691,11 +698,75 @@
     summary {
         cursor: pointer;
         font-size: 17px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        list-style: none;
+        transition: color 0.15s ease;
+    }
+    summary::-webkit-details-marker {
+        display: none;
+    }
+    summary::before {
+        content: "›";
+        display: inline-block;
+        font-size: 20px;
+        line-height: 1;
+        color: #19194f;
+        transition: transform 0.2s ease;
+    }
+    details[open] > summary::before {
+        transform: rotate(90deg);
+    }
+    summary:hover {
+        color: #19194f;
     }
     details p {
         margin: 8px 0 0;
         color: #555;
         font-size: 14px;
+    }
+    /* Animación de despliegue del panel de información */
+    details[open] > :not(summary) {
+        animation: info-expand 0.22s ease;
+        transform-origin: top center;
+    }
+
+    @keyframes info-expand {
+        from {
+            opacity: 0;
+            transform: translateY(-6px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .edit-field.expand-panel {
+        animation: expand-in 0.2s ease;
+        transform-origin: top center;
+    }
+
+    @keyframes expand-in {
+        from {
+            opacity: 0;
+            transform: translateY(-6px) scaleY(0.98);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0) scaleY(1);
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        details[open] > :not(summary),
+        .edit-field.expand-panel {
+            animation: none;
+        }
+        summary::before {
+            transition: none;
+        }
     }
 
     .location h3 {

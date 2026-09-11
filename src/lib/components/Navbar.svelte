@@ -17,15 +17,22 @@
     let showRoleMenu = $state(false);
     let userMenu: HTMLDivElement | null = $state(null);
     let access = $derived(getRoleAccess(profile?.role));
+    let loggingOut = $state(false);
 
     async function logout() {
+        if (loggingOut) return;
+        loggingOut = true;
         try {
             await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
         } finally {
             accessToken.clear();
             profileStore.clear();
             showRoleMenu = false;
-            await goto("/login");
+            try {
+                await goto("/login");
+            } finally {
+                loggingOut = false;
+            }
         }
     }
 
@@ -92,11 +99,19 @@
         {#if showRoleMenu}
             <div class="role-menu">
                 {#if access}
-                    <RoleCard {access} compact onLogout={logout} />
+                    <RoleCard
+                        {access}
+                        compact
+                        onLogout={logout}
+                        logoutPending={loggingOut}
+                    />
                 {:else}
                     <p class="role-loading">Cargando perfil...</p>
                 {/if}
             </div>
+        {/if}
+        {#if loggingOut}
+            <span class="sr-only" role="status">Cerrando sesión…</span>
         {/if}
         </div>
     </div>
@@ -181,6 +196,18 @@
 
     .profile-icon {
         border-radius: 100%;
+    }
+
+    .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
     }
 
     @media (max-width: 768px) {

@@ -1,16 +1,26 @@
 <script lang="ts">
     import type { RoleAccess } from "$lib/access/roleAccess";
+    import { navigating, page } from "$app/stores";
     import { LogOut } from "lucide-svelte";
 
     let {
         access,
         compact = false,
         onLogout,
+        logoutPending = false,
     }: {
         access: RoleAccess;
         compact?: boolean;
         onLogout?: () => void;
+        logoutPending?: boolean;
     } = $props();
+
+    // Qué link del panel se está cargando (para cursor + spinner)
+    let pendingHref = $state<string | null>(null);
+
+    $effect(() => {
+        if ($navigating === null) pendingHref = null;
+    });
 </script>
 
 <article
@@ -24,13 +34,44 @@
 
     <nav aria-label={`Opciones de ${access.label}`}>
         {#each access.actions as action}
-            <a class="option-btn" href={action.href}>{action.label}</a>
+            {@const isActive =
+                $page.url.pathname === action.href.split("#")[0] &&
+                (action.href.includes("#")
+                    ? $page.url.hash === action.href.slice(action.href.indexOf("#"))
+                    : true)}
+            {@const isPending = pendingHref === action.href}
+            <a
+                class="option-btn"
+                class:is-pending={isPending}
+                class:active-link={isActive}
+                href={action.href}
+                data-sveltekit-preload-data="hover"
+                aria-current={isActive ? "page" : undefined}
+                aria-disabled={pendingHref !== null || undefined}
+                onclick={() => (pendingHref = action.href)}
+            >
+                <span>{action.label}</span>
+                {#if isPending}
+                    <span class="mini-spinner" aria-hidden="true"></span>
+                {/if}
+            </a>
         {/each}
         {#if onLogout}
             <div class="logout">
-                <button type="button" onclick={onLogout}
-                    >Cerrar sesión
-                    <LogOut size={18} />
+                <button
+                    type="button"
+                    onclick={onLogout}
+                    disabled={logoutPending}
+                    class:is-pending={logoutPending}
+                    aria-busy={logoutPending || undefined}
+                >
+                    {#if logoutPending}
+                        <span class="mini-spinner" aria-hidden="true"></span>
+                        Saliendo…
+                    {:else}
+                        Cerrar sesión
+                        <LogOut size={18} />
+                    {/if}
                 </button>
             </div>
         {/if}
@@ -208,6 +249,10 @@
         color: #050505;
         font-weight: 600;
         line-height: 1.25;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
         transition:
             background-color 0.15s ease,
             color 0.15s ease;
@@ -217,6 +262,14 @@
         background-color: #eef0f4;
         color: #19194f;
         text-decoration: none;
+    }
+    .compact .option-btn.active-link {
+        background-color: #e8eaf6;
+        color: #19194f;
+    }
+    .compact .option-btn.is-pending {
+        background-color: #eef0f4;
+        color: #19194f;
     }
     .compact .logout {
         margin-top: 6px;

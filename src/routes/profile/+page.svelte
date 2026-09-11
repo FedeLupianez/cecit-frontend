@@ -1,5 +1,6 @@
 <script lang="ts">
     import { page } from "$app/state";
+    import { slide } from "svelte/transition";
     import { accessToken } from "$lib/stores/authStore";
     import { profileStore } from "$lib/stores/profileStore";
     import RoleCard from "$lib/components/RoleCard.svelte";
@@ -262,7 +263,10 @@
                             Correo electrónico</span
                         >
                         {#if editingEmail}
-                            <div class="edit-field">
+                            <div
+                                class="edit-field expand-panel"
+                                transition:slide={{ duration: 220 }}
+                            >
                                 <input
                                     type="email"
                                     placeholder="Nuevo correo electrónico"
@@ -331,7 +335,10 @@
                             Contraseña</span
                         >
                         {#if changingPassword}
-                            <div class="edit-field">
+                            <div
+                                class="edit-field expand-panel"
+                                transition:slide={{ duration: 220 }}
+                            >
                                 <input
                                     type="password"
                                     placeholder="Contraseña actual"
@@ -635,6 +642,28 @@
         flex-direction: column;
         gap: 10px;
         padding: 6px 0 2px;
+        transform-origin: top center;
+    }
+    .expand-panel {
+        animation: expand-in 0.2s ease;
+        transform-origin: top center;
+    }
+
+    @keyframes expand-in {
+        from {
+            opacity: 0;
+            transform: translateY(-6px) scaleY(0.98);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0) scaleY(1);
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .expand-panel {
+            animation: none;
+        }
     }
     .edit-field input {
         width: 100%;

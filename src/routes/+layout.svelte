@@ -4,9 +4,14 @@
 
     import Navbar from "$lib/components/Navbar.svelte";
     import Footer from "$lib/components/Footer.svelte";
+    import NavigationProgress from "$lib/components/NavigationProgress.svelte";
     import { profileStore } from "$lib/stores/profileStore";
+    import { navigating, page } from "$app/stores";
+    import { fade } from "svelte/transition";
 
     let { children, data } = $props();
+
+    let isNavigating = $derived($navigating !== null);
 
     $effect(() => {
         if (data?.accessToken) {
@@ -16,6 +21,14 @@
             profileStore.setProfile(data.profile);
             console.log(profileStore.getProfile());
         }
+    });
+
+    // Cursor de carga global + aria-busy mientras navega
+    $effect(() => {
+        document.documentElement.classList.toggle(
+            "is-navigating",
+            isNavigating,
+        );
     });
 </script>
 
@@ -27,8 +40,13 @@
 </svelte:head>
 
 <Navbar />
-<main>
-    {@render children()}
+<NavigationProgress />
+<main aria-busy={isNavigating}>
+    {#key $page.url.pathname}
+        <div class="page-enter" in:fade={{ duration: 160 }}>
+            {@render children()}
+        </div>
+    {/key}
 </main>
 <Footer />
 
@@ -36,5 +54,9 @@
     main {
         flex: 1;
         background-color: white;
+    }
+
+    .page-enter {
+        min-height: inherit;
     }
 </style>

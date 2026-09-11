@@ -1,5 +1,6 @@
 <script lang="ts">
     import { onMount } from "svelte";
+    import { fly, slide } from "svelte/transition";
     import { page } from "$app/state";
     import { accessToken } from "$lib/stores/authStore";
     import {
@@ -1161,10 +1162,12 @@
             </div>
         </div>
 
-        <nav class="tabs" aria-label="Secciones del panel">
+        <div class="tabs" role="tablist" aria-label="Secciones del panel">
             {#each tabs as tab (tab.id)}
                 <button
                     type="button"
+                    role="tab"
+                    aria-selected={activeTab === tab.id}
                     class:active={activeTab === tab.id}
                     onclick={() => (activeTab = tab.id)}
                 >
@@ -1175,7 +1178,7 @@
                     {tab.label}
                 </button>
             {/each}
-        </nav>
+        </div>
 
         {#if errorGlobal}
             <p class="state error" role="alert">{errorGlobal}</p>
@@ -1186,7 +1189,14 @@
 
         {#if loadingGlobal}
             <p class="state">Cargando información del panel...</p>
-        {:else if activeTab === "usuarios"}
+        {:else}
+            {#key activeTab}
+                <div
+                    class="tab-panel"
+                    role="tabpanel"
+                    in:fly={{ y: 14, duration: 220 }}
+                >
+                    {#if activeTab === "usuarios"}
             <section class="section">
                 <header class="section-head">
                     <div>
@@ -1420,7 +1430,8 @@
 
                 {#if creatingPartner}
                     <form
-                        class="create-form"
+                        class="create-form expand-panel"
+                        transition:slide={{ duration: 220 }}
                         onsubmit={(e) => {
                             e.preventDefault();
                             createPartner();
@@ -1694,7 +1705,8 @@
 
                 {#if openingCreatingBenefit}
                     <form
-                        class="create-form"
+                        class="create-form expand-panel"
+                        transition:slide={{ duration: 220 }}
                         onsubmit={(e) => {
                             e.preventDefault();
                             createBenefit();
@@ -2096,7 +2108,8 @@
 
                 {#if openingCreatingVoucher}
                     <form
-                        class="create-form"
+                        class="create-form expand-panel"
+                        transition:slide={{ duration: 220 }}
                         onsubmit={(e) => {
                             e.preventDefault();
                             createVoucher();
@@ -2191,7 +2204,10 @@
                 {/if}
 
                 {#if searchedVoucher}
-                    <div class="voucher-lookup">
+                    <div
+                        class="voucher-lookup expand-panel"
+                        transition:slide={{ duration: 220 }}
+                    >
                         <h3>Voucher {searchedVoucher.token}</h3>
                         <p class="sub">{voucherLabel(searchedVoucher)}</p>
                         <dl class="lookup-grid">
@@ -2372,6 +2388,9 @@
                     </table>
                 </div>
             </section>
+                    {/if}
+                </div>
+            {/key}
         {/if}
     </div>
 </section>
@@ -2434,6 +2453,68 @@
         border-color: var(--primary-blue);
         background: var(--primary-blue);
         color: #fff;
+        animation: tab-pop 0.18s ease;
+    }
+    .tabs button:focus-visible {
+        outline: 2px solid var(--primary-blue);
+        outline-offset: 2px;
+    }
+
+    @keyframes tab-pop {
+        0% {
+            transform: scale(0.96);
+        }
+        100% {
+            transform: scale(1);
+        }
+    }
+
+    /* Contenedor del tab activo: anima cada cambio de panel */
+    .tab-panel {
+        animation: tab-panel-in 0.22s ease;
+        transform-origin: top center;
+    }
+
+    @keyframes tab-panel-in {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Despliegue de paneles de info / formularios / editores */
+    .expand-panel {
+        transform-origin: top center;
+    }
+
+    .inline-edit,
+    .edit-field {
+        animation: expand-in 0.18s ease;
+        transform-origin: top center;
+    }
+
+    @keyframes expand-in {
+        from {
+            opacity: 0;
+            transform: translateY(-6px) scaleY(0.98);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0) scaleY(1);
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .tab-panel,
+        .tabs button.active,
+        .inline-edit,
+        .edit-field {
+            animation: none;
+        }
     }
 
     .section {

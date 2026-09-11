@@ -1,6 +1,7 @@
 <script lang="ts">
     import { accessToken } from "$lib/stores/authStore";
     import { goto } from "$app/navigation";
+    import { navigating } from "$app/stores";
 
     let email = $state("");
     let password = $state("");
@@ -10,6 +11,9 @@
     const emailError = "Ingresa un correo electrónico válido.";
     let loading: boolean = $state(false);
     let errorTimeout: ReturnType<typeof setTimeout> | undefined;
+
+    // loading = fetch login, $navigating = redirección a "/" (layout hace refresh+profile)
+    let redirecting = $derived(loading && $navigating !== null);
 
     async function login(e: Event) {
         e.preventDefault();
@@ -36,7 +40,7 @@
                 throw new Error(`Response status : ${response.status}`);
             const result = await response.json();
             accessToken.setToken(result.access_token);
-            goto("/");
+            await goto("/");
         } catch (rerror) {
             error = "Credenciales Inválidas";
             loading = false;
@@ -86,9 +90,9 @@
             </label>
 
             {#if loading}
-                <div class="loading-container">
-                    <div class="spinner"></div>
-                    <p>Iniciando Sesión...</p>
+                <div class="loading-container" role="status">
+                    <div class="spinner" aria-hidden="true"></div>
+                    <p>{redirecting ? "Redirigiendo…" : "Iniciando Sesión..."}</p>
                 </div>
             {:else if !loading && error}
                 <span class="error-box">{error}</span>

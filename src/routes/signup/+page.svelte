@@ -7,12 +7,14 @@
     let password: string = $state("");
     let showPassword: boolean = $state(false);
     let error: string = $state("");
+    let loading: boolean = $state(false);
     const passwdError = "Ingresa una contraseña";
     const emailError = "Ingresa un correo electrónico válido.";
     const numberError = "Ingresa tu número de socio";
 
     async function login(e: Event) {
         e.preventDefault();
+        if (loading) return;
         const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!regex.test(email)) {
             error = emailError;
@@ -27,6 +29,7 @@
             return;
         }
         error = "";
+        loading = true;
 
         try {
             const response = await fetch("/api/auth/register", {
@@ -43,9 +46,11 @@
                 throw new Error(`Response status : ${response.status}`);
             const result = await response.json();
             accessToken.setToken(result.access_token);
-            goto("/");
+            await goto("/");
         } catch (error) {
             console.log(error);
+        } finally {
+            loading = false;
         }
     }
 </script>
@@ -102,7 +107,13 @@
             </label>
 
             <p class="error" class:visible={!!error}>{error}</p>
-            <button type="submit">Registrarme</button>
+            <button type="submit" disabled={loading} aria-busy={loading || undefined}>
+                {#if loading}
+                    Registrando…
+                {:else}
+                    Registrarme
+                {/if}
+            </button>
         </form>
     </div>
 </section>
@@ -203,6 +214,10 @@
         cursor: pointer;
         background: var(--primary-blue-light);
         border: 1px solid var(--primary-blue-light);
+    }
+    button:disabled {
+        cursor: progress;
+        opacity: 0.8;
     }
     .error {
         color: #d32f2f;
