@@ -33,13 +33,17 @@
         description: string;
     } = $props();
 
-    const endDateFormated = $derived(
-        new Date(endDate).toLocaleDateString("es-ES", {
+    const endDateFormated = $derived.by(() => {
+        const parts = endDate?.slice(0, 10).split("-").map(Number);
+        if (!parts || parts.length !== 3 || parts.some(Number.isNaN))
+            return endDate;
+        const [y, m, d] = parts;
+        return new Date(y, m - 1, d).toLocaleDateString("es-ES", {
             day: "numeric",
             month: "long",
             year: "numeric",
-        }),
-    );
+        });
+    });
 
     let user_vouchers = $state<number>(0);
     let error = $state("");
@@ -227,7 +231,7 @@
                         <div class="expanded-data-container">
                             <Clock size={40} class="expanded-data-icon"></Clock>
                             <div class="end-date-info">
-                                <p class="expanded-data-title">FECHA VIGENTE</p>
+                                <p class="expanded-data-title">VIGENTE HASTA</p>
                                 <p class="expanded-data-var">
                                     {endDateFormated}
                                 </p>
