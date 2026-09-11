@@ -83,6 +83,7 @@
         id_benefit: string;
         application_date: string;
         delivery_date: string;
+        limit_date: string;
         status: "PENDING" | "DELIVERED" | "EXPIRED" | "REJECTED";
     }
 
@@ -1125,7 +1126,15 @@
 
     function formatDate(value: string) {
         if (!value) return "—";
-        const date = new Date(value);
+        // Las fechas "YYYY-MM-DD" se parsean como UTC y se corren un día
+        // en timezones negativos: construirlas como fecha local.
+        const parts = value.slice(0, 10).split("-").map(Number);
+        let date: Date;
+        if (parts.length === 3 && parts.every((n) => !Number.isNaN(n))) {
+            date = new Date(parts[0], parts[1] - 1, parts[2]);
+        } else {
+            date = new Date(value);
+        }
         if (Number.isNaN(date.getTime())) return value;
         return date.toLocaleDateString("es-ES", {
             day: "2-digit",
@@ -1197,1197 +1206,1431 @@
                     in:fly={{ y: 14, duration: 220 }}
                 >
                     {#if activeTab === "usuarios"}
-            <section class="section">
-                <header class="section-head">
-                    <div>
-                        <h2>Usuarios</h2>
-                        <p>
-                            Visualizá las cuentas y modificá su correo o
-                            contraseña.
-                        </p>
-                    </div>
-                    <input
-                        class="search"
-                        type="search"
-                        placeholder="Buscar por nombre, DNI o email…"
-                        bind:value={userFilter}
-                    />
-                </header>
+                        <section class="section">
+                            <header class="section-head">
+                                <div>
+                                    <h2>Usuarios</h2>
+                                    <p>
+                                        Visualizá las cuentas y modificá su
+                                        correo o contraseña.
+                                    </p>
+                                </div>
+                                <input
+                                    class="search"
+                                    type="search"
+                                    placeholder="Buscar por nombre, DNI o email…"
+                                    bind:value={userFilter}
+                                />
+                            </header>
 
-                <div class="table-wrap">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>Socio</th>
-                                <th>Email</th>
-                                <th>Rol</th>
-                                <th>Estado</th>
-                                <th>Última actividad</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {#each filteredAccounts as account (account.id_user)}
-                                <tr>
-                                    <td>
-                                        <strong
-                                            >{account.name}
-                                            {account.lastname}</strong
-                                        >
-                                        <span class="sub"
-                                            >{account.dni} · {account.id_user}</span
-                                        >
-                                    </td>
-                                    <td>
-                                        {#if editingUser[account.id_user] === "email"}
-                                            <div class="inline-edit">
-                                                <input
-                                                    type="email"
-                                                    bind:value={
-                                                        emailInputs[
-                                                            account.id_user
-                                                        ]
-                                                    }
-                                                    onkeydown={(e) =>
-                                                        e.key === "Enter" &&
-                                                        saveEmail(account)}
-                                                />
-                                                <div class="edit-actions">
+                            <div class="table-wrap">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Socio</th>
+                                            <th>Email</th>
+                                            <th>Rol</th>
+                                            <th>Estado</th>
+                                            <th>Última actividad</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {#each filteredAccounts as account (account.id_user)}
+                                            <tr>
+                                                <td>
+                                                    <strong
+                                                        >{account.name}
+                                                        {account.lastname}</strong
+                                                    >
+                                                    <span class="sub"
+                                                        >{account.dni} · {account.id_user}</span
+                                                    >
+                                                </td>
+                                                <td>
+                                                    {#if editingUser[account.id_user] === "email"}
+                                                        <div
+                                                            class="inline-edit"
+                                                        >
+                                                            <input
+                                                                type="email"
+                                                                bind:value={
+                                                                    emailInputs[
+                                                                        account
+                                                                            .id_user
+                                                                    ]
+                                                                }
+                                                                onkeydown={(
+                                                                    e,
+                                                                ) =>
+                                                                    e.key ===
+                                                                        "Enter" &&
+                                                                    saveEmail(
+                                                                        account,
+                                                                    )}
+                                                            />
+                                                            <div
+                                                                class="edit-actions"
+                                                            >
+                                                                <button
+                                                                    class="save-btn"
+                                                                    type="button"
+                                                                    onclick={() =>
+                                                                        saveEmail(
+                                                                            account,
+                                                                        )}
+                                                                    disabled={savingUser ===
+                                                                        account.id_user}
+                                                                    >Guardar</button
+                                                                >
+                                                                <button
+                                                                    class="cancel-btn"
+                                                                    type="button"
+                                                                    onclick={() =>
+                                                                        cancelEditUser(
+                                                                            account.id_user,
+                                                                        )}
+                                                                    >Cancelar</button
+                                                                >
+                                                            </div>
+                                                        </div>
+                                                    {:else}
+                                                        <span class="mono"
+                                                            >{account.email ??
+                                                                "—"}</span
+                                                        >
+                                                    {/if}
+                                                </td>
+                                                <td>
+                                                    <span class="role-badge"
+                                                        >{account.role}</span
+                                                    >
+                                                </td>
+                                                <td>
                                                     <button
-                                                        class="save-btn"
+                                                        class="status-btn"
+                                                        class:on={account.active}
                                                         type="button"
                                                         onclick={() =>
-                                                            saveEmail(account)}
+                                                            toggleActive(
+                                                                account,
+                                                            )}
                                                         disabled={savingUser ===
                                                             account.id_user}
-                                                        >Guardar</button
                                                     >
-                                                    <button
-                                                        class="cancel-btn"
-                                                        type="button"
-                                                        onclick={() =>
-                                                            cancelEditUser(
-                                                                account.id_user,
-                                                            )}>Cancelar</button
+                                                        {account.active
+                                                            ? "ACTIVA"
+                                                            : "INACTIVA"}
+                                                    </button>
+                                                </td>
+                                                <td>
+                                                    <span class="mono"
+                                                        >{formatLastActivity(
+                                                            account.last_activity,
+                                                        )}</span
                                                     >
-                                                </div>
-                                            </div>
+                                                </td>
+                                                <td>
+                                                    <div class="row-actions">
+                                                        {#if editingUser[account.id_user] === "password"}
+                                                            <div
+                                                                class="inline-edit"
+                                                            >
+                                                                <input
+                                                                    type="password"
+                                                                    placeholder="Nueva contraseña"
+                                                                    bind:value={
+                                                                        passwordInputs[
+                                                                            account
+                                                                                .id_user
+                                                                        ]
+                                                                    }
+                                                                    onkeydown={(
+                                                                        e,
+                                                                    ) =>
+                                                                        e.key ===
+                                                                            "Enter" &&
+                                                                        savePassword(
+                                                                            account,
+                                                                        )}
+                                                                />
+                                                                <div
+                                                                    class="edit-actions"
+                                                                >
+                                                                    <button
+                                                                        class="save-btn"
+                                                                        type="button"
+                                                                        onclick={() =>
+                                                                            savePassword(
+                                                                                account,
+                                                                            )}
+                                                                        disabled={savingUser ===
+                                                                            account.id_user}
+                                                                        >Guardar</button
+                                                                    >
+                                                                    <button
+                                                                        class="cancel-btn"
+                                                                        type="button"
+                                                                        onclick={() =>
+                                                                            cancelEditUser(
+                                                                                account.id_user,
+                                                                            )}
+                                                                        >Cancelar</button
+                                                                    >
+                                                                </div>
+                                                            </div>
+                                                        {:else if editingUser[account.id_user] !== "email"}
+                                                            <button
+                                                                class="ico-btn"
+                                                                type="button"
+                                                                title="Cambiar email"
+                                                                onclick={() =>
+                                                                    startEditEmail(
+                                                                        account,
+                                                                    )}
+                                                            >
+                                                                <Pencil
+                                                                    size={14}
+                                                                />
+                                                            </button>
+                                                            <button
+                                                                class="ico-btn"
+                                                                type="button"
+                                                                title="Cambiar contraseña"
+                                                                onclick={() =>
+                                                                    startEditPassword(
+                                                                        account,
+                                                                    )}
+                                                            >
+                                                                <Eye
+                                                                    size={14}
+                                                                />
+                                                            </button>
+                                                        {/if}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            {#if userErrors[account.id_user] || userSuccess[account.id_user]}
+                                                <tr class="msg-row">
+                                                    <td colspan="6">
+                                                        {#if userErrors[account.id_user]}
+                                                            <p
+                                                                class="field-error"
+                                                                role="alert"
+                                                            >
+                                                                {userErrors[
+                                                                    account
+                                                                        .id_user
+                                                                ]}
+                                                            </p>
+                                                        {/if}
+                                                        {#if userSuccess[account.id_user]}
+                                                            <p
+                                                                class="field-success"
+                                                                role="status"
+                                                            >
+                                                                {userSuccess[
+                                                                    account
+                                                                        .id_user
+                                                                ]}
+                                                            </p>
+                                                        {/if}
+                                                    </td>
+                                                </tr>
+                                            {/if}
                                         {:else}
-                                            <span class="mono"
-                                                >{account.email ?? "—"}</span
-                                            >
-                                        {/if}
-                                    </td>
-                                    <td>
-                                        <span class="role-badge"
-                                            >{account.role}</span
-                                        >
-                                    </td>
-                                    <td>
+                                            <tr>
+                                                <td
+                                                    colspan="6"
+                                                    class="empty-cell"
+                                                >
+                                                    No hay usuarios para
+                                                    mostrar.
+                                                </td>
+                                            </tr>
+                                        {/each}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </section>
+                    {:else if activeTab === "negocios"}
+                        <section class="section">
+                            <header class="section-head">
+                                <div>
+                                    <h2>Negocios</h2>
+                                    <p>
+                                        Administrá los negocios asociados tal
+                                        como un negociante.
+                                    </p>
+                                </div>
+                                <button
+                                    class="add-btn"
+                                    type="button"
+                                    onclick={() =>
+                                        (creatingPartner = !creatingPartner)}
+                                >
+                                    <Plus size={16} />
+                                    {creatingPartner
+                                        ? "Cancelar"
+                                        : "Nuevo negocio"}
+                                </button>
+                            </header>
+
+                            {#if creatingPartner}
+                                <form
+                                    class="create-form expand-panel"
+                                    transition:slide={{ duration: 220 }}
+                                    onsubmit={(e) => {
+                                        e.preventDefault();
+                                        createPartner();
+                                    }}
+                                >
+                                    <h3>Nuevo negocio</h3>
+                                    <div class="form-grid">
+                                        <label>
+                                            Nombre
+                                            <input
+                                                type="text"
+                                                placeholder="Nombre del negocio"
+                                                bind:value={
+                                                    newPartner.partner_name
+                                                }
+                                            />
+                                        </label>
+                                        <label>
+                                            Email del admin
+                                            <input
+                                                type="email"
+                                                placeholder="admin@negocio.com"
+                                                bind:value={newPartner.email}
+                                            />
+                                        </label>
+                                        <label>
+                                            Contraseña del admin
+                                            <input
+                                                type="password"
+                                                placeholder="••••••••"
+                                                bind:value={newPartner.password}
+                                            />
+                                        </label>
+                                        <label>
+                                            Logo (URL)
+                                            <input
+                                                type="url"
+                                                placeholder="https://…"
+                                                bind:value={newPartner.logo}
+                                            />
+                                        </label>
+                                        <label class="full">
+                                            Direcciones (separadas por coma)
+                                            <input
+                                                type="text"
+                                                placeholder="Calle 1, Calle 2"
+                                                bind:value={
+                                                    newPartner.directions
+                                                }
+                                            />
+                                        </label>
+                                    </div>
+                                    {#if partnerCreateError}
+                                        <p class="field-error" role="alert">
+                                            {partnerCreateError}
+                                        </p>
+                                    {/if}
+                                    <div class="form-actions">
                                         <button
-                                            class="status-btn"
-                                            class:on={account.active}
-                                            type="button"
-                                            onclick={() =>
-                                                toggleActive(account)}
-                                            disabled={savingUser ===
-                                                account.id_user}
+                                            class="save-btn"
+                                            type="submit"
+                                            disabled={savingPartner}
                                         >
-                                            {account.active
-                                                ? "ACTIVA"
-                                                : "INACTIVA"}
+                                            {savingPartner
+                                                ? "Guardando…"
+                                                : "Crear negocio"}
                                         </button>
-                                    </td>
-                                    <td>
-                                        <span class="mono"
-                                            >{formatLastActivity(
-                                                account.last_activity,
-                                            )}</span
-                                        >
-                                    </td>
-                                    <td>
-                                        <div class="row-actions">
-                                            {#if editingUser[account.id_user] === "password"}
-                                                <div class="inline-edit">
+                                    </div>
+                                </form>
+                            {/if}
+
+                            <div class="cards-grid">
+                                {#each partners as partner (partner.id_partner)}
+                                    <article class="data-card">
+                                        <div class="card-top">
+                                            <img
+                                                class="partner-logo"
+                                                src={partner.logo}
+                                                alt={`Logo de ${partner.name}`}
+                                            />
+                                            <div class="card-title">
+                                                <h3>{partner.name}</h3>
+                                                <span
+                                                    class="role-badge"
+                                                    class:off={!partner.active}
+                                                    >{partner.active
+                                                        ? "ACTIVO"
+                                                        : "INACTIVO"}</span
+                                                >
+                                            </div>
+                                        </div>
+
+                                        {#if editingPartner === partner.id_partner}
+                                            <div class="edit-field">
+                                                <label>Nombre</label>
+                                                <div class="row">
                                                     <input
-                                                        type="password"
-                                                        placeholder="Nueva contraseña"
+                                                        type="text"
                                                         bind:value={
-                                                            passwordInputs[
-                                                                account.id_user
+                                                            partnerNameInputs[
+                                                                partner
+                                                                    .id_partner
                                                             ]
                                                         }
                                                         onkeydown={(e) =>
                                                             e.key === "Enter" &&
-                                                            savePassword(
-                                                                account,
+                                                            updatePartnerName(
+                                                                partner,
                                                             )}
                                                     />
-                                                    <div class="edit-actions">
+                                                    <button
+                                                        class="save-btn"
+                                                        type="button"
+                                                        onclick={() =>
+                                                            updatePartnerName(
+                                                                partner,
+                                                            )}
+                                                        disabled={partnerBusy[
+                                                            partner.id_partner
+                                                        ]}>Guardar</button
+                                                    >
+                                                </div>
+                                            </div>
+                                            <div class="edit-field">
+                                                <label>Logo (URL)</label>
+                                                <div class="row">
+                                                    <input
+                                                        type="url"
+                                                        bind:value={
+                                                            partnerLogoInputs[
+                                                                partner
+                                                                    .id_partner
+                                                            ]
+                                                        }
+                                                        onkeydown={(e) =>
+                                                            e.key === "Enter" &&
+                                                            updatePartnerLogo(
+                                                                partner,
+                                                            )}
+                                                    />
+                                                    <button
+                                                        class="save-btn"
+                                                        type="button"
+                                                        onclick={() =>
+                                                            updatePartnerLogo(
+                                                                partner,
+                                                            )}
+                                                        disabled={partnerBusy[
+                                                            partner.id_partner
+                                                        ]}>Guardar</button
+                                                    >
+                                                </div>
+                                            </div>
+
+                                            <div class="edit-field">
+                                                <label>Ubicaciones</label>
+                                                {#if locationsLoading[partner.id_partner]}
+                                                    <p class="muted">
+                                                        Cargando…
+                                                    </p>
+                                                {:else}
+                                                    <ul class="locs-list">
+                                                        {#each locationsByPartner[partner.id_partner] ?? [] as location (location.id_location)}
+                                                            <li
+                                                                class="loc-item"
+                                                            >
+                                                                <span
+                                                                    >{location.direction}</span
+                                                                >
+                                                                <button
+                                                                    class="remove-btn"
+                                                                    type="button"
+                                                                    aria-label={`Quitar ${location.direction}`}
+                                                                    onclick={() =>
+                                                                        removePartnerLocation(
+                                                                            partner.id_partner,
+                                                                            location.id_location,
+                                                                        )}
+                                                                    disabled={partnerBusy[
+                                                                        partner
+                                                                            .id_partner
+                                                                    ] !==
+                                                                        undefined}
+                                                                >
+                                                                    <Trash2
+                                                                        size={14}
+                                                                    />
+                                                                </button>
+                                                            </li>
+                                                        {:else}
+                                                            <li
+                                                                class="loc-empty"
+                                                            >
+                                                                Sin ubicaciones
+                                                                registradas.
+                                                            </li>
+                                                        {/each}
+                                                    </ul>
+                                                    <div class="row">
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Nueva dirección"
+                                                            bind:value={
+                                                                partnerLocationInputs[
+                                                                    partner
+                                                                        .id_partner
+                                                                ]
+                                                            }
+                                                            onkeydown={(e) =>
+                                                                e.key ===
+                                                                    "Enter" &&
+                                                                addPartnerLocation(
+                                                                    partner,
+                                                                )}
+                                                        />
                                                         <button
-                                                            class="save-btn"
+                                                            class="add-btn"
                                                             type="button"
                                                             onclick={() =>
-                                                                savePassword(
-                                                                    account,
+                                                                addPartnerLocation(
+                                                                    partner,
                                                                 )}
-                                                            disabled={savingUser ===
-                                                                account.id_user}
-                                                            >Guardar</button
-                                                        >
-                                                        <button
-                                                            class="cancel-btn"
-                                                            type="button"
-                                                            onclick={() =>
-                                                                cancelEditUser(
-                                                                    account.id_user,
-                                                                )}
-                                                            >Cancelar</button
+                                                            disabled={partnerBusy[
+                                                                partner
+                                                                    .id_partner
+                                                            ]}>Agregar</button
                                                         >
                                                     </div>
-                                                </div>
-                                            {:else if editingUser[account.id_user] !== "email"}
-                                                <button
-                                                    class="ico-btn"
-                                                    type="button"
-                                                    title="Cambiar email"
-                                                    onclick={() =>
-                                                        startEditEmail(account)}
-                                                >
-                                                    <Pencil size={14} />
-                                                </button>
-                                                <button
-                                                    class="ico-btn"
-                                                    type="button"
-                                                    title="Cambiar contraseña"
-                                                    onclick={() =>
-                                                        startEditPassword(
-                                                            account,
-                                                        )}
-                                                >
-                                                    <Eye size={14} />
-                                                </button>
-                                            {/if}
-                                        </div>
-                                    </td>
-                                </tr>
-                                {#if userErrors[account.id_user] || userSuccess[account.id_user]}
-                                    <tr class="msg-row">
-                                        <td colspan="6">
-                                            {#if userErrors[account.id_user]}
+                                                {/if}
+                                            </div>
+
+                                            {#if partnerErrors[partner.id_partner]}
                                                 <p
                                                     class="field-error"
                                                     role="alert"
                                                 >
-                                                    {userErrors[
-                                                        account.id_user
+                                                    {partnerErrors[
+                                                        partner.id_partner
                                                     ]}
                                                 </p>
                                             {/if}
-                                            {#if userSuccess[account.id_user]}
+                                            {#if partnerSuccess[partner.id_partner]}
                                                 <p
                                                     class="field-success"
                                                     role="status"
                                                 >
-                                                    {userSuccess[
-                                                        account.id_user
+                                                    {partnerSuccess[
+                                                        partner.id_partner
                                                     ]}
                                                 </p>
                                             {/if}
-                                        </td>
-                                    </tr>
-                                {/if}
-                            {:else}
-                                <tr>
-                                    <td colspan="6" class="empty-cell">
-                                        No hay usuarios para mostrar.
-                                    </td>
-                                </tr>
-                            {/each}
-                        </tbody>
-                    </table>
-                </div>
-            </section>
-        {:else if activeTab === "negocios"}
-            <section class="section">
-                <header class="section-head">
-                    <div>
-                        <h2>Negocios</h2>
-                        <p>
-                            Administrá los negocios asociados tal como un
-                            negociante.
-                        </p>
-                    </div>
-                    <button
-                        class="add-btn"
-                        type="button"
-                        onclick={() => (creatingPartner = !creatingPartner)}
-                    >
-                        <Plus size={16} />
-                        {creatingPartner ? "Cancelar" : "Nuevo negocio"}
-                    </button>
-                </header>
+                                        {:else}
+                                            <p class="directions">
+                                                {partner.directions.length
+                                                    ? partner.directions.join(
+                                                          " · ",
+                                                      )
+                                                    : "Sin ubicaciones registradas."}
+                                            </p>
+                                        {/if}
 
-                {#if creatingPartner}
-                    <form
-                        class="create-form expand-panel"
-                        transition:slide={{ duration: 220 }}
-                        onsubmit={(e) => {
-                            e.preventDefault();
-                            createPartner();
-                        }}
-                    >
-                        <h3>Nuevo negocio</h3>
-                        <div class="form-grid">
-                            <label>
-                                Nombre
-                                <input
-                                    type="text"
-                                    placeholder="Nombre del negocio"
-                                    bind:value={newPartner.partner_name}
-                                />
-                            </label>
-                            <label>
-                                Email del admin
-                                <input
-                                    type="email"
-                                    placeholder="admin@negocio.com"
-                                    bind:value={newPartner.email}
-                                />
-                            </label>
-                            <label>
-                                Contraseña del admin
-                                <input
-                                    type="password"
-                                    placeholder="••••••••"
-                                    bind:value={newPartner.password}
-                                />
-                            </label>
-                            <label>
-                                Logo (URL)
-                                <input
-                                    type="url"
-                                    placeholder="https://…"
-                                    bind:value={newPartner.logo}
-                                />
-                            </label>
-                            <label class="full">
-                                Direcciones (separadas por coma)
-                                <input
-                                    type="text"
-                                    placeholder="Calle 1, Calle 2"
-                                    bind:value={newPartner.directions}
-                                />
-                            </label>
-                        </div>
-                        {#if partnerCreateError}
-                            <p class="field-error" role="alert">
-                                {partnerCreateError}
-                            </p>
-                        {/if}
-                        <div class="form-actions">
-                            <button
-                                class="save-btn"
-                                type="submit"
-                                disabled={savingPartner}
-                            >
-                                {savingPartner ? "Guardando…" : "Crear negocio"}
-                            </button>
-                        </div>
-                    </form>
-                {/if}
-
-                <div class="cards-grid">
-                    {#each partners as partner (partner.id_partner)}
-                        <article class="data-card">
-                            <div class="card-top">
-                                <img
-                                    class="partner-logo"
-                                    src={partner.logo}
-                                    alt={`Logo de ${partner.name}`}
-                                />
-                                <div class="card-title">
-                                    <h3>{partner.name}</h3>
-                                    <span
-                                        class="role-badge"
-                                        class:off={!partner.active}
-                                        >{partner.active
-                                            ? "ACTIVO"
-                                            : "INACTIVO"}</span
-                                    >
-                                </div>
-                            </div>
-
-                            {#if editingPartner === partner.id_partner}
-                                <div class="edit-field">
-                                    <label>Nombre</label>
-                                    <div class="row">
-                                        <input
-                                            type="text"
-                                            bind:value={
-                                                partnerNameInputs[
-                                                    partner.id_partner
-                                                ]
-                                            }
-                                            onkeydown={(e) =>
-                                                e.key === "Enter" &&
-                                                updatePartnerName(partner)}
-                                        />
-                                        <button
-                                            class="save-btn"
-                                            type="button"
-                                            onclick={() =>
-                                                updatePartnerName(partner)}
-                                            disabled={partnerBusy[
-                                                partner.id_partner
-                                            ]}>Guardar</button
-                                        >
-                                    </div>
-                                </div>
-                                <div class="edit-field">
-                                    <label>Logo (URL)</label>
-                                    <div class="row">
-                                        <input
-                                            type="url"
-                                            bind:value={
-                                                partnerLogoInputs[
-                                                    partner.id_partner
-                                                ]
-                                            }
-                                            onkeydown={(e) =>
-                                                e.key === "Enter" &&
-                                                updatePartnerLogo(partner)}
-                                        />
-                                        <button
-                                            class="save-btn"
-                                            type="button"
-                                            onclick={() =>
-                                                updatePartnerLogo(partner)}
-                                            disabled={partnerBusy[
-                                                partner.id_partner
-                                            ]}>Guardar</button
-                                        >
-                                    </div>
-                                </div>
-
-                                <div class="edit-field">
-                                    <label>Ubicaciones</label>
-                                    {#if locationsLoading[partner.id_partner]}
-                                        <p class="muted">Cargando…</p>
-                                    {:else}
-                                        <ul class="locs-list">
-                                            {#each locationsByPartner[partner.id_partner] ?? [] as location (location.id_location)}
-                                                <li class="loc-item">
-                                                    <span
-                                                        >{location.direction}</span
-                                                    >
-                                                    <button
-                                                        class="remove-btn"
-                                                        type="button"
-                                                        aria-label={`Quitar ${location.direction}`}
-                                                        onclick={() =>
-                                                            removePartnerLocation(
-                                                                partner.id_partner,
-                                                                location.id_location,
-                                                            )}
-                                                        disabled={partnerBusy[
-                                                            partner.id_partner
-                                                        ] !== undefined}
-                                                    >
-                                                        <Trash2 size={14} />
-                                                    </button>
-                                                </li>
+                                        <div class="card-actions">
+                                            {#if editingPartner === partner.id_partner}
+                                                <button
+                                                    class="cancel-btn"
+                                                    type="button"
+                                                    onclick={closePartnerEdit}
+                                                    >Terminar</button
+                                                >
                                             {:else}
-                                                <li class="loc-empty">
-                                                    Sin ubicaciones registradas.
-                                                </li>
-                                            {/each}
-                                        </ul>
-                                        <div class="row">
-                                            <input
-                                                type="text"
-                                                placeholder="Nueva dirección"
-                                                bind:value={
-                                                    partnerLocationInputs[
-                                                        partner.id_partner
-                                                    ]
-                                                }
-                                                onkeydown={(e) =>
-                                                    e.key === "Enter" &&
-                                                    addPartnerLocation(partner)}
-                                            />
+                                                <button
+                                                    class="edit-btn"
+                                                    type="button"
+                                                    onclick={() =>
+                                                        openPartnerEdit(
+                                                            partner,
+                                                        )}
+                                                >
+                                                    <Pencil size={13} />
+                                                    Editar
+                                                </button>
+                                            {/if}
                                             <button
-                                                class="add-btn"
+                                                class="danger-btn"
                                                 type="button"
                                                 onclick={() =>
-                                                    addPartnerLocation(partner)}
+                                                    deletePartner(partner)}
                                                 disabled={partnerBusy[
                                                     partner.id_partner
-                                                ]}>Agregar</button
+                                                ] !== undefined}
                                             >
+                                                <Trash2 size={14} />
+                                                Eliminar
+                                            </button>
                                         </div>
-                                    {/if}
+                                    </article>
+                                {:else}
+                                    <p class="empty">
+                                        No hay negocios para mostrar.
+                                    </p>
+                                {/each}
+                            </div>
+                        </section>
+                    {:else if activeTab === "beneficios"}
+                        <section class="section">
+                            <header class="section-head">
+                                <div>
+                                    <h2>Beneficios</h2>
+                                    <p>
+                                        Creá, editá o eliminá los beneficios
+                                        publicados.
+                                    </p>
                                 </div>
+                                <button
+                                    class="add-btn"
+                                    type="button"
+                                    onclick={() =>
+                                        (openingCreatingBenefit =
+                                            !openingCreatingBenefit)}
+                                >
+                                    <Plus size={16} />
+                                    {openingCreatingBenefit
+                                        ? "Cancelar"
+                                        : "Nuevo beneficio"}
+                                </button>
+                            </header>
 
-                                {#if partnerErrors[partner.id_partner]}
-                                    <p class="field-error" role="alert">
-                                        {partnerErrors[partner.id_partner]}
-                                    </p>
-                                {/if}
-                                {#if partnerSuccess[partner.id_partner]}
-                                    <p class="field-success" role="status">
-                                        {partnerSuccess[partner.id_partner]}
-                                    </p>
-                                {/if}
-                            {:else}
-                                <p class="directions">
-                                    {partner.directions.length
-                                        ? partner.directions.join(" · ")
-                                        : "Sin ubicaciones registradas."}
-                                </p>
+                            {#if openingCreatingBenefit}
+                                <form
+                                    class="create-form expand-panel"
+                                    transition:slide={{ duration: 220 }}
+                                    onsubmit={(e) => {
+                                        e.preventDefault();
+                                        createBenefit();
+                                    }}
+                                >
+                                    <h3>Nuevo beneficio</h3>
+                                    <div class="form-grid">
+                                        <label>
+                                            Negocio
+                                            <select
+                                                bind:value={
+                                                    newBenefit.id_partner
+                                                }
+                                            >
+                                                <option value=""
+                                                    >Seleccionar…</option
+                                                >
+                                                {#each partners as partner (partner.id_partner)}
+                                                    <option
+                                                        value={partner.id_partner}
+                                                    >
+                                                        {partner.name}
+                                                    </option>
+                                                {/each}
+                                            </select>
+                                        </label>
+                                        <label>
+                                            Tipo
+                                            <select
+                                                bind:value={newBenefit.id_type}
+                                            >
+                                                <option value=""
+                                                    >Seleccionar…</option
+                                                >
+                                                {#each benefitTypes as type (type.id_type)}
+                                                    <option
+                                                        value={type.id_type}
+                                                    >
+                                                        {type.name}
+                                                    </option>
+                                                {/each}
+                                            </select>
+                                        </label>
+                                        <label>
+                                            Título
+                                            <input
+                                                type="text"
+                                                bind:value={newBenefit.title}
+                                            />
+                                        </label>
+                                        <label>
+                                            Imagen (URL)
+                                            <input
+                                                type="url"
+                                                bind:value={newBenefit.image}
+                                                placeholder="https://…"
+                                            />
+                                        </label>
+                                        <label>
+                                            Inicio
+                                            <input
+                                                type="date"
+                                                bind:value={
+                                                    newBenefit.start_date
+                                                }
+                                            />
+                                        </label>
+                                        <label>
+                                            Fin
+                                            <input
+                                                type="date"
+                                                bind:value={newBenefit.end_date}
+                                            />
+                                        </label>
+                                        <label>
+                                            Cupones máximos
+                                            <input
+                                                type="number"
+                                                min="1"
+                                                bind:value={
+                                                    newBenefit.max_coupons
+                                                }
+                                            />
+                                        </label>
+                                        <label>
+                                            Máximo por usuario
+                                            <input
+                                                type="number"
+                                                min="1"
+                                                bind:value={
+                                                    newBenefit.max_per_user
+                                                }
+                                            />
+                                        </label>
+                                        <label class="full">
+                                            Descripción
+                                            <textarea
+                                                rows="3"
+                                                bind:value={
+                                                    newBenefit.description
+                                                }
+                                            ></textarea>
+                                        </label>
+                                    </div>
+                                    {#if benefitCreateError}
+                                        <p class="field-error" role="alert">
+                                            {benefitCreateError}
+                                        </p>
+                                    {/if}
+                                    <div class="form-actions">
+                                        <button
+                                            class="save-btn"
+                                            type="submit"
+                                            disabled={savingBenefit}
+                                        >
+                                            {savingBenefit
+                                                ? "Guardando…"
+                                                : "Crear beneficio"}
+                                        </button>
+                                    </div>
+                                </form>
                             {/if}
 
-                            <div class="card-actions">
-                                {#if editingPartner === partner.id_partner}
-                                    <button
-                                        class="cancel-btn"
-                                        type="button"
-                                        onclick={closePartnerEdit}
-                                        >Terminar</button
-                                    >
+                            <div class="cards-grid">
+                                {#each benefits as benefit (benefit.id_benefit)}
+                                    <article class="data-card">
+                                        <div class="card-top">
+                                            <img
+                                                class="benefit-img"
+                                                src={benefit.image}
+                                                alt={benefit.title}
+                                            />
+                                            <div class="card-title">
+                                                <h3>{benefit.title}</h3>
+                                                <span class="sub"
+                                                    >{benefit.partner}</span
+                                                >
+                                            </div>
+                                        </div>
+
+                                        {#if editingBenefitId === benefit.id_benefit}
+                                            <div class="edit-field">
+                                                <label>Título</label>
+                                                <input
+                                                    type="text"
+                                                    bind:value={
+                                                        benefitDrafts[
+                                                            benefit.id_benefit
+                                                        ].title
+                                                    }
+                                                />
+                                            </div>
+                                            <div class="edit-field">
+                                                <label>Descripción</label>
+                                                <textarea
+                                                    rows="2"
+                                                    bind:value={
+                                                        benefitDrafts[
+                                                            benefit.id_benefit
+                                                        ].description
+                                                    }
+                                                ></textarea>
+                                            </div>
+                                            <div class="edit-field">
+                                                <label>Imagen (URL)</label>
+                                                <input
+                                                    type="url"
+                                                    bind:value={
+                                                        benefitDrafts[
+                                                            benefit.id_benefit
+                                                        ].image
+                                                    }
+                                                />
+                                            </div>
+                                            <div class="edit-field row-2">
+                                                <label>
+                                                    Inicio
+                                                    <input
+                                                        type="date"
+                                                        bind:value={
+                                                            benefitDrafts[
+                                                                benefit
+                                                                    .id_benefit
+                                                            ].start_date
+                                                        }
+                                                    />
+                                                </label>
+                                                <label>
+                                                    Fin
+                                                    <input
+                                                        type="date"
+                                                        bind:value={
+                                                            benefitDrafts[
+                                                                benefit
+                                                                    .id_benefit
+                                                            ].end_date
+                                                        }
+                                                    />
+                                                </label>
+                                            </div>
+                                            <div class="edit-field row-2">
+                                                <label>
+                                                    Cupones máximos
+                                                    <input
+                                                        type="number"
+                                                        min="1"
+                                                        bind:value={
+                                                            benefitDrafts[
+                                                                benefit
+                                                                    .id_benefit
+                                                            ].max_coupons
+                                                        }
+                                                    />
+                                                </label>
+                                                <label>
+                                                    Máx. por usuario
+                                                    <input
+                                                        type="number"
+                                                        min="1"
+                                                        bind:value={
+                                                            benefitDrafts[
+                                                                benefit
+                                                                    .id_benefit
+                                                            ].max_per_user
+                                                        }
+                                                    />
+                                                </label>
+                                            </div>
+                                            <div class="edit-field">
+                                                <label>Estado</label>
+                                                <select
+                                                    bind:value={
+                                                        benefitDrafts[
+                                                            benefit.id_benefit
+                                                        ].status
+                                                    }
+                                                >
+                                                    <option value="ACTIVE"
+                                                        >ACTIVE</option
+                                                    >
+                                                    <option value="INACTIVE"
+                                                        >INACTIVE</option
+                                                    >
+                                                    <option value="PENDING"
+                                                        >PENDING</option
+                                                    >
+                                                </select>
+                                            </div>
+                                        {:else}
+                                            <p class="desc">
+                                                {benefit.description}
+                                            </p>
+                                            <p class="sub">
+                                                {benefit.type} · {benefit.coupons}/
+                                                {benefit.max_coupons} canjeados
+                                            </p>
+                                        {/if}
+
+                                        {#if benefitErrors[benefit.id_benefit]}
+                                            <p class="field-error" role="alert">
+                                                {benefitErrors[
+                                                    benefit.id_benefit
+                                                ]}
+                                            </p>
+                                        {/if}
+                                        {#if benefitSuccess[benefit.id_benefit]}
+                                            <p
+                                                class="field-success"
+                                                role="status"
+                                            >
+                                                {benefitSuccess[
+                                                    benefit.id_benefit
+                                                ]}
+                                            </p>
+                                        {/if}
+
+                                        <div class="card-actions">
+                                            {#if editingBenefitId === benefit.id_benefit}
+                                                <button
+                                                    class="save-btn"
+                                                    type="button"
+                                                    onclick={() =>
+                                                        saveBenefit(benefit)}
+                                                    disabled={benefitBusy ===
+                                                        benefit.id_benefit}
+                                                    >Guardar</button
+                                                >
+                                                <button
+                                                    class="cancel-btn"
+                                                    type="button"
+                                                    onclick={cancelEditBenefit}
+                                                    >Cancelar</button
+                                                >
+                                            {:else}
+                                                <button
+                                                    class="edit-btn"
+                                                    type="button"
+                                                    onclick={() =>
+                                                        startEditBenefit(
+                                                            benefit,
+                                                        )}
+                                                >
+                                                    <Pencil size={13} />
+                                                    Editar
+                                                </button>
+                                            {/if}
+                                            <button
+                                                class="danger-btn"
+                                                type="button"
+                                                onclick={() =>
+                                                    deleteBenefit(benefit)}
+                                                disabled={benefitBusy ===
+                                                    benefit.id_benefit}
+                                            >
+                                                <Trash2 size={14} />
+                                                Eliminar
+                                            </button>
+                                        </div>
+                                    </article>
                                 {:else}
-                                    <button
-                                        class="edit-btn"
-                                        type="button"
-                                        onclick={() => openPartnerEdit(partner)}
-                                    >
-                                        <Pencil size={13} />
-                                        Editar
-                                    </button>
-                                {/if}
-                                <button
-                                    class="danger-btn"
-                                    type="button"
-                                    onclick={() => deletePartner(partner)}
-                                    disabled={partnerBusy[
-                                        partner.id_partner
-                                    ] !== undefined}
-                                >
-                                    <Trash2 size={14} />
-                                    Eliminar
-                                </button>
+                                    <p class="empty">
+                                        No hay beneficios para mostrar.
+                                    </p>
+                                {/each}
                             </div>
-                        </article>
-                    {:else}
-                        <p class="empty">No hay negocios para mostrar.</p>
-                    {/each}
-                </div>
-            </section>
-        {:else if activeTab === "beneficios"}
-            <section class="section">
-                <header class="section-head">
-                    <div>
-                        <h2>Beneficios</h2>
-                        <p>Creá, editá o eliminá los beneficios publicados.</p>
-                    </div>
-                    <button
-                        class="add-btn"
-                        type="button"
-                        onclick={() =>
-                            (openingCreatingBenefit = !openingCreatingBenefit)}
-                    >
-                        <Plus size={16} />
-                        {openingCreatingBenefit
-                            ? "Cancelar"
-                            : "Nuevo beneficio"}
-                    </button>
-                </header>
+                        </section>
+                    {:else if activeTab === "categorias"}
+                        <section class="section">
+                            <header class="section-head">
+                                <div>
+                                    <h2>Categorías</h2>
+                                    <p>
+                                        Activá o desactivá las categorías de
+                                        cupones.
+                                    </p>
+                                </div>
+                            </header>
 
-                {#if openingCreatingBenefit}
-                    <form
-                        class="create-form expand-panel"
-                        transition:slide={{ duration: 220 }}
-                        onsubmit={(e) => {
-                            e.preventDefault();
-                            createBenefit();
-                        }}
-                    >
-                        <h3>Nuevo beneficio</h3>
-                        <div class="form-grid">
-                            <label>
-                                Negocio
-                                <select bind:value={newBenefit.id_partner}>
-                                    <option value="">Seleccionar…</option>
-                                    {#each partners as partner (partner.id_partner)}
-                                        <option value={partner.id_partner}>
-                                            {partner.name}
-                                        </option>
-                                    {/each}
-                                </select>
-                            </label>
-                            <label>
-                                Tipo
-                                <select bind:value={newBenefit.id_type}>
-                                    <option value="">Seleccionar…</option>
-                                    {#each benefitTypes as type (type.id_type)}
-                                        <option value={type.id_type}>
-                                            {type.name}
-                                        </option>
-                                    {/each}
-                                </select>
-                            </label>
-                            <label>
-                                Título
-                                <input
-                                    type="text"
-                                    bind:value={newBenefit.title}
-                                />
-                            </label>
-                            <label>
-                                Imagen (URL)
-                                <input
-                                    type="url"
-                                    bind:value={newBenefit.image}
-                                    placeholder="https://…"
-                                />
-                            </label>
-                            <label>
-                                Inicio
-                                <input
-                                    type="date"
-                                    bind:value={newBenefit.start_date}
-                                />
-                            </label>
-                            <label>
-                                Fin
-                                <input
-                                    type="date"
-                                    bind:value={newBenefit.end_date}
-                                />
-                            </label>
-                            <label>
-                                Cupones máximos
-                                <input
-                                    type="number"
-                                    min="1"
-                                    bind:value={newBenefit.max_coupons}
-                                />
-                            </label>
-                            <label>
-                                Máximo por usuario
-                                <input
-                                    type="number"
-                                    min="1"
-                                    bind:value={newBenefit.max_per_user}
-                                />
-                            </label>
-                            <label class="full">
-                                Descripción
-                                <textarea
-                                    rows="3"
-                                    bind:value={newBenefit.description}
-                                ></textarea>
-                            </label>
-                        </div>
-                        {#if benefitCreateError}
-                            <p class="field-error" role="alert">
-                                {benefitCreateError}
-                            </p>
-                        {/if}
-                        <div class="form-actions">
-                            <button
-                                class="save-btn"
-                                type="submit"
-                                disabled={savingBenefit}
-                            >
-                                {savingBenefit
-                                    ? "Guardando…"
-                                    : "Crear beneficio"}
-                            </button>
-                        </div>
-                    </form>
-                {/if}
-
-                <div class="cards-grid">
-                    {#each benefits as benefit (benefit.id_benefit)}
-                        <article class="data-card">
-                            <div class="card-top">
-                                <img
-                                    class="benefit-img"
-                                    src={benefit.image}
-                                    alt={benefit.title}
-                                />
-                                <div class="card-title">
-                                    <h3>{benefit.title}</h3>
-                                    <span class="sub">{benefit.partner}</span>
+                            {#if categories.length === 0}
+                                <p class="empty">
+                                    No hay categorías para mostrar.
+                                </p>
+                            {:else}
+                                <div class="table-wrap">
+                                    <table class="data-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Categoría</th>
+                                                <th>Estado</th>
+                                                <th>Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {#each categories as category (category.id_category)}
+                                                <tr>
+                                                    <td>
+                                                        <strong
+                                                            >{category.name}</strong
+                                                        >
+                                                    </td>
+                                                    <td>
+                                                        <button
+                                                            class="status-btn"
+                                                            class:on={category.active}
+                                                            type="button"
+                                                            onclick={() =>
+                                                                toggleCategory(
+                                                                    category,
+                                                                )}
+                                                            disabled={categoryBusy ===
+                                                                category.id_category}
+                                                        >
+                                                            {category.active
+                                                                ? "ACTIVA"
+                                                                : "INACTIVA"}
+                                                        </button>
+                                                    </td>
+                                                    <td>
+                                                        <button
+                                                            class="ico-btn"
+                                                            class:ok={!category.active}
+                                                            type="button"
+                                                            title={category.active
+                                                                ? "Desactivar"
+                                                                : "Activar"}
+                                                            onclick={() =>
+                                                                toggleCategory(
+                                                                    category,
+                                                                )}
+                                                            disabled={categoryBusy ===
+                                                                category.id_category}
+                                                        >
+                                                            {#if category.active}
+                                                                <XCircle
+                                                                    size={15}
+                                                                />
+                                                            {:else}
+                                                                <CheckCircle2
+                                                                    size={15}
+                                                                />
+                                                            {/if}
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                                {#if categoryErrors[category.id_category] || categorySuccess[category.id_category]}
+                                                    <tr class="msg-row">
+                                                        <td colspan="3">
+                                                            {#if categoryErrors[category.id_category]}
+                                                                <p
+                                                                    class="field-error"
+                                                                    role="alert"
+                                                                >
+                                                                    {categoryErrors[
+                                                                        category
+                                                                            .id_category
+                                                                    ]}
+                                                                </p>
+                                                            {/if}
+                                                            {#if categorySuccess[category.id_category]}
+                                                                <p
+                                                                    class="field-success"
+                                                                    role="status"
+                                                                >
+                                                                    {categorySuccess[
+                                                                        category
+                                                                            .id_category
+                                                                    ]}
+                                                                </p>
+                                                            {/if}
+                                                        </td>
+                                                    </tr>
+                                                {/if}
+                                            {/each}
+                                        </tbody>
+                                    </table>
                                 </div>
-                            </div>
-
-                            {#if editingBenefitId === benefit.id_benefit}
-                                <div class="edit-field">
-                                    <label>Título</label>
-                                    <input
-                                        type="text"
-                                        bind:value={
-                                            benefitDrafts[benefit.id_benefit]
-                                                .title
-                                        }
-                                    />
+                            {/if}
+                        </section>
+                    {:else if activeTab === "vouchers"}
+                        <section class="section">
+                            <header class="section-head">
+                                <div>
+                                    <h2>Vouchers</h2>
+                                    <p>
+                                        Consultá, canjeá, rechazá o creá
+                                        vouchers.
+                                    </p>
                                 </div>
-                                <div class="edit-field">
-                                    <label>Descripción</label>
-                                    <textarea
-                                        rows="2"
-                                        bind:value={
-                                            benefitDrafts[benefit.id_benefit]
-                                                .description
-                                        }
-                                    ></textarea>
-                                </div>
-                                <div class="edit-field">
-                                    <label>Imagen (URL)</label>
-                                    <input
-                                        type="url"
-                                        bind:value={
-                                            benefitDrafts[benefit.id_benefit]
-                                                .image
-                                        }
-                                    />
-                                </div>
-                                <div class="edit-field row-2">
-                                    <label>
-                                        Inicio
-                                        <input
-                                            type="date"
-                                            bind:value={
-                                                benefitDrafts[
-                                                    benefit.id_benefit
-                                                ].start_date
-                                            }
-                                        />
-                                    </label>
-                                    <label>
-                                        Fin
-                                        <input
-                                            type="date"
-                                            bind:value={
-                                                benefitDrafts[
-                                                    benefit.id_benefit
-                                                ].end_date
-                                            }
-                                        />
-                                    </label>
-                                </div>
-                                <div class="edit-field row-2">
-                                    <label>
-                                        Cupones máximos
-                                        <input
-                                            type="number"
-                                            min="1"
-                                            bind:value={
-                                                benefitDrafts[
-                                                    benefit.id_benefit
-                                                ].max_coupons
-                                            }
-                                        />
-                                    </label>
-                                    <label>
-                                        Máx. por usuario
-                                        <input
-                                            type="number"
-                                            min="1"
-                                            bind:value={
-                                                benefitDrafts[
-                                                    benefit.id_benefit
-                                                ].max_per_user
-                                            }
-                                        />
-                                    </label>
-                                </div>
-                                <div class="edit-field">
-                                    <label>Estado</label>
-                                    <select
-                                        bind:value={
-                                            benefitDrafts[benefit.id_benefit]
-                                                .status
-                                        }
-                                    >
-                                        <option value="ACTIVE">ACTIVE</option>
-                                        <option value="INACTIVE"
-                                            >INACTIVE</option
+                                <div class="head-actions">
+                                    <select bind:value={voucherStatus}>
+                                        <option value="ALL"
+                                            >Todos los estados</option
                                         >
                                         <option value="PENDING">PENDING</option>
+                                        <option value="DELIVERED"
+                                            >DELIVERED</option
+                                        >
+                                        <option value="EXPIRED">EXPIRED</option>
+                                        <option value="REJECTED"
+                                            >REJECTED</option
+                                        >
                                     </select>
-                                </div>
-                            {:else}
-                                <p class="desc">{benefit.description}</p>
-                                <p class="sub">
-                                    {benefit.type} · {benefit.coupons}/
-                                    {benefit.max_coupons} canjeados
-                                </p>
-                            {/if}
-
-                            {#if benefitErrors[benefit.id_benefit]}
-                                <p class="field-error" role="alert">
-                                    {benefitErrors[benefit.id_benefit]}
-                                </p>
-                            {/if}
-                            {#if benefitSuccess[benefit.id_benefit]}
-                                <p class="field-success" role="status">
-                                    {benefitSuccess[benefit.id_benefit]}
-                                </p>
-                            {/if}
-
-                            <div class="card-actions">
-                                {#if editingBenefitId === benefit.id_benefit}
                                     <button
-                                        class="save-btn"
-                                        type="button"
-                                        onclick={() => saveBenefit(benefit)}
-                                        disabled={benefitBusy ===
-                                            benefit.id_benefit}>Guardar</button
-                                    >
-                                    <button
-                                        class="cancel-btn"
-                                        type="button"
-                                        onclick={cancelEditBenefit}
-                                        >Cancelar</button
-                                    >
-                                {:else}
-                                    <button
-                                        class="edit-btn"
+                                        class="add-btn"
                                         type="button"
                                         onclick={() =>
-                                            startEditBenefit(benefit)}
+                                            (openingCreatingVoucher =
+                                                !openingCreatingVoucher)}
                                     >
-                                        <Pencil size={13} />
-                                        Editar
+                                        <Plus size={16} />
+                                        {openingCreatingVoucher
+                                            ? "Cancelar"
+                                            : "Nuevo voucher"}
                                     </button>
-                                {/if}
-                                <button
-                                    class="danger-btn"
-                                    type="button"
-                                    onclick={() => deleteBenefit(benefit)}
-                                    disabled={benefitBusy ===
-                                        benefit.id_benefit}
+                                </div>
+                            </header>
+
+                            {#if openingCreatingVoucher}
+                                <form
+                                    class="create-form expand-panel"
+                                    transition:slide={{ duration: 220 }}
+                                    onsubmit={(e) => {
+                                        e.preventDefault();
+                                        createVoucher();
+                                    }}
                                 >
-                                    <Trash2 size={14} />
-                                    Eliminar
-                                </button>
-                            </div>
-                        </article>
-                    {:else}
-                        <p class="empty">No hay beneficios para mostrar.</p>
-                    {/each}
-                </div>
-            </section>
-        {:else if activeTab === "categorias"}
-            <section class="section">
-                <header class="section-head">
-                    <div>
-                        <h2>Categorías</h2>
-                        <p>Activá o desactivá las categorías de cupones.</p>
-                    </div>
-                </header>
-
-                {#if categories.length === 0}
-                    <p class="empty">No hay categorías para mostrar.</p>
-                {:else}
-                    <div class="table-wrap">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Categoría</th>
-                                    <th>Estado</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {#each categories as category (category.id_category)}
-                                    <tr>
-                                        <td>
-                                            <strong>{category.name}</strong>
-                                        </td>
-                                        <td>
-                                            <button
-                                                class="status-btn"
-                                                class:on={category.active}
-                                                type="button"
-                                                onclick={() =>
-                                                    toggleCategory(category)}
-                                                disabled={categoryBusy ===
-                                                    category.id_category}
+                                    <h3>Nuevo voucher</h3>
+                                    <div class="form-grid">
+                                        <label>
+                                            Usuario
+                                            <select
+                                                bind:value={newVoucher.id_user}
                                             >
-                                                {category.active
-                                                    ? "ACTIVA"
-                                                    : "INACTIVA"}
-                                            </button>
-                                        </td>
-                                        <td>
-                                            <button
-                                                class="ico-btn"
-                                                class:ok={!category.active}
-                                                type="button"
-                                                title={category.active
-                                                    ? "Desactivar"
-                                                    : "Activar"}
-                                                onclick={() =>
-                                                    toggleCategory(category)}
-                                                disabled={categoryBusy ===
-                                                    category.id_category}
+                                                <option value=""
+                                                    >Seleccionar…</option
+                                                >
+                                                {#each accounts as account (account.id_user)}
+                                                    <option
+                                                        value={account.id_user}
+                                                    >
+                                                        {account.name}
+                                                        {account.lastname}
+                                                        {account.dni
+                                                            ? `· ${account.dni}`
+                                                            : ""}
+                                                    </option>
+                                                {/each}
+                                            </select>
+                                        </label>
+                                        <label>
+                                            Beneficio
+                                            <select
+                                                bind:value={
+                                                    newVoucher.id_benefit
+                                                }
                                             >
-                                                {#if category.active}
-                                                    <XCircle size={15} />
-                                                {:else}
-                                                    <CheckCircle2 size={15} />
-                                                {/if}
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    {#if categoryErrors[category.id_category] || categorySuccess[category.id_category]}
-                                        <tr class="msg-row">
-                                            <td colspan="3">
-                                                {#if categoryErrors[category.id_category]}
-                                                    <p
-                                                        class="field-error"
-                                                        role="alert"
+                                                <option value=""
+                                                    >Seleccionar…</option
+                                                >
+                                                {#each benefits as benefit (benefit.id_benefit)}
+                                                    <option
+                                                        value={benefit.id_benefit}
                                                     >
-                                                        {categoryErrors[
-                                                            category.id_category
-                                                        ]}
-                                                    </p>
-                                                {/if}
-                                                {#if categorySuccess[category.id_category]}
-                                                    <p
-                                                        class="field-success"
-                                                        role="status"
-                                                    >
-                                                        {categorySuccess[
-                                                            category.id_category
-                                                        ]}
-                                                    </p>
-                                                {/if}
-                                            </td>
-                                        </tr>
+                                                        {benefit.title} · {benefit.partner}
+                                                    </option>
+                                                {/each}
+                                            </select>
+                                        </label>
+                                    </div>
+                                    {#if voucherCreateError}
+                                        <p class="field-error" role="alert">
+                                            {voucherCreateError}
+                                        </p>
                                     {/if}
-                                {/each}
-                            </tbody>
-                        </table>
-                    </div>
-                {/if}
-            </section>
-        {:else if activeTab === "vouchers"}
-            <section class="section">
-                <header class="section-head">
-                    <div>
-                        <h2>Vouchers</h2>
-                        <p>Consultá, canjeá, rechazá o creá vouchers.</p>
-                    </div>
-                    <div class="head-actions">
-                        <select bind:value={voucherStatus}>
-                            <option value="ALL">Todos los estados</option>
-                            <option value="PENDING">PENDING</option>
-                            <option value="DELIVERED">DELIVERED</option>
-                            <option value="EXPIRED">EXPIRED</option>
-                            <option value="REJECTED">REJECTED</option>
-                        </select>
-                        <button
-                            class="add-btn"
-                            type="button"
-                            onclick={() =>
-                                (openingCreatingVoucher =
-                                    !openingCreatingVoucher)}
-                        >
-                            <Plus size={16} />
-                            {openingCreatingVoucher
-                                ? "Cancelar"
-                                : "Nuevo voucher"}
-                        </button>
-                    </div>
-                </header>
-
-                {#if openingCreatingVoucher}
-                    <form
-                        class="create-form expand-panel"
-                        transition:slide={{ duration: 220 }}
-                        onsubmit={(e) => {
-                            e.preventDefault();
-                            createVoucher();
-                        }}
-                    >
-                        <h3>Nuevo voucher</h3>
-                        <div class="form-grid">
-                            <label>
-                                Usuario
-                                <select bind:value={newVoucher.id_user}>
-                                    <option value="">Seleccionar…</option>
-                                    {#each accounts as account (account.id_user)}
-                                        <option value={account.id_user}>
-                                            {account.name}
-                                            {account.lastname}
-                                            {account.dni
-                                                ? `· ${account.dni}`
-                                                : ""}
-                                        </option>
-                                    {/each}
-                                </select>
-                            </label>
-                            <label>
-                                Beneficio
-                                <select bind:value={newVoucher.id_benefit}>
-                                    <option value="">Seleccionar…</option>
-                                    {#each benefits as benefit (benefit.id_benefit)}
-                                        <option value={benefit.id_benefit}>
-                                            {benefit.title} · {benefit.partner}
-                                        </option>
-                                    {/each}
-                                </select>
-                            </label>
-                        </div>
-                        {#if voucherCreateError}
-                            <p class="field-error" role="alert">
-                                {voucherCreateError}
-                            </p>
-                        {/if}
-                        <div class="form-actions">
-                            <button
-                                class="save-btn"
-                                type="submit"
-                                disabled={savingVoucher}
-                            >
-                                {savingVoucher ? "Guardando…" : "Crear voucher"}
-                            </button>
-                        </div>
-                    </form>
-                {/if}
-
-                <div class="search-box search-voucher">
-                    <input
-                        type="text"
-                        placeholder="Buscar por token, socio o beneficio…"
-                        bind:value={voucherSearch}
-                    />
-                </div>
-
-                <div class="lookup-box">
-                    <label for="voucherLookupInput">
-                        Consultar voucher por token
-                    </label>
-                    <div class="lookup-row">
-                        <input
-                            id="voucherLookupInput"
-                            type="text"
-                            placeholder="Ingresá el token…"
-                            bind:value={voucherFilter}
-                            onkeydown={(e) => {
-                                if (e.key === "Enter") {
-                                    e.preventDefault();
-                                    searchVoucher();
-                                }
-                            }}
-                        />
-                        <button
-                            class="search-btn"
-                            type="button"
-                            onclick={searchVoucher}
-                            disabled={voucherBusy === "_search"}
-                        >
-                            {voucherBusy === "_search" ? "Buscando…" : "Buscar"}
-                        </button>
-                    </div>
-                </div>
-
-                {#if voucherErrors._search}
-                    <p class="field-error" role="alert">
-                        {voucherErrors._search}
-                    </p>
-                {/if}
-
-                {#if searchedVoucher}
-                    <div
-                        class="voucher-lookup expand-panel"
-                        transition:slide={{ duration: 220 }}
-                    >
-                        <h3>Voucher {searchedVoucher.token}</h3>
-                        <p class="sub">{voucherLabel(searchedVoucher)}</p>
-                        <dl class="lookup-grid">
-                            <div>
-                                <dt>BENEFICIO</dt>
-                                <dd>{searchedVoucher.title}</dd>
-                            </div>
-                            <div>
-                                <dt>NEGOCIO</dt>
-                                <dd>{searchedVoucher.partner}</dd>
-                            </div>
-                            <div>
-                                <dt>SOCIO</dt>
-                                <dd>
-                                    {searchedVoucher.user_name}
-                                    {searchedVoucher.user_dni
-                                        ? `(${searchedVoucher.user_dni})`
-                                        : ""}
-                                </dd>
-                            </div>
-                            <div>
-                                <dt>VIGENTE HASTA</dt>
-                                <dd>{formatDate(searchedVoucher.endDate)}</dd>
-                            </div>
-                        </dl>
-                        <div class="state-bar">
-                            <span
-                                class="status-chip"
-                                class:resolved={searchedVoucher.status !==
-                                    "PENDING"}
-                            >
-                                {searchedVoucher.status}
-                            </span>
-                        </div>
-                    </div>
-                    <div class="card-actions">
-                        <button
-                            class="success-btn"
-                            type="button"
-                            onclick={() => {
-                                if (searchedVoucher)
-                                    voucherAction(searchedVoucher, "redeem");
-                            }}
-                            disabled={!searchedVoucher ||
-                                searchedVoucher.status !== "PENDING" ||
-                                voucherBusy === searchedVoucher.token}
-                        >
-                            <CheckCircle2 size={14} />
-                            Canjear
-                        </button>
-                        <button
-                            class="danger-btn"
-                            type="button"
-                            onclick={() => {
-                                if (searchedVoucher)
-                                    voucherAction(searchedVoucher, "reject");
-                            }}
-                            disabled={!searchedVoucher ||
-                                searchedVoucher.status !== "PENDING" ||
-                                voucherBusy === searchedVoucher.token}
-                        >
-                            <XCircle size={14} />
-                            Rechazar
-                        </button>
-                    </div>
-                {/if}
-
-                <div class="table-wrap">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>Fecha</th>
-                                <th>Token</th>
-                                <th>Socio</th>
-                                <th>Beneficio</th>
-                                <th>Estado</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {#each filteredVouchers as voucher (voucher.token)}
-                                <tr>
-                                    <td
-                                        >{formatDate(
-                                            voucher.application_date,
-                                        )}</td
-                                    >
-                                    <td class="mono token">{voucher.token}</td>
-                                    <td>
-                                        {(() => {
-                                            const account = accountsById.get(
-                                                voucher.id_user,
-                                            );
-                                            return account
-                                                ? `${account.name} ${account.lastname}`
-                                                : voucher.id_user;
-                                        })()}
-                                    </td>
-                                    <td>
-                                        {benefitsById.get(voucher.id_benefit)
-                                            ?.title ?? voucher.id_benefit}
-                                    </td>
-                                    <td>
-                                        <span
-                                            class="status-btn"
-                                            class:on={voucher.status ===
-                                                "PENDING" ||
-                                                voucher.status === "DELIVERED"}
+                                    <div class="form-actions">
+                                        <button
+                                            class="save-btn"
+                                            type="submit"
+                                            disabled={savingVoucher}
                                         >
-                                            {voucher.status}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <div class="row-actions">
-                                            <button
-                                                class="ico-btn ok"
-                                                type="button"
-                                                title="Canjear"
-                                                onclick={() =>
-                                                    voucherAction(
-                                                        voucher,
-                                                        "redeem",
-                                                    )}
-                                                disabled={voucher.status !==
-                                                    "PENDING" ||
-                                                    voucherBusy ===
-                                                        voucher.token}
-                                            >
-                                                <CheckCircle2 size={15} />
-                                            </button>
-                                            <button
-                                                class="ico-btn bad"
-                                                type="button"
-                                                title="Rechazar"
-                                                onclick={() =>
-                                                    voucherAction(
-                                                        voucher,
-                                                        "reject",
-                                                    )}
-                                                disabled={voucher.status !==
-                                                    "PENDING" ||
-                                                    voucherBusy ===
-                                                        voucher.token}
-                                            >
-                                                <XCircle size={15} />
-                                            </button>
-                                            <button
-                                                class="ico-btn"
-                                                type="button"
-                                                title="Eliminar"
-                                                onclick={() =>
-                                                    deleteVoucher(voucher)}
-                                                disabled={voucherBusy ===
-                                                    voucher.token}
-                                            >
-                                                <Trash2 size={15} />
-                                            </button>
+                                            {savingVoucher
+                                                ? "Guardando…"
+                                                : "Crear voucher"}
+                                        </button>
+                                    </div>
+                                </form>
+                            {/if}
+
+                            <div class="search-box search-voucher">
+                                <input
+                                    type="text"
+                                    placeholder="Buscar por token, socio o beneficio…"
+                                    bind:value={voucherSearch}
+                                />
+                            </div>
+
+                            <div class="lookup-box">
+                                <label for="voucherLookupInput">
+                                    Consultar voucher por token
+                                </label>
+                                <div class="lookup-row">
+                                    <input
+                                        id="voucherLookupInput"
+                                        type="text"
+                                        placeholder="Ingresá el token…"
+                                        bind:value={voucherFilter}
+                                        onkeydown={(e) => {
+                                            if (e.key === "Enter") {
+                                                e.preventDefault();
+                                                searchVoucher();
+                                            }
+                                        }}
+                                    />
+                                    <button
+                                        class="search-btn"
+                                        type="button"
+                                        onclick={searchVoucher}
+                                        disabled={voucherBusy === "_search"}
+                                    >
+                                        {voucherBusy === "_search"
+                                            ? "Buscando…"
+                                            : "Buscar"}
+                                    </button>
+                                </div>
+                            </div>
+
+                            {#if voucherErrors._search}
+                                <p class="field-error" role="alert">
+                                    {voucherErrors._search}
+                                </p>
+                            {/if}
+
+                            {#if searchedVoucher}
+                                <div
+                                    class="voucher-lookup expand-panel"
+                                    transition:slide={{ duration: 220 }}
+                                >
+                                    <h3>Voucher {searchedVoucher.token}</h3>
+                                    <p class="sub">
+                                        {voucherLabel(searchedVoucher)}
+                                    </p>
+                                    <dl class="lookup-grid">
+                                        <div>
+                                            <dt>BENEFICIO</dt>
+                                            <dd>{searchedVoucher.title}</dd>
                                         </div>
-                                    </td>
-                                </tr>
-                                {#if voucherErrors[voucher.token]}
-                                    <tr class="msg-row">
-                                        <td colspan="6">
-                                            <p class="field-error" role="alert">
-                                                {voucherErrors[voucher.token]}
-                                            </p>
-                                        </td>
-                                    </tr>
-                                {/if}
-                            {:else}
-                                <tr>
-                                    <td colspan="6" class="empty-cell">
-                                        No hay vouchers para mostrar.
-                                    </td>
-                                </tr>
-                            {/each}
-                        </tbody>
-                    </table>
-                </div>
-            </section>
+                                        <div>
+                                            <dt>NEGOCIO</dt>
+                                            <dd>{searchedVoucher.partner}</dd>
+                                        </div>
+                                        <div>
+                                            <dt>SOCIO</dt>
+                                            <dd>
+                                                {searchedVoucher.user_name}
+                                                {searchedVoucher.user_dni
+                                                    ? `(${searchedVoucher.user_dni})`
+                                                    : ""}
+                                            </dd>
+                                        </div>
+                                        <div>
+                                            <dt>VIGENTE HASTA</dt>
+                                            <dd>
+                                                {formatDate(
+                                                    searchedVoucher.endDate,
+                                                )}
+                                            </dd>
+                                        </div>
+                                    </dl>
+                                    <div class="state-bar">
+                                        <span
+                                            class="status-chip"
+                                            class:resolved={searchedVoucher.status !==
+                                                "PENDING"}
+                                        >
+                                            {searchedVoucher.status}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="card-actions">
+                                    <button
+                                        class="success-btn"
+                                        type="button"
+                                        onclick={() => {
+                                            if (searchedVoucher)
+                                                voucherAction(
+                                                    searchedVoucher,
+                                                    "redeem",
+                                                );
+                                        }}
+                                        disabled={!searchedVoucher ||
+                                            searchedVoucher.status !==
+                                                "PENDING" ||
+                                            voucherBusy ===
+                                                searchedVoucher.token}
+                                    >
+                                        <CheckCircle2 size={14} />
+                                        Canjear
+                                    </button>
+                                    <button
+                                        class="danger-btn"
+                                        type="button"
+                                        onclick={() => {
+                                            if (searchedVoucher)
+                                                voucherAction(
+                                                    searchedVoucher,
+                                                    "reject",
+                                                );
+                                        }}
+                                        disabled={!searchedVoucher ||
+                                            searchedVoucher.status !==
+                                                "PENDING" ||
+                                            voucherBusy ===
+                                                searchedVoucher.token}
+                                    >
+                                        <XCircle size={14} />
+                                        Rechazar
+                                    </button>
+                                </div>
+                            {/if}
+
+                            <div class="table-wrap">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Canjeado</th>
+                                            <th>Token</th>
+                                            <th>Socio</th>
+                                            <th>Beneficio</th>
+                                            <th>Vigencia</th>
+                                            <th>Estado</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {#each filteredVouchers as voucher (voucher.token)}
+                                            <tr>
+                                                <td
+                                                    >{formatDate(
+                                                        voucher.application_date,
+                                                    )}</td
+                                                >
+                                                <td class="mono token"
+                                                    >{voucher.token}</td
+                                                >
+                                                <td>
+                                                    {(() => {
+                                                        const account =
+                                                            accountsById.get(
+                                                                voucher.id_user,
+                                                            );
+                                                        return account
+                                                            ? `${account.name} ${account.lastname}`
+                                                            : voucher.id_user;
+                                                    })()}
+                                                </td>
+                                                <td>
+                                                    {benefitsById.get(
+                                                        voucher.id_benefit,
+                                                    )?.title ??
+                                                        voucher.id_benefit}
+                                                </td>
+                                                <td
+                                                    >{formatDate(
+                                                        voucher.limit_date,
+                                                    )}</td
+                                                >
+                                                <td>
+                                                    <span
+                                                        class="status-btn"
+                                                        class:on={voucher.status ===
+                                                            "PENDING" ||
+                                                            voucher.status ===
+                                                                "DELIVERED"}
+                                                    >
+                                                        {voucher.status}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <div class="row-actions">
+                                                        <button
+                                                            class="ico-btn ok"
+                                                            type="button"
+                                                            title="Canjear"
+                                                            onclick={() =>
+                                                                voucherAction(
+                                                                    voucher,
+                                                                    "redeem",
+                                                                )}
+                                                            disabled={voucher.status !==
+                                                                "PENDING" ||
+                                                                voucherBusy ===
+                                                                    voucher.token}
+                                                        >
+                                                            <CheckCircle2
+                                                                size={15}
+                                                            />
+                                                        </button>
+                                                        <button
+                                                            class="ico-btn bad"
+                                                            type="button"
+                                                            title="Rechazar"
+                                                            onclick={() =>
+                                                                voucherAction(
+                                                                    voucher,
+                                                                    "reject",
+                                                                )}
+                                                            disabled={voucher.status !==
+                                                                "PENDING" ||
+                                                                voucherBusy ===
+                                                                    voucher.token}
+                                                        >
+                                                            <XCircle
+                                                                size={15}
+                                                            />
+                                                        </button>
+                                                        <button
+                                                            class="ico-btn"
+                                                            type="button"
+                                                            title="Eliminar"
+                                                            onclick={() =>
+                                                                deleteVoucher(
+                                                                    voucher,
+                                                                )}
+                                                            disabled={voucherBusy ===
+                                                                voucher.token}
+                                                        >
+                                                            <Trash2 size={15} />
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            {#if voucherErrors[voucher.token]}
+                                                <tr class="msg-row">
+                                                    <td colspan="7">
+                                                        <p
+                                                            class="field-error"
+                                                            role="alert"
+                                                        >
+                                                            {voucherErrors[
+                                                                voucher.token
+                                                            ]}
+                                                        </p>
+                                                    </td>
+                                                </tr>
+                                            {/if}
+                                        {:else}
+                                            <tr>
+                                                <td
+                                                    colspan="7"
+                                                    class="empty-cell"
+                                                >
+                                                    No hay vouchers para
+                                                    mostrar.
+                                                </td>
+                                            </tr>
+                                        {/each}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </section>
                     {/if}
                 </div>
             {/key}
@@ -3097,4 +3340,3 @@
         }
     }
 </style>
-
