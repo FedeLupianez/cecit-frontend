@@ -63,6 +63,10 @@
             <p class="title">¡Hola!</p>
             <p class="text">Bienvenido de vuelta.</p>
             <p class="text">Ingresa los datos para iniciar sesión</p>
+            <p class="signup-text">
+                ¿No tenés cuenta?
+                <a href="/signup" class="signup-link">Creá tu cuenta</a>
+            </p>
         </div>
         <form onsubmit={login} class="right" novalidate>
             <input
@@ -188,6 +192,24 @@
         font-size: 2rem;
         padding: 0;
         margin: 0;
+    }
+
+    .signup-text {
+        margin: 1.2rem 0 0;
+        padding: 0;
+        font-size: 1.1rem;
+        color: #333;
+    }
+
+    .signup-link {
+        color: var(--primary-blue);
+        font-weight: 700;
+        text-decoration: underline;
+        text-underline-offset: 3px;
+    }
+
+    .signup-link:hover {
+        color: var(--primary-blue-light);
     }
 
     .login {

@@ -77,6 +77,65 @@
               ),
     );
 
+    /*
+  ==========================================
+  SCROLL DE FILTROS CON MOUSE (drag + Shift+rueda)
+  ==========================================
+  */
+
+    let filtersEl: HTMLDivElement | null = $state(null);
+    let draggingFilters = $state(false);
+    let dragMoved = false;
+    let dragStartX = 0;
+    let dragStartScroll = 0;
+
+    function onFiltersPointerDown(e: PointerEvent) {
+        if (e.pointerType !== "mouse" || e.button !== 0 || !filtersEl) return;
+        draggingFilters = true;
+        dragMoved = false;
+        dragStartX = e.clientX;
+        dragStartScroll = filtersEl.scrollLeft;
+    }
+
+    function onFiltersPointerMove(e: PointerEvent) {
+        if (!draggingFilters || !filtersEl || e.pointerType !== "mouse")
+            return;
+        const dx = e.clientX - dragStartX;
+        if (Math.abs(dx) > 5) dragMoved = true;
+        if (dragMoved) filtersEl.scrollLeft = dragStartScroll - dx;
+    }
+
+    function endFiltersDrag() {
+        if (!draggingFilters) return;
+        draggingFilters = false;
+        // Suprime el click que sigue a un arrastre
+        if (dragMoved) {
+            setTimeout(() => {
+                dragMoved = false;
+            }, 0);
+        }
+    }
+
+    function onFiltersWheel(e: WheelEvent) {
+        if (!filtersEl) return;
+        const maxScroll = filtersEl.scrollWidth - filtersEl.clientWidth;
+        if (maxScroll <= 0) return;
+        // Shift+rueda: traducir scroll vertical a horizontal
+        if (e.shiftKey && e.deltaY !== 0) {
+            e.preventDefault();
+            filtersEl.scrollLeft += e.deltaY;
+        }
+    }
+
+    function handleFilterClick(e: MouseEvent, filter: string) {
+        if (dragMoved) {
+            e.preventDefault();
+            e.stopPropagation();
+            return;
+        }
+        selectFilter(filter);
+    }
+
     /**
      * @param {string} filter
      */
@@ -160,7 +219,20 @@
         </div>
     </div>
 
-    <div class="filters" aria-busy={filters.length === 0}>
+    <div
+        class="filters"
+        class:dragging={draggingFilters}
+        bind:this={filtersEl}
+        role="group"
+        aria-label="Filtros por categoría"
+        aria-busy={filters.length === 0}
+        onpointerdown={onFiltersPointerDown}
+        onpointermove={onFiltersPointerMove}
+        onpointerup={endFiltersDrag}
+        onpointercancel={endFiltersDrag}
+        onpointerleave={endFiltersDrag}
+        onwheel={onFiltersWheel}
+    >
         {#if filters.length === 0}
             {#each Array(6) as _, i (i)}
                 <div class="filter-skeleton" aria-hidden="true"></div>
@@ -169,7 +241,7 @@
             {#each filters as filter}
                 <button
                     class:active={activeFilter === filter}
-                    onclick={() => selectFilter(filter)}
+                    onclick={(e) => handleFilterClick(e, filter)}
                 >
                     {filter}
                 </button>
@@ -337,6 +409,17 @@
 
         scrollbar-width: none;
         -webkit-overflow-scrolling: touch;
+
+        cursor: grab;
+    }
+
+    .filters.dragging {
+        cursor: grabbing;
+        scroll-behavior: auto;
+    }
+
+    .filters.dragging button {
+        user-select: none;
     }
 
     .filter-skeleton {
