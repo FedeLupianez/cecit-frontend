@@ -12,6 +12,7 @@
         image,
         partner,
         methods,
+        startDate,
         endDate,
         direction,
         logo,
@@ -25,6 +26,7 @@
         image: string;
         partner: string;
         methods: string[];
+        startDate: string;
         endDate: string;
         direction: string;
         logo: string;
@@ -34,16 +36,31 @@
         description: string;
     } = $props();
 
-    const endDateFormated = $derived.by(() => {
-        const parts = endDate?.slice(0, 10).split("-").map(Number);
-        if (!parts || parts.length !== 3 || parts.some(Number.isNaN))
-            return endDate;
-        const [y, m, d] = parts;
-        return new Date(y, m - 1, d).toLocaleDateString("es-ES", {
-            day: "numeric",
-            month: "long",
+    function formatDateTime(iso: string | undefined): string {
+        if (!iso) return "";
+        const d = new Date(iso);
+        if (isNaN(d.getTime())) return iso;
+        const date = d.toLocaleDateString("es-ES", {
+            day: "2-digit",
+            month: "2-digit",
             year: "numeric",
         });
+        const time = d.toLocaleTimeString("es-ES", {
+            hour: "2-digit",
+            minute: "2-digit",
+        });
+        return `${date} ${time}`;
+    }
+
+    const startDateFormatted = $derived(formatDateTime(startDate));
+    const endDateFormatted = $derived(formatDateTime(endDate));
+
+    const validityText = $derived.by(() => {
+        if (startDateFormatted && endDateFormatted) {
+            return `${startDateFormatted} — ${endDateFormatted}`;
+        }
+        if (endDateFormatted) return `Hasta ${endDateFormatted}`;
+        return "";
     });
 
     let user_vouchers = $state<number>(0);
@@ -220,9 +237,9 @@
                         <div class="expanded-data-container">
                             <Clock size={40} class="expanded-data-icon"></Clock>
                             <div class="end-date-info">
-                                <p class="expanded-data-title">VIGENTE HASTA</p>
+                                <p class="expanded-data-title">VIGENCIA</p>
                                 <p class="expanded-data-var">
-                                    {endDateFormated}
+                                    {validityText}
                                 </p>
                             </div>
                         </div>

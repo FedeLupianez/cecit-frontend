@@ -175,6 +175,7 @@
                                 title={benefit.title}
                                 image={benefit.image}
                                 partner={benefit.partner}
+                                startDate={benefit.start_date}
                                 endDate={benefit.end_date}
                                 methods={benefit.payment_methods}
                                 logo={benefit.logo}
