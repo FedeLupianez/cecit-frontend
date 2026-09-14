@@ -3,7 +3,7 @@
     import { slide } from "svelte/transition";
     import { accessToken } from "$lib/stores/authStore";
     import { apiFetch } from "$lib/api";
-    import { Pencil, Plus, Trash2 } from "lucide-svelte";
+    import { Pencil, Plus, Trash2, Store } from "lucide-svelte";
 
     interface Partner {
         id_partner: string;
@@ -33,7 +33,11 @@
         direction: string;
     }
 
-    let partner: Partner | undefined = $state();
+    let partners: Partner[] = $state([]);
+    let selectedPartnerId = $state<string>("");
+    let partner: Partner | undefined = $derived(
+        partners.find((p) => p.id_partner === selectedPartnerId),
+    );
     let benefits: Benefit[] = $state([]);
     let redeemed = $state(0);
     let loading = $state(true);
@@ -65,7 +69,6 @@
     );
 
     function authHeaders(): Record<string, string> {
-        // apiFetch inyecta el Authorization automáticamente.
         return {};
     }
 
@@ -83,6 +86,41 @@
         return "Ocurrió un error.";
     }
 
+    async function loadPartnerData(p: Partner) {
+        selectedPartnerId = p.id_partner;
+        benefits = [];
+        locations = [];
+        redeemed = 0;
+
+        try {
+            const benefitsResponse = await apiFetch(
+                `/api/benefits/partner?id_partner=${encodeURIComponent(p.id_partner)}`,
+                { credentials: "include" },
+            );
+            if (benefitsResponse.ok) {
+                benefits = (await benefitsResponse.json()).filter(
+                    (b: Benefit) => b.id_partner === p.id_partner,
+                );
+            }
+
+            const vouchers = await Promise.all(
+                benefits.map(async (b): Promise<Voucher[]> => {
+                    const response = await fetch(
+                        `/api/vouchers/bybenefit?id_benefit=${b.id_benefit}`,
+                    );
+                    return response.ok ? await response.json() : [];
+                }),
+            );
+            redeemed = vouchers
+                .flat()
+                .filter((v) => v.status === "DELIVERED").length;
+
+            await loadLocations();
+        } catch {
+            // silent — benefits/locations will show empty states
+        }
+    }
+
     async function loadPanel() {
         const token = accessToken.getToken();
         if (!token) {
@@ -92,48 +130,24 @@
         }
 
         try {
-            const partnerResponse = await apiFetch("/api/partners-admins/me", {
-                headers: authHeaders(),
+            const response = await apiFetch("/api/partners-admins/me/all", {
                 credentials: "include",
             });
-            if (
-                partnerResponse.status === 401 ||
-                partnerResponse.status === 403
-            ) {
+            if (response.status === 401 || response.status === 403) {
                 error = "No tenés permiso para ver el panel de negocio.";
                 return;
             }
-            if (!partnerResponse.ok)
-                throw new Error("No se pudo obtener el negocio.");
-            partner = await partnerResponse.json();
-
-            const benefitsResponse = await apiFetch(
-                `/api/benefits/partner?id_partner=${encodeURIComponent(partner?.id_partner || "")}`,
-                {
-                    headers: authHeaders(),
-                    credentials: "include",
-                },
-            );
-            if (!benefitsResponse.ok)
-                throw new Error("No se pudieron obtener los beneficios.");
-            benefits = (await benefitsResponse.json()).filter(
-                (benefit: Benefit) =>
-                    benefit.id_partner === partner?.id_partner,
-            );
-
-            const vouchers = await Promise.all(
-                benefits.map(async (benefit): Promise<Voucher[]> => {
-                    const response = await fetch(
-                        `/api/vouchers/bybenefit?id_benefit=${benefit.id_benefit}`,
-                    );
-                    return response.ok ? await response.json() : [];
-                }),
-            );
-            redeemed = vouchers
-                .flat()
-                .filter((voucher) => voucher.status === "DELIVERED").length;
-
-            await loadLocations();
+            if (!response.ok)
+                throw new Error("No se pudieron obtener los negocios.");
+            partners = await response.json();
+            if (partners.length === 0) {
+                error = "No tenés negocios asociados.";
+                return;
+            }
+            if (!selectedPartnerId || !partners.find((p) => p.id_partner === selectedPartnerId)) {
+                selectedPartnerId = partners[0].id_partner;
+            }
+            await loadPartnerData(partner!);
         } catch (cause) {
             error =
                 cause instanceof Error
@@ -151,7 +165,7 @@
         try {
             const response = await apiFetch(
                 `/api/partners/locations?id_partner=${encodeURIComponent(partner.id_partner)}`,
-                { headers: authHeaders(), credentials: "include" },
+                { credentials: "include" },
             );
             if (!response.ok) {
                 locationsError = "No se pudieron cargar las ubicaciones.";
@@ -163,6 +177,13 @@
         } catch {
             locationsError = "No se pudieron cargar las ubicaciones.";
         }
+    }
+
+    function selectPartner(p: Partner) {
+        if (p.id_partner === selectedPartnerId) return;
+        editingName = false;
+        editingLogo = false;
+        loadPartnerData(p);
     }
 
     function startEditName() {
@@ -213,7 +234,12 @@
                 return;
             }
             const data = await response.json();
-            partner.name = data?.name ?? new_name.toLowerCase();
+            const updatedName = data?.name ?? new_name.toLowerCase();
+            partners = partners.map((p) =>
+                p.id_partner === partner!.id_partner
+                    ? { ...p, name: updatedName }
+                    : p,
+            );
             editingName = false;
         } catch (cause) {
             nameError =
@@ -273,7 +299,12 @@
                 return;
             }
             const data = await response.json();
-            partner.logo = data?.logo ?? new_logo;
+            const updatedLogo = data?.logo ?? new_logo;
+            partners = partners.map((p) =>
+                p.id_partner === partner!.id_partner
+                    ? { ...p, logo: updatedLogo }
+                    : p,
+            );
             editingLogo = false;
         } catch (cause) {
             logoError =
@@ -399,8 +430,32 @@
             <p class="state">Cargando información del negocio...</p>
         {:else if error}
             <p class="state error" role="alert">{error}</p>
-        {:else if partner}
-            <section class="business-card">
+        {:else if partners.length > 0}
+            {#if partners.length > 1}
+                <div class="partner-selector" role="tablist" aria-label="Seleccionar negocio">
+                    {#each partners as p (p.id_partner)}
+                        <button
+                            type="button"
+                            role="tab"
+                            aria-selected={p.id_partner === selectedPartnerId}
+                            class="partner-tab"
+                            class:active={p.id_partner === selectedPartnerId}
+                            onclick={() => selectPartner(p)}
+                        >
+                            <img
+                                class="partner-tab-logo"
+                                src={p.logo}
+                                alt=""
+                                loading="lazy"
+                            />
+                            <span>{p.name}</span>
+                        </button>
+                    {/each}
+                </div>
+            {/if}
+
+            {#if partner}
+                <section class="business-card">
                 <div class="logo-col">
                     <img
                         class="logo"
@@ -596,6 +651,7 @@
                     {/each}
                 </div>
             </section>
+            {/if}
         {/if}
     </div>
 </section>
@@ -993,6 +1049,49 @@
     }
     .error {
         color: #a31818;
+    }
+
+    .partner-selector {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 24px;
+        overflow-x: auto;
+        padding-bottom: 4px;
+    }
+    .partner-tab {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 18px;
+        border: 1px solid #9a9a9a;
+        border-radius: 999px;
+        background: #fff;
+        color: #111;
+        font: inherit;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        white-space: nowrap;
+        flex-shrink: 0;
+        transition:
+            background 0.15s ease,
+            border-color 0.15s ease,
+            color 0.15s ease;
+    }
+    .partner-tab:hover {
+        border-color: #151535;
+    }
+    .partner-tab.active {
+        background: #151535;
+        border-color: #151535;
+        color: #fff;
+    }
+    .partner-tab-logo {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        object-fit: cover;
+        background: #eee;
     }
     @media (max-width: 780px) {
         .business-panel {
