@@ -1,5 +1,4 @@
 <script lang="ts">
-    import { onMount } from "svelte";
     import { fly, slide } from "svelte/transition";
     import { page } from "$app/state";
     import { accessToken } from "$lib/stores/authStore";
@@ -18,6 +17,7 @@
         XCircle,
         CheckCircle2,
         Tags,
+        Loader2,
     } from "lucide-svelte";
 
     type AccountRole = "USER" | "CECIT_ADMIN" | "PARTNER_ADMIN";
@@ -167,8 +167,10 @@
         new Map(benefits.map((benefit) => [benefit.id_benefit, benefit])),
     );
 
-    async function loadAll() {
-        loadingGlobal = true;
+    let loadedTabs = $state(new Set<Tab>());
+
+    async function ensureTabData(tab: Tab) {
+        if (loadedTabs.has(tab)) return;
         errorGlobal = "";
         try {
             const token = accessToken.getToken();
@@ -176,55 +178,88 @@
                 setError("Tu sesión expiró. Volvé a iniciar sesión.");
                 return;
             }
-            const [
-                accountsRes,
-                partnersRes,
-                benefitsRes,
-                typesRes,
-                vouchersRes,
-                categoriesRes,
-            ] = await Promise.all([
-                fetch("/api/accounts/all", {
+            loadingGlobal = true;
+
+            if (tab === "usuarios") {
+                const res = await fetch("/api/accounts/all", {
                     headers: authHeaders(),
                     credentials: "include",
-                }),
-                fetch("/api/partners/all", {
+                });
+                if (res.status === 401 || res.status === 403) {
+                    setError("No tenés permiso para ver el panel de administrador.");
+                    return;
+                }
+                if (!res.ok) {
+                    setError("No se pudieron cargar los usuarios.");
+                    return;
+                }
+                accounts = await res.json();
+            } else if (tab === "negocios") {
+                const res = await fetch("/api/partners/all", {
                     headers: authHeaders(),
                     credentials: "include",
-                }),
-                fetch("/api/benefits/all"),
-                fetch("/api/benefit-types/all"),
-                fetch("/api/vouchers/all"),
-                fetch("/api/categories/all"),
-            ]);
-            if (accountsRes.status === 401 || accountsRes.status === 403) {
-                setError(
-                    "No tenés permiso para ver el panel de administrador.",
-                );
-                return;
+                });
+                if (!res.ok) {
+                    setError("No se pudieron cargar los negocios.");
+                    return;
+                }
+                partners = await res.json();
+            } else if (tab === "beneficios") {
+                const [partnersRes, benefitsRes, typesRes] = await Promise.all([
+                    fetch("/api/partners/all", {
+                        headers: authHeaders(),
+                        credentials: "include",
+                    }),
+                    fetch("/api/benefits/all"),
+                    fetch("/api/benefit-types/all"),
+                ]);
+                if (!partnersRes.ok || !benefitsRes.ok) {
+                    setError("No se pudieron cargar los beneficios.");
+                    return;
+                }
+                partners = await partnersRes.json();
+                benefits = await benefitsRes.json();
+                benefitTypes = typesRes.ok ? await typesRes.json() : [];
+            } else if (tab === "vouchers") {
+                const [accountsRes, benefitsRes, vouchersRes] = await Promise.all([
+                    fetch("/api/accounts/all", {
+                        headers: authHeaders(),
+                        credentials: "include",
+                    }),
+                    fetch("/api/benefits/all"),
+                    fetch("/api/vouchers/all"),
+                ]);
+                if (!accountsRes.ok || !benefitsRes.ok) {
+                    setError("No se pudieron cargar los vouchers.");
+                    return;
+                }
+                accounts = await accountsRes.json();
+                benefits = await benefitsRes.json();
+                vouchers = vouchersRes.ok ? await vouchersRes.json() : [];
+            } else if (tab === "categorias") {
+                const res = await fetch("/api/categories/all");
+                if (!res.ok) {
+                    setError("No se pudieron cargar las categorías.");
+                    return;
+                }
+                categories = await res.json();
             }
-            if (!accountsRes.ok || !partnersRes.ok || !benefitsRes.ok) {
-                setError("No se pudieron cargar los datos del panel.");
-                return;
-            }
-            accounts = await accountsRes.json();
-            partners = await partnersRes.json();
-            benefits = await benefitsRes.json();
-            benefitTypes = typesRes.ok ? await typesRes.json() : [];
-            vouchers = vouchersRes.ok ? await vouchersRes.json() : [];
-            categories = categoriesRes.ok ? await categoriesRes.json() : [];
+
+            loadedTabs.add(tab);
         } catch (cause) {
             setError(
                 cause instanceof Error
                     ? cause.message
-                    : "No se pudo cargar el panel.",
+                    : "No se pudieron cargar los datos.",
             );
         } finally {
             loadingGlobal = false;
         }
     }
 
-    onMount(loadAll);
+    $effect(() => {
+        ensureTabData(activeTab);
+    });
 
     /* ------------------------------------------------------------------ */
     /*  USUARIOS                                                           */
@@ -701,7 +736,8 @@
                 directions: "",
             };
             setSuccess("Negocio creado correctamente.");
-            await loadAll();
+            loadedTabs.delete("negocios");
+            await ensureTabData("negocios");
         } catch (cause) {
             partnerCreateError =
                 cause instanceof Error ? cause.message : "No se pudo crear.";
@@ -876,7 +912,8 @@
                 max_per_user: "",
             };
             setSuccess("Beneficio creado correctamente.");
-            await loadAll();
+            loadedTabs.delete("beneficios");
+            await ensureTabData("beneficios");
         } catch (cause) {
             benefitCreateError =
                 cause instanceof Error ? cause.message : "No se pudo crear.";
@@ -1017,7 +1054,7 @@
         target: { token: string; status: string },
         action: "redeem" | "reject",
     ) {
-        voucherBusy = target.token;
+        voucherBusy = `${target.token}:${action}`;
         voucherErrors[target.token] = "";
         try {
             const response = await fetch(
@@ -2263,7 +2300,7 @@
                                     </p>
                                 </div>
                                 <div class="head-actions">
-                                    <select bind:value={voucherStatus}>
+                                    <select class="filter-select" bind:value={voucherStatus}>
                                         <option value="ALL"
                                             >Todos los estados</option
                                         >
@@ -2467,10 +2504,17 @@
                                             searchedVoucher.status !==
                                                 "PENDING" ||
                                             voucherBusy ===
-                                                searchedVoucher.token}
+                                                `${searchedVoucher.token}:redeem` ||
+                                            voucherBusy ===
+                                                `${searchedVoucher.token}:reject`}
                                     >
-                                        <CheckCircle2 size={14} />
-                                        Canjear
+                                        {#if voucherBusy === `${searchedVoucher?.token}:redeem`}
+                                            <Loader2 size={14} class="spin" />
+                                            Canjeando…
+                                        {:else}
+                                            <CheckCircle2 size={14} />
+                                            Canjear
+                                        {/if}
                                     </button>
                                     <button
                                         class="danger-btn"
@@ -2486,10 +2530,17 @@
                                             searchedVoucher.status !==
                                                 "PENDING" ||
                                             voucherBusy ===
-                                                searchedVoucher.token}
+                                                `${searchedVoucher.token}:redeem` ||
+                                            voucherBusy ===
+                                                `${searchedVoucher.token}:reject`}
                                     >
-                                        <XCircle size={14} />
-                                        Rechazar
+                                        {#if voucherBusy === `${searchedVoucher?.token}:reject`}
+                                            <Loader2 size={14} class="spin" />
+                                            Rechazando…
+                                        {:else}
+                                            <XCircle size={14} />
+                                            Rechazar
+                                        {/if}
                                     </button>
                                 </div>
                             {/if}
@@ -2565,11 +2616,20 @@
                                                             disabled={voucher.status !==
                                                                 "PENDING" ||
                                                                 voucherBusy ===
-                                                                    voucher.token}
+                                                                    `${voucher.token}:redeem` ||
+                                                                voucherBusy ===
+                                                                    `${voucher.token}:reject`}
                                                         >
-                                                            <CheckCircle2
-                                                                size={15}
-                                                            />
+                                                            {#if voucherBusy === `${voucher.token}:redeem`}
+                                                                <Loader2
+                                                                    size={15}
+                                                                    class="spin"
+                                                                />
+                                                            {:else}
+                                                                <CheckCircle2
+                                                                    size={15}
+                                                                />
+                                                            {/if}
                                                         </button>
                                                         <button
                                                             class="ico-btn bad"
@@ -2583,11 +2643,20 @@
                                                             disabled={voucher.status !==
                                                                 "PENDING" ||
                                                                 voucherBusy ===
-                                                                    voucher.token}
+                                                                    `${voucher.token}:redeem` ||
+                                                                voucherBusy ===
+                                                                    `${voucher.token}:reject`}
                                                         >
-                                                            <XCircle
-                                                                size={15}
-                                                            />
+                                                            {#if voucherBusy === `${voucher.token}:reject`}
+                                                                <Loader2
+                                                                    size={15}
+                                                                    class="spin"
+                                                                />
+                                                            {:else}
+                                                                <XCircle
+                                                                    size={15}
+                                                                />
+                                                            {/if}
                                                         </button>
                                                         <button
                                                             class="ico-btn"
@@ -2598,7 +2667,11 @@
                                                                     voucher,
                                                                 )}
                                                             disabled={voucherBusy ===
-                                                                voucher.token}
+                                                                voucher.token ||
+                                                                voucherBusy ===
+                                                                    `${voucher.token}:redeem` ||
+                                                                voucherBusy ===
+                                                                    `${voucher.token}:reject`}
                                                         >
                                                             <Trash2 size={15} />
                                                         </button>
@@ -2761,6 +2834,9 @@
         .edit-field {
             animation: none;
         }
+        :global(.spin) {
+            animation: none;
+        }
     }
 
     .section {
@@ -2819,6 +2895,15 @@
         border-radius: 9px;
         font: inherit;
         font-size: 14px;
+    }
+    .filter-select {
+        padding: 10px 13px;
+        border: 1px solid #cdd3e2;
+        border-radius: 9px;
+        background: #fff;
+        font: inherit;
+        font-size: 14px;
+        cursor: pointer;
     }
     .search:focus-visible,
     input:focus-visible,
@@ -2949,6 +3034,19 @@
     .ico-btn:disabled {
         opacity: 0.4;
         cursor: default;
+    }
+
+    :global(.spin) {
+        animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+        from {
+            transform: rotate(0deg);
+        }
+        to {
+            transform: rotate(360deg);
+        }
     }
 
     .inline-edit {
