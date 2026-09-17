@@ -9,8 +9,7 @@
     import { getRoleAccess } from "$lib/access/roleAccess";
     import RoleCard from "$lib/components/RoleCard.svelte";
 
-    const logo =
-        "http://centrodecomercioag.com.ar/wp-content/uploads/2023/07/logonuevo.png";
+    const logo = "/logo_con_texto.png";
 
     let profile: Profile | null | undefined = $state();
     let avatar = $state<string>("");
@@ -23,7 +22,10 @@
         if (loggingOut) return;
         loggingOut = true;
         try {
-            await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+            await fetch("/api/auth/logout", {
+                method: "POST",
+                credentials: "include",
+            });
         } finally {
             accessToken.clear();
             profileStore.clear();
@@ -59,7 +61,6 @@
             window.removeEventListener("keydown", closeMenuOnEscape);
         };
     });
-
     $effect(() => {
         if (!profile?.email) {
             avatar = "";
@@ -77,42 +78,43 @@
     <div class="links">
         <a href="http://centrodecomercioag.com.ar/">Institucional</a>
         <span class="separator" aria-hidden="true">|</span>
-        <a href="http://centrodecomercioag.com.ar/hacete-socio/">Hacete socio</a>
+        <a href="http://centrodecomercioag.com.ar/hacete-socio/">Hacete socio</a
+        >
         <span class="separator" aria-hidden="true">|</span>
         <a href="http://centrodecomercioag.com.ar/contacto/">Contacto</a>
 
         <div class="user-menu" bind:this={userMenu}>
-        <button
-            class="user-btn"
-            type="button"
-            aria-label="Abrir menú de usuario"
-            aria-expanded={showRoleMenu}
-            onclick={() => (showRoleMenu = !showRoleMenu)}
-        >
-            {#if !profile}
-                <User24Icon height="3.0em" class="profile-icon" />
-            {:else}
-                <img src={avatar} alt="profileImage" class="profile-icon" />
-            {/if}
-        </button>
-
-        {#if showRoleMenu}
-            <div class="role-menu">
-                {#if access}
-                    <RoleCard
-                        {access}
-                        compact
-                        onLogout={logout}
-                        logoutPending={loggingOut}
-                    />
+            <button
+                class="user-btn"
+                type="button"
+                aria-label="Abrir menú de usuario"
+                aria-expanded={showRoleMenu}
+                onclick={() => (showRoleMenu = !showRoleMenu)}
+            >
+                {#if !profile}
+                    <User24Icon height="3.0em" class="profile-icon" />
                 {:else}
-                    <p class="role-loading">Cargando perfil...</p>
+                    <img src={avatar} alt="profileImage" class="profile-icon" />
                 {/if}
-            </div>
-        {/if}
-        {#if loggingOut}
-            <span class="sr-only" role="status">Cerrando sesión…</span>
-        {/if}
+            </button>
+
+            {#if showRoleMenu}
+                <div class="role-menu">
+                    {#if access}
+                        <RoleCard
+                            {access}
+                            compact
+                            onLogout={logout}
+                            logoutPending={loggingOut}
+                        />
+                    {:else}
+                        <p class="role-loading">Cargando perfil...</p>
+                    {/if}
+                </div>
+            {/if}
+            {#if loggingOut}
+                <span class="sr-only" role="status">Cerrando sesión…</span>
+            {/if}
         </div>
     </div>
 
@@ -166,7 +168,10 @@
         cursor: pointer;
     }
 
-    .user-menu { position: relative; flex: 0 0 auto; }
+    .user-menu {
+        position: relative;
+        flex: 0 0 auto;
+    }
 
     .role-menu {
         position: absolute;
