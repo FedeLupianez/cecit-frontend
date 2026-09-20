@@ -1,5 +1,4 @@
 <script lang="ts">
-    import { page } from "$app/state";
     import { slide } from "svelte/transition";
     import { accessToken } from "$lib/stores/authStore";
     import { apiFetch } from "$lib/api";
@@ -8,15 +7,7 @@
     import { getRoleAccess } from "$lib/access/roleAccess";
     import { Pencil, Mail, Lock, BadgeCheck, Hash } from "lucide-svelte";
 
-    const profile = $derived(
-        page.data.profile as
-            | {
-                  user_id: string;
-                  email: string;
-                  role?: string;
-              }
-            | undefined,
-    );
+    const profile = $derived(profileStore.getProfile());
     const access = $derived(getRoleAccess(profile?.role));
 
     const avatar = $derived(

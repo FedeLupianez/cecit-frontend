@@ -1,7 +1,9 @@
 <script lang="ts">
     import { onMount } from "svelte";
     import { slide } from "svelte/transition";
+    import { goto } from "$app/navigation";
     import { accessToken } from "$lib/stores/authStore";
+    import { profileStore } from "$lib/stores/profileStore";
     import { apiFetch } from "$lib/api";
     import { Pencil, Plus, Trash2, Store } from "lucide-svelte";
 
@@ -38,6 +40,12 @@
     let partner: Partner | undefined = $derived(
         partners.find((p) => p.id_partner === selectedPartnerId),
     );
+
+    $effect(() => {
+        const profile = profileStore.getProfile();
+        if (profile && profile.role !== "PARTNER_ADMIN") goto("/");
+    });
+
     let benefits: Benefit[] = $state([]);
     let redeemed = $state(0);
     let loading = $state(true);

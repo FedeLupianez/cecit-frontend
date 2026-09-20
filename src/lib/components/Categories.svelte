@@ -1,19 +1,66 @@
-<script>
+<script lang="ts">
     import "./Categories.css";
 
     import { onMount } from "svelte";
-    import { ChevronRight, ChevronLeft } from "lucide-svelte";
-    import * as iconMap from "lucide-svelte";
+    import {
+        ChevronRight,
+        ChevronLeft,
+        Tag,
+        Car,
+        Gift,
+        ShoppingBag,
+        UtensilsCrossed,
+        Heart,
+        Home,
+        GraduationCap,
+        Plane,
+        Shirt,
+        Smartphone,
+        Briefcase,
+        Dumbbell,
+        Dog,
+        Baby,
+        BookOpen,
+        Music,
+        Palette,
+        Wrench,
+        Stethoscope,
+        Gem,
+        Banknote,
+        Landmark,
+    } from "lucide-svelte";
     import {
         getCategories,
         loadCategories,
     } from "$lib/stores/categories.svelte";
 
-    /** @param {string} name */
-    function getIcon(name) {
-        return (
-            iconMap[/** @type {keyof typeof iconMap} */ (name)] ?? iconMap.Book
-        );
+    const iconMap: Record<string, typeof Tag> = {
+        Car,
+        Gift,
+        ShoppingBag,
+        UtensilsCrossed,
+        Heart,
+        Home,
+        GraduationCap,
+        Plane,
+        Shirt,
+        Smartphone,
+        Briefcase,
+        Dumbbell,
+        Dog,
+        Baby,
+        BookOpen,
+        Music,
+        Palette,
+        Wrench,
+        Stethoscope,
+        Gem,
+        Banknote,
+        Landmark,
+    };
+
+    function getIcon(name: string) {
+        return iconMap[name] ?? Tag;
     }
 
     let categories = $derived(getCategories());
@@ -25,12 +72,11 @@
         loadCategories();
     });
 
-    /** @type {HTMLElement | undefined} */
-    let carousel;
+    let carousel: HTMLElement | undefined;
 
     const SCROLL_STEP = 300;
 
-    function scrollCarousel(direction) {
+    function scrollCarousel(direction: number) {
         if (!carousel) return;
 
         carousel.scrollBy({

@@ -67,7 +67,6 @@
         const unsub = profileStore.subscribe((p) => {
             profile = p;
         });
-        console.log(profile);
         window.addEventListener("click", closeMenuOnOutsideClick);
         window.addEventListener("keydown", closeMenuOnEscape);
         return () => {

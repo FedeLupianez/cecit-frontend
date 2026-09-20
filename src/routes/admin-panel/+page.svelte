@@ -1,7 +1,8 @@
 <script lang="ts">
     import { fly, slide } from "svelte/transition";
-    import { page } from "$app/state";
+    import { goto } from "$app/navigation";
     import { accessToken } from "$lib/stores/authStore";
+    import { profileStore } from "$lib/stores/profileStore";
     // Alias: todos los fetch de este panel pasan por el wrapper con
     // Authorization automática y reintento tras refresh ante 401.
     import { apiFetch as fetch } from "$lib/api";
@@ -120,6 +121,11 @@
     ];
 
     let activeTab: Tab = $state("usuarios");
+
+    $effect(() => {
+        const profile = profileStore.getProfile();
+        if (profile && profile.role !== "CECIT_ADMIN") goto("/");
+    });
 
     let loadingGlobal = $state(true);
     let errorGlobal = $state("");
@@ -882,7 +888,7 @@
                 },
                 credentials: "include",
                 body: JSON.stringify({
-                    id_admin: page.data.profile?.user_id ?? "",
+                    id_admin: profileStore.getProfile()?.user_id ?? "",
                     id_partner: newBenefit.id_partner,
                     id_type: Number(newBenefit.id_type),
                     start_date: newBenefit.start_date || today,

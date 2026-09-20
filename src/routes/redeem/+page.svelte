@@ -1,5 +1,7 @@
 <script lang="ts">
+    import { goto } from "$app/navigation";
     import { accessToken } from "$lib/stores/authStore";
+    import { profileStore } from "$lib/stores/profileStore";
     import { apiFetch } from "$lib/api";
 
     interface VoucherInfo {
@@ -16,6 +18,11 @@
     }
 
     type VoucherState = "PENDING" | "DELIVERED" | "REJECTED";
+
+    $effect(() => {
+        const profile = profileStore.getProfile();
+        if (profile && profile.role !== "PARTNER_ADMIN") goto("/");
+    });
 
     let tokenInput = $state("");
     let voucher: VoucherInfo | undefined = $state();

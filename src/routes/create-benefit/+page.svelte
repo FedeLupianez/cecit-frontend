@@ -2,11 +2,16 @@
     import { onMount } from "svelte";
 
     import { goto } from "$app/navigation";
-    import { page } from "$app/state";
 
     import { accessToken } from "$lib/stores/authStore";
     import { apiFetch } from "$lib/api";
+    import { profileStore } from "$lib/stores/profileStore";
     import type { BenefitsCreateDTO } from "$lib/types/Benefit";
+
+    $effect(() => {
+        const profile = profileStore.getProfile();
+        if (profile && profile.role !== "CECIT_ADMIN") goto("/");
+    });
 
     let title = $state("");
 
@@ -95,7 +100,7 @@
 
         try {
             const payload: BenefitsCreateDTO = {
-                id_admin: page.data.profile?.user_id ?? "",
+                id_admin: profileStore.getProfile()?.user_id ?? "",
                 id_partner: selectedPartner,
                 id_type: Number(selectedType),
                 start_date: `${startDate} ${startTime || "00:00"}:00`,
