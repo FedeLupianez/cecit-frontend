@@ -33,10 +33,7 @@
 </script>
 
 <svelte:head>
-    <link
-        rel="icon"
-        href="http://centrodecomercioag.com.ar/wp-content/uploads/2023/07/cecit2023.png"
-    />
+    <link rel="icon" href="/logo_sin_texto.png" />
 </svelte:head>
 
 <Navbar />

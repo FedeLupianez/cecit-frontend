@@ -15,7 +15,7 @@ export const load: LayoutServerLoad = async ({ fetch, cookies, url }) => {
         };
     }
 
-    if (url.pathname === "/login") return {};
+    if (url.pathname === "/login" || url.pathname === "/signup") return {};
 
     const refreshToken = cookies.get("refresh_token_cecit");
     if (!refreshToken) throw redirect(302, "/login");

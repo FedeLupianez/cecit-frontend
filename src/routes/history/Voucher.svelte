@@ -136,9 +136,9 @@
 
 <style>
     .card {
-        background: #f4f5f7;
-        border: 1px solid #2b2b2b;
-        border-radius: 0;
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 16px;
         overflow: hidden;
 
         width: 100%;
@@ -146,6 +146,14 @@
 
         display: flex;
         flex-direction: column;
+
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+        transition: box-shadow 0.2s ease, transform 0.2s ease;
+    }
+
+    .card:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
+        transform: translateY(-2px);
     }
 
     .compact-card {
@@ -166,7 +174,7 @@
     }
 
     .content {
-        padding: 8px 10px 14px;
+        padding: 14px 16px 16px;
 
         flex: 1;
         display: flex;
@@ -175,50 +183,56 @@
 
     .title-row {
         display: flex;
-        align-items: center;
+        align-items: flex-start;
         justify-content: space-between;
-        gap: 12px;
+        gap: 10px;
     }
 
     h2 {
         margin: 0;
-        color: #050505;
+        color: #111827;
 
-        font-size: 25px;
-        font-weight: 800;
-        line-height: 1.1;
-        letter-spacing: 0;
+        font-size: 20px;
+        font-weight: 700;
+        line-height: 1.2;
+        letter-spacing: -0.2px;
 
-        white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+        display: -webkit-box;
+        line-clamp: 2;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
     }
 
     .redeemed-badge {
         min-width: max-content;
 
-        padding: 6px 13px;
+        padding: 4px 10px;
 
         border: none;
         border-radius: 999px;
 
-        background: #2ecc71;
-        color: white;
+        background: #dcfce7;
+        color: #166534;
 
-        font-size: 14px;
-        font-weight: 500;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.3px;
+        white-space: nowrap;
     }
 
     .redeemed-badge.rejected {
-        background: #e67e22;
+        background: #ffedd5;
+        color: #9a3412;
     }
 
     .voucher-data {
-        margin-top: 10px;
+        margin-top: 12px;
 
         display: flex;
         flex-direction: column;
-        gap: 2px;
+        gap: 8px;
     }
 
     .voucher-data p {
@@ -232,62 +246,69 @@
     }
 
     .status-badge {
-        padding: 2px 10px;
+        padding: 3px 10px;
 
         border-radius: 999px;
 
-        background: #2ecc71;
-        color: white;
+        background: #dcfce7;
+        color: #166534;
 
         font-size: 11px;
-        font-weight: 800;
+        font-weight: 700;
         letter-spacing: 0.3px;
         line-height: 1.4;
     }
 
     .status-badge.expired {
-        background: #c0392b;
+        background: #fee2e2;
+        color: #991b1b;
     }
 
     .status-badge.delivered {
-        background: #2ecc71;
+        background: #dcfce7;
+        color: #166534;
     }
 
     .status-badge.rejected {
-        background: #e67e22;
+        background: #ffedd5;
+        color: #9a3412;
     }
 
     .data-label {
-        color: #8a8d95;
+        color: #9ca3af;
 
-        font-size: 12px;
-        font-weight: 800;
-        letter-spacing: 0.3px;
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
 
     .data-var {
-        color: #151535;
+        color: #1f2937;
 
-        font-size: 16px;
-        font-weight: 800;
-        line-height: 1.2;
-        letter-spacing: 0.3px;
+        font-size: 14px;
+        font-weight: 600;
+        line-height: 1.3;
     }
 
     .data-var.token {
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+        color: #6b7280;
+        font-family: monospace;
+        font-size: 13px;
     }
 
     .bottom {
         margin-top: auto;
         padding-top: 12px;
+        border-top: 1px solid #f3f4f6;
 
         display: flex;
         justify-content: space-between;
         align-items: center;
-        gap: 12px;
+        gap: 10px;
     }
 
     .business {
@@ -295,26 +316,26 @@
 
         display: flex;
         align-items: center;
-        gap: 9px;
+        gap: 8px;
     }
 
     .business img {
-        width: 24px;
-        height: 24px;
+        width: 22px;
+        height: 22px;
 
         flex: 0 0 auto;
         object-fit: contain;
+        border-radius: 4px;
     }
 
     .business p {
         margin: 0;
 
-        color: #151535;
+        color: #374151;
 
-        font-size: 16px;
-        font-weight: 800;
+        font-size: 13px;
+        font-weight: 600;
         line-height: 1;
-        letter-spacing: 0.3px;
 
         white-space: nowrap;
         overflow: hidden;
@@ -330,31 +351,37 @@
     .download-btn {
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 6px;
 
         background: #151535;
         color: white;
-        padding: 0.5rem 1rem;
-        font-size: 1rem;
+        padding: 8px 14px;
+        font-size: 13px;
+        font-weight: 600;
 
-        border-radius: 999px;
+        border-radius: 10px;
         cursor: pointer;
         flex-shrink: 0;
         white-space: nowrap;
+        transition: background 0.15s ease;
+    }
+
+    .download-btn:hover {
+        background: #1e1e50;
     }
 
     .download-btn:disabled {
         cursor: progress;
-        opacity: 0.85;
+        opacity: 0.7;
     }
 
     .spinner {
         display: inline-block;
         vertical-align: middle;
-        width: 18px;
-        height: 18px;
-        border: 3px solid #e0e0e0;
-        border-top-color: #151535;
+        width: 16px;
+        height: 16px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-top-color: white;
         border-radius: 50%;
         animation: spin 0.8s linear infinite;
     }
@@ -368,14 +395,14 @@
     .voucher-error {
         margin: 8px 0 0;
 
-        color: #c0392b;
-        font-size: 14px;
-        font-weight: 600;
+        color: #dc2626;
+        font-size: 13px;
+        font-weight: 500;
     }
 
     @media (max-width: 640px) {
         .card {
-            background: #fff;
+            border-radius: 12px;
         }
 
         .compact-card > img {
@@ -383,21 +410,20 @@
         }
 
         .content {
-            padding: 10px 12px 14px;
+            padding: 12px 14px 14px;
         }
 
         h2 {
-            font-size: 20px;
-            line-height: 1.05;
+            font-size: 18px;
         }
 
         .business p {
-            font-size: 15px;
+            font-size: 12px;
         }
 
         .download-btn {
-            padding: 8px 13px;
-            font-size: 13px;
+            padding: 7px 12px;
+            font-size: 12px;
         }
     }
 </style>
