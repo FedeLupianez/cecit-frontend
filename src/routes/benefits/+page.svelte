@@ -179,7 +179,7 @@
                                 endDate={benefit.end_date}
                                 methods={benefit.payment_methods}
                                 logo={benefit.logo}
-                                direction={benefit.direction}
+                                direction={benefit.directions?.join(", ") ?? ""}
                                 coupons={benefit.coupons}
                                 max_coupons={benefit.max_coupons}
                                 max_per_user={benefit.max_per_user}

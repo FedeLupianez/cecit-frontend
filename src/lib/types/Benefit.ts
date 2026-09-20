@@ -22,7 +22,7 @@ export interface Benefit {
     categories: string[];
     payment_methods: string[];
     logo: string;
-    direction: string;
+    directions: string[];
     start_date: string;
     end_date: string;
     image: string;

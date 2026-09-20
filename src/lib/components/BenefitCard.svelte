@@ -304,12 +304,13 @@
                             <p>SUCURSALES</p>
                             {#if direction && direction.trim() !== ""}
                                 <iframe
-                                    src={`https://www.google.com/maps?q=${encodeURIComponent(direction)}&output=embed`}
+                                    src={`https://www.google.com/maps?q=${encodeURIComponent(direction)}&zoom=19&output=embed`}
                                     style="border:0;"
                                     loading="lazy"
                                     allowfullscreen
                                     title="SUCURSALES"
                                     class="map"
+                                    referrerpolicy="no-referrer-when-downgrade"
                                 ></iframe>
                             {:else}
                                 <div class="map no-location">
