@@ -802,7 +802,95 @@
         }
 
         .expanded-backdrop {
-            display: none;
+            padding: 0;
+            align-items: stretch;
+        }
+
+        .expanded-card {
+            width: 100%;
+            height: 100%;
+            border-radius: 0;
+            flex-direction: column;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .expanded-title-wrap {
+            width: 100%;
+            flex: 0 0 auto;
+            height: auto;
+            padding: 16px 48px 12px 16px;
+        }
+
+        .expanded-title {
+            writing-mode: horizontal-tb;
+            font-size: 1.2rem;
+            text-align: left;
+            height: auto;
+            width: auto;
+        }
+
+        .close-btn {
+            position: relative;
+            top: auto;
+            right: auto;
+            align-self: flex-end;
+            margin: 8px 12px 0;
+            width: 36px;
+            height: 36px;
+            background: #f3f4f6;
+        }
+
+        .expanded-info {
+            border-radius: 0;
+            height: auto;
+            min-height: 0;
+        }
+
+        .expanded-data {
+            flex-direction: column;
+            height: auto;
+            padding: 0 16px 20px;
+            gap: 16px;
+        }
+
+        .expanded-col-1 {
+            width: 100%;
+            gap: 12px;
+            overflow: visible;
+        }
+
+        .expanded-col-2 {
+            width: 100%;
+            align-items: stretch;
+            padding-top: 0;
+            gap: 16px;
+        }
+
+        .expanded-data-title {
+            font-size: 0.75rem;
+        }
+
+        .expanded-data-var {
+            font-size: 0.9rem;
+        }
+
+        .map {
+            height: 14rem;
+        }
+
+        .terms-text {
+            width: 100%;
+            font-size: 0.85rem;
+        }
+
+        .expanded-coupon-btn {
+            transform: none;
+            width: calc(100% - 32px);
+            margin: 0 16px 24px;
+            padding: 1rem;
+            font-size: 1.1rem;
+            text-align: center;
         }
     }
 </style>

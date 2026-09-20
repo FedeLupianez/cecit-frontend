@@ -781,6 +781,7 @@
         }
         .metrics {
             min-width: 0;
+            width: 100%;
         }
         .form-grid,
         .fields-grid {
@@ -805,6 +806,26 @@
         .ghost-button,
         .create-button {
             width: 100%;
+        }
+        .date-row {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 8px;
+        }
+        .date-sep {
+            display: none;
+        }
+        .chip.left {
+            min-width: 0;
+            width: 100%;
+        }
+        .per-user {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 8px;
+        }
+        .per-user input {
+            max-width: 100%;
         }
     }
 </style>

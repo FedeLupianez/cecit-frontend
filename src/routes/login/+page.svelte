@@ -280,4 +280,42 @@
         color: #d32f2f;
         border: 1px solid #d32f2f;
     }
+
+    @media (max-width: 700px) {
+        .login-card {
+            width: 92%;
+            height: auto;
+            flex-direction: column;
+            padding: 1.5rem;
+        }
+
+        .left,
+        .right {
+            max-width: 100%;
+            width: 100%;
+        }
+
+        .left {
+            padding: 0;
+            margin-bottom: 1.5rem;
+            align-items: center;
+            text-align: center;
+        }
+
+        .right {
+            align-items: stretch;
+        }
+
+        .title {
+            font-size: 2.2rem;
+        }
+
+        .text {
+            font-size: 1.4rem;
+        }
+
+        button {
+            width: 100%;
+        }
+    }
 </style>

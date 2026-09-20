@@ -294,4 +294,17 @@
         outline: 2px solid #f5b8b8;
         outline-offset: 2px;
     }
+
+    @media (max-width: 600px) {
+        .role-card:not(.compact) {
+            width: 90vw;
+            max-width: 30rem;
+            min-height: 0;
+            padding: 2.5rem 1.5rem;
+        }
+
+        .role-card:not(.compact) header span {
+            font-size: clamp(3rem, 8vw, 5rem);
+        }
+    }
 </style>

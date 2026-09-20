@@ -1103,12 +1103,22 @@
         }
         .metrics {
             min-width: 0;
+            width: 100%;
         }
         .business-card {
             grid-template-columns: 1fr;
         }
         .coupon-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .partner-selector {
+            overflow-x: auto;
+            scrollbar-width: none;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: 4px;
+        }
+        .partner-selector::-webkit-scrollbar {
+            display: none;
         }
     }
     @media (max-width: 460px) {
@@ -1120,6 +1130,24 @@
         }
         .coupon-grid {
             grid-template-columns: 1fr;
+        }
+        .add-location {
+            flex-direction: column;
+        }
+        .add-location button {
+            width: 100%;
+            justify-content: center;
+        }
+        .edit-actions {
+            flex-direction: column;
+        }
+        .edit-actions button {
+            width: 100%;
+        }
+        .name-row {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 8px;
         }
     }
 </style>

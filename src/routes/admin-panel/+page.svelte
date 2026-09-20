@@ -3439,5 +3439,44 @@
         .edit-field.row-2 {
             grid-template-columns: 1fr;
         }
+        .intro-row {
+            flex-direction: column;
+            gap: 16px;
+        }
+        .tabs {
+            overflow-x: auto;
+            flex-wrap: nowrap;
+            scrollbar-width: none;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: 4px;
+        }
+        .tabs::-webkit-scrollbar {
+            display: none;
+        }
+        .tabs button {
+            flex: 0 0 auto;
+            white-space: nowrap;
+        }
+        .section-head {
+            flex-direction: column;
+            gap: 12px;
+        }
+        .section-head .search {
+            min-width: 0;
+            width: 100%;
+        }
+        .head-actions {
+            width: 100%;
+        }
+        .head-actions .filter-select {
+            flex: 1;
+            min-width: 0;
+        }
+        .lookup-row {
+            flex-direction: column;
+        }
+        .lookup-row .search-btn {
+            width: 100%;
+        }
     }
 </style>

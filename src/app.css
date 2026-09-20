@@ -79,3 +79,10 @@ button.is-pending {
         animation-duration: 1.4s;
     }
 }
+
+/* --- Responsive global helpers --- */
+@media (max-width: 600px) {
+    html {
+        font-size: 15px;
+    }
+}

@@ -1,7 +1,7 @@
 <script lang="ts">
     import { profileStore } from "$lib/stores/profileStore";
     import User24Icon from "@iconify-svelte/qlementine-icons/user-24";
-    import { Menu } from "lucide-svelte";
+    import { Menu, X } from "lucide-svelte";
     import type { Profile } from "$lib/stores/profileStore";
     import { onMount } from "svelte";
     import { goto } from "$app/navigation";
@@ -14,6 +14,7 @@
     let profile: Profile | null | undefined = $state();
     let avatar = $state<string>("");
     let showRoleMenu = $state(false);
+    let showMobileMenu = $state(false);
     let userMenu: HTMLDivElement | null = $state(null);
     let access = $derived(getRoleAccess(profile?.role));
     let loggingOut = $state(false);
@@ -30,6 +31,7 @@
             accessToken.clear();
             profileStore.clear();
             showRoleMenu = false;
+            showMobileMenu = false;
             try {
                 await goto("/login");
             } finally {
@@ -45,7 +47,20 @@
     }
 
     function closeMenuOnEscape(event: KeyboardEvent) {
-        if (event.key === "Escape") showRoleMenu = false;
+        if (event.key === "Escape") {
+            showRoleMenu = false;
+            showMobileMenu = false;
+        }
+    }
+
+    function toggleMobileMenu() {
+        showMobileMenu = !showMobileMenu;
+        showRoleMenu = false;
+    }
+
+    function closeMobileMenu() {
+        showMobileMenu = false;
+        showRoleMenu = false;
     }
 
     onMount(() => {
@@ -118,10 +133,65 @@
         </div>
     </div>
 
-    <button class="menu-btn" type="button" aria-label="Abrir menú">
+    <button class="menu-btn" type="button" aria-label="Abrir menú" onclick={toggleMobileMenu}>
         <Menu size={34} strokeWidth={2.5} />
     </button>
 </nav>
+
+{#if showMobileMenu}
+    <div
+        class="mobile-overlay"
+        role="presentation"
+        onclick={closeMobileMenu}
+        onkeydown={(e) => e.key === "Escape" && closeMobileMenu()}
+    >
+        <div
+            class="mobile-drawer"
+            role="dialog"
+            aria-label="Menú de navegación"
+            onclick={(e) => e.stopPropagation()}
+        >
+            <div class="mobile-drawer-header">
+                <div class="logo">
+                    <img loading="lazy" src={logo} alt="CeCIT Logo" />
+                </div>
+                <button
+                    class="close-btn"
+                    type="button"
+                    aria-label="Cerrar menú"
+                    onclick={closeMobileMenu}
+                >
+                    <X size={28} />
+                </button>
+            </div>
+
+            <div class="mobile-drawer-links">
+                <a href="http://centrodecomercioag.com.ar/" onclick={closeMobileMenu}>Institucional</a>
+                <a href="http://centrodecomercioag.com.ar/hacete-socio/" onclick={closeMobileMenu}>Hacete socio</a>
+                <a href="http://centrodecomercioag.com.ar/contacto/" onclick={closeMobileMenu}>Contacto</a>
+            </div>
+
+            <div class="mobile-drawer-user">
+                {#if !profile}
+                    <a href="/login" class="mobile-login-link" onclick={closeMobileMenu}>
+                        <User24Icon height="2.0em" class="profile-icon" />
+                        <span>Iniciar sesión</span>
+                    </a>
+                {:else}
+                    <div class="mobile-user-info">
+                        <img src={avatar} alt="profileImage" class="profile-icon" />
+                        <span>{profile.email}</span>
+                    </div>
+                    {#if access}
+                        <div class="mobile-role-card">
+                            <RoleCard {access} compact onLogout={logout} logoutPending={loggingOut} />
+                        </div>
+                    {/if}
+                {/if}
+            </div>
+        </div>
+    </div>
+{/if}
 
 <style>
     .navbar {
@@ -251,5 +321,117 @@
             height: 58px;
             max-width: 190px;
         }
+    }
+
+    .mobile-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 9998;
+        background: rgba(0, 0, 0, 0.45);
+        display: flex;
+        justify-content: flex-end;
+        animation: fade-in 0.2s ease;
+    }
+
+    @keyframes fade-in {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    .mobile-drawer {
+        width: min(340px, 85vw);
+        height: 100%;
+        background: #fff;
+        display: flex;
+        flex-direction: column;
+        box-shadow: -4px 0 24px rgba(0, 0, 0, 0.15);
+        animation: slide-in 0.25s ease;
+        overflow-y: auto;
+    }
+
+    @keyframes slide-in {
+        from { transform: translateX(100%); }
+        to { transform: translateX(0); }
+    }
+
+    .mobile-drawer-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 18px 20px;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .mobile-drawer-header .logo img {
+        height: 50px;
+        object-fit: contain;
+    }
+
+    .close-btn {
+        border: none;
+        background: transparent;
+        color: #555;
+        padding: 8px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .mobile-drawer-links {
+        display: flex;
+        flex-direction: column;
+        padding: 12px 20px;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .mobile-drawer-links a {
+        padding: 14px 0;
+        text-decoration: none;
+        color: #111;
+        font-size: 17px;
+        font-weight: 600;
+        border-bottom: 1px solid #f3f4f6;
+    }
+
+    .mobile-drawer-links a:last-child {
+        border-bottom: none;
+    }
+
+    .mobile-drawer-user {
+        padding: 20px;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .mobile-login-link {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        text-decoration: none;
+        color: #111;
+        font-size: 16px;
+        font-weight: 600;
+        padding: 12px 16px;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+    }
+
+    .mobile-user-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .mobile-user-info .profile-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+    }
+
+    .mobile-role-card {
+        margin-top: 8px;
     }
 </style>

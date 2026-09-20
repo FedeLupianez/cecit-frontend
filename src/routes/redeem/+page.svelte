@@ -21,7 +21,7 @@
     let voucher: VoucherInfo | undefined = $state();
     let voucherState: VoucherState | undefined = $state();
     let loading = $state(false);
-    let acting = $state(false);
+    let actingAction = $state<"redeem" | "reject" | null>(null);
     let error = $state("");
     let message = $state("");
 
@@ -85,6 +85,12 @@
                 voucherState = undefined;
                 return;
             }
+            if (response.status === 409) {
+                error = "Este voucher pertenece a otro negocio. No tenés acceso para canjearlo.";
+                voucher = undefined;
+                voucherState = undefined;
+                return;
+            }
             if (!response.ok) {
                 voucher = undefined;
                 voucherState = undefined;
@@ -110,13 +116,13 @@
     }
 
     async function sendAction(action: "redeem" | "reject") {
-        if (!voucher || acting) return;
+        if (!voucher || actingAction) return;
         const authToken = accessToken.getToken();
         if (!authToken) {
             error = "Tu sesión expiró. Volvé a iniciar sesión.";
             return;
         }
-        acting = true;
+        actingAction = action;
         error = "";
         message = "";
         try {
@@ -139,7 +145,7 @@
                     ? cause.message
                     : "Ocurrió un error al realizar la acción.";
         } finally {
-            acting = false;
+            actingAction = null;
         }
     }
 
@@ -253,9 +259,9 @@
                     class="redeem-btn"
                     type="button"
                     onclick={() => sendAction("redeem")}
-                    disabled={!canAct || acting}
+                    disabled={!canAct || actingAction !== null}
                 >
-                    {#if acting}
+                    {#if actingAction === "redeem"}
                         <span class="spinner"></span>
                     {/if}
                     Canjear
@@ -264,9 +270,9 @@
                     class="reject-btn"
                     type="button"
                     onclick={() => sendAction("reject")}
-                    disabled={!canAct || acting}
+                    disabled={!canAct || actingAction !== null}
                 >
-                    {#if acting}
+                    {#if actingAction === "reject"}
                         <span class="spinner"></span>
                     {/if}
                     Rechazar
