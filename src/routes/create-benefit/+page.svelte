@@ -1,5 +1,6 @@
 <script lang="ts">
     import { onMount } from "svelte";
+    import { fly, scale } from "svelte/transition";
 
     import { goto } from "$app/navigation";
 
@@ -34,6 +35,10 @@
     let endTime = $state("18:00");
 
     let maxCoupons = $state(100);
+
+    let refund_limit: number | null = $state(null);
+
+    let showSuccessModal = $state(false);
 
     let maxPerUser = $state(1);
 
@@ -99,6 +104,13 @@
         sending = true;
 
         try {
+            const parsedRefundLimit =
+                refund_limit === null ||
+                (refund_limit as unknown) === "" ||
+                Number.isNaN(Number(refund_limit))
+                    ? null
+                    : Number(refund_limit);
+
             const payload: BenefitsCreateDTO = {
                 id_admin: profileStore.getProfile()?.user_id ?? "",
                 id_partner: selectedPartner,
@@ -115,6 +127,7 @@
                 coupons: 0,
                 max_coupons: Number(maxCoupons) || 100,
                 max_per_user: Math.max(Number(maxPerUser) || 1, 1),
+                refund_limit: parsedRefundLimit,
             };
 
             const response = await apiFetch("/api/benefits", {
@@ -127,7 +140,19 @@
 
             if (!response.ok) throw new Error("No se pudo crear el beneficio.");
 
-            await goto("/business-panel");
+            showSuccessModal = true;
+            // reset form para permitir crear otro sin navegar
+            title = "";
+            description = "";
+            selectedType = "";
+            selectedPartner = "";
+            paymentMethods = [];
+            imagePreview = "";
+            startDate = "";
+            endDate = "";
+            maxCoupons = 100;
+            maxPerUser = 1;
+            refund_limit = null;
         } catch (error) {
             statusMessage =
                 error instanceof Error
@@ -164,11 +189,17 @@
                 </p>
             </div>
             <div class="metrics" aria-label="Resumen de beneficios">
-                <div><strong>04</strong><span>UTILIZARON<br />BENEFICIOS</span></div>
+                <div>
+                    <strong>04</strong><span>UTILIZARON<br />BENEFICIOS</span>
+                </div>
 
-                <div><strong>10</strong><span>CANJEARON<br />BENEFICIOS</span></div>
+                <div>
+                    <strong>10</strong><span>CANJEARON<br />BENEFICIOS</span>
+                </div>
 
-                <div><strong>10</strong><span>ACTIVOS<br />BENEFICIOS</span></div>
+                <div>
+                    <strong>10</strong><span>ACTIVOS<br />BENEFICIOS</span>
+                </div>
             </div>
         </div>
 
@@ -236,7 +267,9 @@
                                 <span class="upload-icon" aria-hidden="true"
                                     >⇧</span
                                 >
-                                <span>Pegá la URL de la imagen del beneficio</span>
+                                <span
+                                    >Pegá la URL de la imagen del beneficio</span
+                                >
                             </span>{/if}
                     </label>
                 </section>
@@ -321,7 +354,8 @@
                     >
 
                     <label class="field"
-                        ><span class="field-label">Cantidad de cupones</span><input
+                        ><span class="field-label">Cantidad de cupones</span
+                        ><input
                             bind:value={maxCoupons}
                             type="number"
                             min="1"
@@ -330,16 +364,13 @@
                     >
 
                     <label class="field"
-                        ><span class="field-label">Tope de reintegro</span><input
-                            placeholder="$99999"
-                        /></label
-                    >
-
-                    <label class="field"
-                        ><span class="field-label">Valor del descuento</span><input
+                        ><span class="field-label">Tope de reintegro</span
+                        ><input
                             type="number"
                             min="0"
-                            placeholder="0"
+                            placeholder="$99999"
+                            bind:value={refund_limit}
+                            aria-label="Tope de reintegro"
                         /></label
                     >
                 </section>
@@ -370,6 +401,45 @@
         </form>
     </div>
 </section>
+
+{#if showSuccessModal}
+    <!-- svelte-ignore a11y_click_events_have_key_events -->
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <div
+        class="modal-overlay"
+        onclick={() => (showSuccessModal = false)}
+        transition:fly={{ y: 8, duration: 180 }}
+    >
+        <div
+            class="modal-card"
+            onclick={(e) => e.stopPropagation()}
+            transition:scale={{ start: 0.92, duration: 220 }}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Beneficio creado"
+        >
+            <div class="modal-icon">✓</div>
+            <h3>¡Beneficio creado!</h3>
+            <p>El beneficio se publicó correctamente.</p>
+            <div class="modal-actions">
+                <button
+                    class="ghost-button"
+                    type="button"
+                    onclick={() => (showSuccessModal = false)}
+                >
+                    Crear otro
+                </button>
+                <button
+                    class="create-button"
+                    type="button"
+                    onclick={() => goto("/business-panel")}
+                >
+                    Ir al panel
+                </button>
+            </div>
+        </div>
+    </div>
+{/if}
 
 <style>
     .create-benefit {
@@ -791,6 +861,74 @@
         .form-grid,
         .fields-grid {
             grid-template-columns: 1fr;
+        }
+    }
+
+    .modal-overlay {
+        position: fixed;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        padding: 20px;
+        background: rgb(15 15 40 / 48%);
+        backdrop-filter: blur(4px);
+        z-index: 50;
+    }
+    .modal-card {
+        width: min(100%, 420px);
+        padding: 28px 24px;
+        border-radius: 16px;
+        background: #fff;
+        text-align: center;
+        box-shadow: 0 20px 40px rgb(0 0 0 / 18%);
+        animation: modal-pop 0.24s ease;
+    }
+    .modal-icon {
+        width: 56px;
+        height: 56px;
+        margin: 0 auto 14px;
+        display: grid;
+        place-items: center;
+        border-radius: 999px;
+        background: #e6f5ea;
+        color: #137333;
+        font-size: 28px;
+        font-weight: 800;
+        animation: check-pop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .modal-card h3 {
+        margin: 0;
+        font-size: 20px;
+        color: #19194f;
+    }
+    .modal-card p {
+        margin: 8px 0 0;
+        color: #555;
+        font-size: 14px;
+    }
+    .modal-actions {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        margin-top: 20px;
+        flex-wrap: wrap;
+    }
+    @keyframes modal-pop {
+        from {
+            opacity: 0;
+            transform: translateY(8px) scale(0.96);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+    @keyframes check-pop {
+        0% {
+            transform: scale(0.5);
+        }
+        100% {
+            transform: scale(1);
         }
     }
 

@@ -192,7 +192,9 @@
                     credentials: "include",
                 });
                 if (res.status === 401 || res.status === 403) {
-                    setError("No tenés permiso para ver el panel de administrador.");
+                    setError(
+                        "No tenés permiso para ver el panel de administrador.",
+                    );
                     return;
                 }
                 if (!res.ok) {
@@ -227,14 +229,15 @@
                 benefits = await benefitsRes.json();
                 benefitTypes = typesRes.ok ? await typesRes.json() : [];
             } else if (tab === "vouchers") {
-                const [accountsRes, benefitsRes, vouchersRes] = await Promise.all([
-                    fetch("/api/accounts/all", {
-                        headers: authHeaders(),
-                        credentials: "include",
-                    }),
-                    fetch("/api/benefits/all"),
-                    fetch("/api/vouchers/all"),
-                ]);
+                const [accountsRes, benefitsRes, vouchersRes] =
+                    await Promise.all([
+                        fetch("/api/accounts/all", {
+                            headers: authHeaders(),
+                            credentials: "include",
+                        }),
+                        fetch("/api/benefits/all"),
+                        fetch("/api/vouchers/all"),
+                    ]);
                 if (!accountsRes.ok || !benefitsRes.ok) {
                     setError("No se pudieron cargar los vouchers.");
                     return;
@@ -756,20 +759,7 @@
     /*  BENEFICIOS                                                         */
     /* ------------------------------------------------------------------ */
 
-    let openingCreatingBenefit = $state(false);
-    let newBenefit = $state({
-        id_partner: "",
-        id_type: "",
-        title: "",
-        description: "",
-        image: "",
-        start_date: "",
-        end_date: "",
-        max_coupons: "",
-        max_per_user: "",
-    });
-    let savingBenefit = $state(false);
-    let benefitCreateError = $state("");
+    let benefitFilter = $state("");
 
     let editingBenefitId = $state("");
     let benefitDrafts = $state<Record<string, Partial<Benefit>>>({});
@@ -777,7 +767,15 @@
     let benefitErrors = $state<Record<string, string>>({});
     let benefitSuccess = $state<Record<string, string>>({});
 
-    const today = $derived(new Date().toISOString().slice(0, 10));
+    const filteredBenefits = $derived(
+        benefitFilter.trim()
+            ? benefits.filter((benefit) =>
+                  benefit.title
+                      .toLowerCase()
+                      .includes(benefitFilter.trim().toLowerCase()),
+              )
+            : benefits,
+    );
 
     function startEditBenefit(benefit: Benefit) {
         editingBenefitId = benefit.id_benefit;
@@ -837,96 +835,71 @@
         }
     }
 
-    async function deleteBenefit(benefit: Benefit) {
-        if (!confirm(`¿Eliminar el beneficio "${benefit.title}"?`)) return;
+    async function toggleBenefitStatus(
+        benefit: Benefit,
+        nextStatus: "ACTIVE" | "INACTIVE",
+    ) {
+        const action = nextStatus === "ACTIVE" ? "activar" : "desactivar";
+        if (
+            !confirm(
+                `¿${nextStatus === "ACTIVE" ? "Activar" : "Desactivar"} el beneficio "${benefit.title}"?`,
+            )
+        )
+            return;
         benefitBusy = benefit.id_benefit;
         benefitErrors[benefit.id_benefit] = "";
         try {
-            const response = await fetch("/api/benefits", {
-                method: "DELETE",
-                headers: {
-                    ...authHeaders(),
-                    "Content-Type": "application/json",
-                },
-                credentials: "include",
-                body: JSON.stringify({ id_benefit: benefit.id_benefit }),
-            });
-            if (!response.ok) {
-                benefitErrors[benefit.id_benefit] = await parseError(response);
-                return;
-            }
-            benefits = benefits.filter(
-                (b) => b.id_benefit !== benefit.id_benefit,
-            );
-            setSuccess("Beneficio eliminado correctamente.");
-        } catch (cause) {
-            benefitErrors[benefit.id_benefit] =
-                cause instanceof Error ? cause.message : "No se pudo eliminar.";
-        } finally {
-            benefitBusy = "";
-        }
-    }
-
-    async function createBenefit() {
-        if (
-            !newBenefit.title.trim() ||
-            !newBenefit.id_partner ||
-            !newBenefit.id_type
-        ) {
-            benefitCreateError =
-                "Completá el título, el negocio y el tipo de beneficio.";
-            return;
-        }
-        savingBenefit = true;
-        benefitCreateError = "";
-        try {
-            const response = await fetch("/api/benefits", {
-                method: "POST",
+            const endpoint: string =
+                nextStatus === "ACTIVE"
+                    ? "/api/benefits/activate"
+                    : "/api/benefits/deactivate";
+            const response = await fetch(endpoint, {
+                method: "PATCH",
                 headers: {
                     ...authHeaders(),
                     "Content-Type": "application/json",
                 },
                 credentials: "include",
                 body: JSON.stringify({
-                    id_admin: profileStore.getProfile()?.user_id ?? "",
-                    id_partner: newBenefit.id_partner,
-                    id_type: Number(newBenefit.id_type),
-                    start_date: newBenefit.start_date || today,
-                    end_date: newBenefit.end_date || today,
-                    image: newBenefit.image,
-                    title: newBenefit.title.trim(),
-                    description: newBenefit.description.trim(),
-                    coupons: 0,
-                    max_coupons: Number(newBenefit.max_coupons) || 100,
-                    max_per_user: Number(newBenefit.max_per_user) || 1,
+                    id_benefit: benefit.id_benefit,
                 }),
             });
             if (!response.ok) {
-                benefitCreateError = await parseError(response);
+                benefitErrors[benefit.id_benefit] = await parseError(response);
                 return;
             }
-            openingCreatingBenefit = false;
-            newBenefit = {
-                id_partner: "",
-                id_type: "",
-                title: "",
-                description: "",
-                image: "",
-                start_date: "",
-                end_date: "",
-                max_coupons: "",
-                max_per_user: "",
-            };
-            setSuccess("Beneficio creado correctamente.");
-            loadedTabs.delete("beneficios");
-            await ensureTabData("beneficios");
+            const updated = await response.json();
+            const index = benefits.findIndex(
+                (b) => b.id_benefit === benefit.id_benefit,
+            );
+            if (index >= 0) benefits[index] = updated;
+            else
+                benefits = benefits.map((b) =>
+                    b.id_benefit === benefit.id_benefit ? updated : b,
+                );
+            // Fallback si el backend no devuelve el objeto actualizado pero sí 200
+            if (!updated?.status) {
+                benefits = benefits.map((b) =>
+                    b.id_benefit === benefit.id_benefit
+                        ? { ...b, status: nextStatus }
+                        : b,
+                );
+            }
+            benefitSuccess[benefit.id_benefit] =
+                nextStatus === "ACTIVE"
+                    ? "Beneficio activado."
+                    : "Beneficio desactivado.";
         } catch (cause) {
-            benefitCreateError =
-                cause instanceof Error ? cause.message : "No se pudo crear.";
+            benefitErrors[benefit.id_benefit] =
+                cause instanceof Error
+                    ? cause.message
+                    : `No se pudo ${action}.`;
         } finally {
-            savingBenefit = false;
+            benefitBusy = "";
         }
     }
+
+
 
     /* ------------------------------------------------------------------ */
     /*  CATEGORÍAS                                                         */
@@ -1835,154 +1808,25 @@
                                 <div>
                                     <h2>Beneficios</h2>
                                     <p>
-                                        Creá, editá o eliminá los beneficios
+                                        Editá o activá/desactivá los beneficios
                                         publicados.
                                     </p>
                                 </div>
-                                <button
-                                    class="add-btn"
-                                    type="button"
-                                    onclick={() =>
-                                        (openingCreatingBenefit =
-                                            !openingCreatingBenefit)}
-                                >
-                                    <Plus size={16} />
-                                    {openingCreatingBenefit
-                                        ? "Cancelar"
-                                        : "Nuevo beneficio"}
-                                </button>
+                                <input
+                                    class="search"
+                                    type="search"
+                                    placeholder="Buscar por título…"
+                                    bind:value={benefitFilter}
+                                />
                             </header>
 
-                            {#if openingCreatingBenefit}
-                                <form
-                                    class="create-form expand-panel"
-                                    transition:slide={{ duration: 220 }}
-                                    onsubmit={(e) => {
-                                        e.preventDefault();
-                                        createBenefit();
-                                    }}
-                                >
-                                    <h3>Nuevo beneficio</h3>
-                                    <div class="form-grid">
-                                        <label>
-                                            Negocio
-                                            <select
-                                                bind:value={
-                                                    newBenefit.id_partner
-                                                }
-                                            >
-                                                <option value=""
-                                                    >Seleccionar…</option
-                                                >
-                                                {#each partners as partner (partner.id_partner)}
-                                                    <option
-                                                        value={partner.id_partner}
-                                                    >
-                                                        {partner.name}
-                                                    </option>
-                                                {/each}
-                                            </select>
-                                        </label>
-                                        <label>
-                                            Tipo
-                                            <select
-                                                bind:value={newBenefit.id_type}
-                                            >
-                                                <option value=""
-                                                    >Seleccionar…</option
-                                                >
-                                                {#each benefitTypes as type (type.id_type)}
-                                                    <option
-                                                        value={type.id_type}
-                                                    >
-                                                        {type.name}
-                                                    </option>
-                                                {/each}
-                                            </select>
-                                        </label>
-                                        <label>
-                                            Título
-                                            <input
-                                                type="text"
-                                                bind:value={newBenefit.title}
-                                            />
-                                        </label>
-                                        <label>
-                                            Imagen (URL)
-                                            <input
-                                                type="url"
-                                                bind:value={newBenefit.image}
-                                                placeholder="https://…"
-                                            />
-                                        </label>
-                                        <label>
-                                            Inicio
-                                            <input
-                                                type="date"
-                                                bind:value={
-                                                    newBenefit.start_date
-                                                }
-                                            />
-                                        </label>
-                                        <label>
-                                            Fin
-                                            <input
-                                                type="date"
-                                                bind:value={newBenefit.end_date}
-                                            />
-                                        </label>
-                                        <label>
-                                            Cupones máximos
-                                            <input
-                                                type="number"
-                                                min="1"
-                                                bind:value={
-                                                    newBenefit.max_coupons
-                                                }
-                                            />
-                                        </label>
-                                        <label>
-                                            Máximo por usuario
-                                            <input
-                                                type="number"
-                                                min="1"
-                                                bind:value={
-                                                    newBenefit.max_per_user
-                                                }
-                                            />
-                                        </label>
-                                        <label class="full">
-                                            Descripción
-                                            <textarea
-                                                rows="3"
-                                                bind:value={
-                                                    newBenefit.description
-                                                }
-                                            ></textarea>
-                                        </label>
-                                    </div>
-                                    {#if benefitCreateError}
-                                        <p class="field-error" role="alert">
-                                            {benefitCreateError}
-                                        </p>
-                                    {/if}
-                                    <div class="form-actions">
-                                        <button
-                                            class="save-btn"
-                                            type="submit"
-                                            disabled={savingBenefit}
-                                        >
-                                            {savingBenefit
-                                                ? "Guardando…"
-                                                : "Crear beneficio"}
-                                        </button>
-                                    </div>
-                                </form>
-                            {/if}
-
                             <div class="cards-grid">
-                                {#each benefits as benefit (benefit.id_benefit)}
-                                    <article class="data-card">
+                                {#each filteredBenefits as benefit (benefit.id_benefit)}
+                                    <article
+                                        class="data-card"
+                                        class:inactive={benefit.status ===
+                                            "INACTIVE"}
+                                    >
                                         <div class="card-top">
                                             <img
                                                 class="benefit-img"
@@ -2163,17 +2007,37 @@
                                                     Editar
                                                 </button>
                                             {/if}
-                                            <button
-                                                class="danger-btn"
-                                                type="button"
-                                                onclick={() =>
-                                                    deleteBenefit(benefit)}
-                                                disabled={benefitBusy ===
-                                                    benefit.id_benefit}
-                                            >
-                                                <Trash2 size={14} />
-                                                Eliminar
-                                            </button>
+                                            {#if benefit.status === "INACTIVE"}
+                                                <button
+                                                    class="success-btn"
+                                                    type="button"
+                                                    onclick={() =>
+                                                        toggleBenefitStatus(
+                                                            benefit,
+                                                            "ACTIVE",
+                                                        )}
+                                                    disabled={benefitBusy ===
+                                                        benefit.id_benefit}
+                                                >
+                                                    <CheckCircle2 size={14} />
+                                                    Activar
+                                                </button>
+                                            {:else}
+                                                <button
+                                                    class="danger-btn"
+                                                    type="button"
+                                                    onclick={() =>
+                                                        toggleBenefitStatus(
+                                                            benefit,
+                                                            "INACTIVE",
+                                                        )}
+                                                    disabled={benefitBusy ===
+                                                        benefit.id_benefit}
+                                                >
+                                                    <XCircle size={14} />
+                                                    Desactivar
+                                                </button>
+                                            {/if}
                                         </div>
                                     </article>
                                 {:else}
@@ -2306,7 +2170,10 @@
                                     </p>
                                 </div>
                                 <div class="head-actions">
-                                    <select class="filter-select" bind:value={voucherStatus}>
+                                    <select
+                                        class="filter-select"
+                                        bind:value={voucherStatus}
+                                    >
                                         <option value="ALL"
                                             >Todos los estados</option
                                         >
@@ -3209,6 +3076,9 @@
         border: 1px solid #e2e5ef;
         border-radius: 12px;
         background: #fff;
+    }
+    .data-card.inactive {
+        opacity: 0.55;
     }
     .card-top {
         display: flex;

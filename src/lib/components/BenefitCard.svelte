@@ -1,6 +1,14 @@
 <script lang="ts">
     import { onMount } from "svelte";
-    import { Clock, X, Info, Wallet, Ticket, Users } from "lucide-svelte";
+    import {
+        Clock,
+        X,
+        Info,
+        Wallet,
+        Ticket,
+        Users,
+        HandCoins,
+    } from "lucide-svelte";
     import favicon from "$lib/assets/favicon.svg";
     import { profileStore } from "$lib/stores/profileStore";
     import { accessToken } from "$lib/stores/authStore";
@@ -20,6 +28,8 @@
         max_coupons,
         max_per_user,
         description,
+        type,
+        refund_limit,
     }: {
         benefit_id: string;
         title: string;
@@ -34,6 +44,8 @@
         max_coupons: number;
         max_per_user: number;
         description: string;
+        type: string;
+        refund_limit: number | null;
     } = $props();
 
     function formatDateTime(iso: string | undefined): string {
@@ -244,17 +256,6 @@
                             </div>
                         </div>
 
-                        <!-- <div class="expanded-data-container"> -->
-                        <!--     <HandCoins size={70} class="expanded-data-icon" -->
-                        <!--     ></HandCoins> -->
-                        <!--     <div class="refund-limit-info"> -->
-                        <!--         <p class="expanded-data-title"> -->
-                        <!--             TOPE DE REINTEGRO -->
-                        <!--         </p> -->
-                        <!--         <p class="expanded-data-var">{endDate}</p> -->
-                        <!--     </div> -->
-                        <!-- </div> -->
-
                         <div class="expanded-data-container">
                             <Wallet size={40} class="expanded-data-icon"
                             ></Wallet>
@@ -267,6 +268,21 @@
                                 </p>
                             </div>
                         </div>
+
+                        {#if type === "Descuento" && refund_limit != null}
+                            <div class="expanded-data-container">
+                                <HandCoins size={40} class="expanded-data-icon"
+                                ></HandCoins>
+                                <div class="payment-method-info">
+                                    <p class="expanded-data-title">
+                                        TOPE DE REINTEGRO
+                                    </p>
+                                    <p class="expanded-data-var">
+                                        {refund_limit}
+                                    </p>
+                                </div>
+                            </div>
+                        {/if}
 
                         <div class="expanded-data-container">
                             <Ticket size={40} class="expanded-data-icon"
@@ -328,6 +344,8 @@
                                 partir de la fecha canjeada. Si el cupón no ha
                                 sido utilizado en ese periodo, perderá su
                                 validez y volverá a reactivarse en el sistema.
+                                El objeto del beneficio estará sujeto a stock
+                                del comercio que publique el beneficio.
                             </p>
                         </div>
                     </div>
