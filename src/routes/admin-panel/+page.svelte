@@ -670,7 +670,7 @@
         partnerErrors[partner.id_partner] = "";
         try {
             const response = await fetch(
-                `/api/partners/${partner.id_partner}`,
+                `/api/partners/id/${partner.id_partner}`,
                 {
                     method: "DELETE",
                     headers: authHeaders(),

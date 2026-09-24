@@ -5,7 +5,16 @@
     import { accessToken } from "$lib/stores/authStore";
     import { profileStore } from "$lib/stores/profileStore";
     import { apiFetch } from "$lib/api";
-    import { Pencil, Plus, Trash2, Store } from "lucide-svelte";
+    import {
+        Pencil,
+        Plus,
+        Trash2,
+        Users,
+        Crown,
+        UserMinus,
+        ShieldCheck,
+        UserPlus,
+    } from "lucide-svelte";
 
     interface Partner {
         id_partner: string;
@@ -33,6 +42,14 @@
         id_location: number;
         id_partner: string;
         direction: string;
+    }
+
+    interface UsersDTO {
+        id_user: string;
+        name: string;
+        dni: string;
+        lastname: string;
+        role?: string;
     }
 
     let partners: Partner[] = $state([]);
@@ -69,6 +86,17 @@
     let addingLocationError = $state("");
     let removingLocationId: number | null = $state(null);
 
+    let employees: UsersDTO[] = $state([]);
+    let employeesLoading = $state(false);
+    let employeesError = $state("");
+    let employeeNameInput = $state("");
+    let employeeLastNameInput = $state("");
+    let employeeDniInput = $state("");
+    let addingEmployee = $state(false);
+    let addingEmployeeError = $state("");
+    let removingEmployeeId: string | null = $state(null);
+    let promotingEmployeeId: string | null = $state(null);
+
     const used = $derived(
         benefits.reduce((total, benefit) => total + benefit.coupons, 0),
     );
@@ -98,6 +126,7 @@
         selectedPartnerId = p.id_partner;
         benefits = [];
         locations = [];
+        employees = [];
         redeemed = 0;
 
         try {
@@ -123,7 +152,7 @@
                 .flat()
                 .filter((v) => v.status === "DELIVERED").length;
 
-            await loadLocations();
+            await Promise.all([loadLocations(), loadEmployees()]);
         } catch {
             // silent — benefits/locations will show empty states
         }
@@ -152,7 +181,10 @@
                 error = "No tenés negocios asociados.";
                 return;
             }
-            if (!selectedPartnerId || !partners.find((p) => p.id_partner === selectedPartnerId)) {
+            if (
+                !selectedPartnerId ||
+                !partners.find((p) => p.id_partner === selectedPartnerId)
+            ) {
                 selectedPartnerId = partners[0].id_partner;
             }
             await loadPartnerData(partner!);
@@ -184,6 +216,172 @@
             locationsError = "";
         } catch {
             locationsError = "No se pudieron cargar las ubicaciones.";
+        }
+    }
+
+    async function loadEmployees() {
+        if (!partner?.id_partner) return;
+        const token = accessToken.getToken();
+        if (!token) return;
+        employeesLoading = true;
+        employeesError = "";
+        try {
+            const response = await apiFetch(
+                `/api/partners/employees?id_partner=${encodeURIComponent(partner.id_partner)}`,
+                { credentials: "include" },
+            );
+            if (!response.ok) {
+                employeesError = await parseError(response);
+                if (!employeesError || employeesError === "Ocurrió un error.") {
+                    employeesError = "No se pudieron cargar los empleados.";
+                }
+                employees = [];
+                return;
+            }
+            const data = await response.json();
+            employees = Array.isArray(data) ? data : (data?.employees ?? []);
+            employeesError = "";
+        } catch {
+            employeesError = "No se pudieron cargar los empleados.";
+            employees = [];
+        } finally {
+            employeesLoading = false;
+        }
+    }
+
+    async function addEmployee() {
+        if (!partner || addingEmployee) return;
+        const name = employeeNameInput.trim();
+        const lastname = employeeLastNameInput.trim();
+        const dni = employeeDniInput.trim();
+        if (!name) {
+            addingEmployeeError = "Ingresá el nombre.";
+            return;
+        }
+        if (!lastname) {
+            addingEmployeeError = "Ingresá el apellido.";
+            return;
+        }
+        if (!dni) {
+            addingEmployeeError = "Ingresá el DNI.";
+            return;
+        }
+        if (!accessToken.getToken()) {
+            addingEmployeeError = "Tu sesión expiró. Volvé a iniciar sesión.";
+            return;
+        }
+        addingEmployee = true;
+        addingEmployeeError = "";
+        try {
+            const response = await apiFetch(
+                `/api/partners/employees?id_partner=${encodeURIComponent(partner.id_partner)}`,
+                {
+                    method: "POST",
+                    headers: {
+                        ...authHeaders(),
+                        "Content-Type": "application/json",
+                    },
+                    credentials: "include",
+                    body: JSON.stringify({
+                        name,
+                        lastname,
+                        dni,
+                    }),
+                },
+            );
+            if (!response.ok) {
+                addingEmployeeError = await parseError(response);
+                return;
+            }
+            const created = await response.json().catch(() => null);
+            if (created && created.id_user) {
+                employees = [...employees, created];
+            } else {
+                await loadEmployees();
+            }
+            employeeNameInput = "";
+            employeeLastNameInput = "";
+            employeeDniInput = "";
+        } catch (cause) {
+            addingEmployeeError =
+                cause instanceof Error
+                    ? cause.message
+                    : "No se pudo agregar el empleado.";
+        } finally {
+            addingEmployee = false;
+        }
+    }
+
+    async function removeEmployee(employee: UsersDTO) {
+        if (!partner || removingEmployeeId) return;
+        if (!accessToken.getToken()) {
+            employeesError = "Tu sesión expiró. Volvé a iniciar sesión.";
+            return;
+        }
+        removingEmployeeId = employee.id_user;
+        employeesError = "";
+        try {
+            const response = await apiFetch(
+                `/api/partners/employees?id_partner=${encodeURIComponent(partner.id_partner)}&dni=${encodeURIComponent(employee.dni)}`,
+                {
+                    method: "DELETE",
+                    headers: authHeaders(),
+                    credentials: "include",
+                },
+            );
+            if (!response.ok) {
+                employeesError = await parseError(response);
+                return;
+            }
+            employees = employees.filter((e) => e.id_user !== employee.id_user);
+        } catch (cause) {
+            employeesError =
+                cause instanceof Error
+                    ? cause.message
+                    : "No se pudo quitar el empleado.";
+        } finally {
+            removingEmployeeId = null;
+        }
+    }
+
+    async function promoteEmployee(employee: UsersDTO) {
+        if (!partner || promotingEmployeeId) return;
+        if (!accessToken.getToken()) {
+            employeesError = "Tu sesión expiró. Volvé a iniciar sesión.";
+            return;
+        }
+        promotingEmployeeId = employee.id_user;
+        employeesError = "";
+        try {
+            const response = await apiFetch("/api/partners/employees", {
+                method: "PATCH",
+                headers: {
+                    ...authHeaders(),
+                    "Content-Type": "application/json",
+                },
+                credentials: "include",
+                body: JSON.stringify({
+                    id_partner: partner.id_partner,
+                    id_user: employee.id_user,
+                }),
+            });
+            if (!response.ok) {
+                employeesError = await parseError(response);
+                return;
+            }
+            // Marcar como promovido localmente o recargar
+            employees = employees.map((e) =>
+                e.id_user === employee.id_user
+                    ? { ...e, role: "PARTNER_ADMIN" }
+                    : e,
+            );
+        } catch (cause) {
+            employeesError =
+                cause instanceof Error
+                    ? cause.message
+                    : "No se pudo promover el empleado.";
+        } finally {
+            promotingEmployeeId = null;
         }
     }
 
@@ -440,7 +638,11 @@
             <p class="state error" role="alert">{error}</p>
         {:else if partners.length > 0}
             {#if partners.length > 1}
-                <div class="partner-selector" role="tablist" aria-label="Seleccionar negocio">
+                <div
+                    class="partner-selector"
+                    role="tablist"
+                    aria-label="Seleccionar negocio"
+                >
                     {#each partners as p (p.id_partner)}
                         <button
                             type="button"
@@ -464,201 +666,357 @@
 
             {#if partner}
                 <section class="business-card">
-                <div class="logo-col">
-                    <img
-                        class="logo"
-                        src={partner.logo}
-                        alt={`Logo de ${partner.name}`}
-                    />
+                    <div class="logo-col">
+                        <img
+                            class="logo"
+                            src={partner.logo}
+                            alt={`Logo de ${partner.name}`}
+                        />
 
-                    {#if editingLogo}
-                        <div
-                            class="edit-field expand-panel"
-                            transition:slide={{ duration: 200 }}
-                        >
-                            <input
-                                type="text"
-                                placeholder="URL de la imagen"
-                                bind:value={logoInput}
-                                onkeydown={(e) =>
-                                    e.key === "Enter" && updateLogo()}
-                            />
-                            <div class="edit-actions">
-                                <button
-                                    class="save-btn"
-                                    type="button"
-                                    onclick={updateLogo}
-                                    disabled={savingLogo}
-                                    >{savingLogo
-                                        ? "Guardando…"
-                                        : "Guardar"}</button
-                                >
-                                <button
-                                    class="cancel-btn"
-                                    type="button"
-                                    onclick={cancelEditLogo}>Cancelar</button
-                                >
-                            </div>
-                            {#if logoError}
-                                <p class="field-error" role="alert">
-                                    {logoError}
-                                </p>
-                            {/if}
-                        </div>
-                    {:else}
-                        <button
-                            class="edit-btn"
-                            type="button"
-                            onclick={startEditLogo}
-                        >
-                            <Pencil size={14} />
-                            Cambiar imagen
-                        </button>
-                    {/if}
-                </div>
-
-                <div class="business-details">
-                    <div class="name-row">
-                        <h2>{partner.name}</h2>
-                        {#if !editingName}
-                            <button
-                                class="edit-btn small"
-                                type="button"
-                                onclick={startEditName}
+                        {#if editingLogo}
+                            <div
+                                class="edit-field expand-panel"
+                                transition:slide={{ duration: 200 }}
                             >
-                                <Pencil size={12} />
-                                Modificar
+                                <input
+                                    type="text"
+                                    placeholder="URL de la imagen"
+                                    bind:value={logoInput}
+                                    onkeydown={(e) =>
+                                        e.key === "Enter" && updateLogo()}
+                                />
+                                <div class="edit-actions">
+                                    <button
+                                        class="save-btn"
+                                        type="button"
+                                        onclick={updateLogo}
+                                        disabled={savingLogo}
+                                        >{savingLogo
+                                            ? "Guardando…"
+                                            : "Guardar"}</button
+                                    >
+                                    <button
+                                        class="cancel-btn"
+                                        type="button"
+                                        onclick={cancelEditLogo}
+                                        >Cancelar</button
+                                    >
+                                </div>
+                                {#if logoError}
+                                    <p class="field-error" role="alert">
+                                        {logoError}
+                                    </p>
+                                {/if}
+                            </div>
+                        {:else}
+                            <button
+                                class="edit-btn"
+                                type="button"
+                                onclick={startEditLogo}
+                            >
+                                <Pencil size={14} />
+                                Cambiar imagen
                             </button>
                         {/if}
                     </div>
 
-                    {#if editingName}
-                        <div
-                            class="edit-field expand-panel"
-                            transition:slide={{ duration: 200 }}
-                        >
-                            <input
-                                type="text"
-                                placeholder="Nombre del negocio"
-                                bind:value={nameInput}
-                                onkeydown={(e) =>
-                                    e.key === "Enter" && updateName()}
-                            />
-                            <div class="edit-actions">
+                    <div class="business-details">
+                        <div class="name-row">
+                            <h2>{partner.name}</h2>
+                            {#if !editingName}
                                 <button
-                                    class="save-btn"
+                                    class="edit-btn small"
                                     type="button"
-                                    onclick={updateName}
-                                    disabled={savingName}
-                                    >{savingName
-                                        ? "Guardando…"
-                                        : "Guardar"}</button
+                                    onclick={startEditName}
                                 >
-                                <button
-                                    class="cancel-btn"
-                                    type="button"
-                                    onclick={cancelEditName}>Cancelar</button
-                                >
-                            </div>
-                            {#if nameError}
-                                <p class="field-error" role="alert">
-                                    {nameError}
-                                </p>
+                                    <Pencil size={12} />
+                                    Modificar
+                                </button>
                             {/if}
                         </div>
+
+                        {#if editingName}
+                            <div
+                                class="edit-field expand-panel"
+                                transition:slide={{ duration: 200 }}
+                            >
+                                <input
+                                    type="text"
+                                    placeholder="Nombre del negocio"
+                                    bind:value={nameInput}
+                                    onkeydown={(e) =>
+                                        e.key === "Enter" && updateName()}
+                                />
+                                <div class="edit-actions">
+                                    <button
+                                        class="save-btn"
+                                        type="button"
+                                        onclick={updateName}
+                                        disabled={savingName}
+                                        >{savingName
+                                            ? "Guardando…"
+                                            : "Guardar"}</button
+                                    >
+                                    <button
+                                        class="cancel-btn"
+                                        type="button"
+                                        onclick={cancelEditName}
+                                        >Cancelar</button
+                                    >
+                                </div>
+                                {#if nameError}
+                                    <p class="field-error" role="alert">
+                                        {nameError}
+                                    </p>
+                                {/if}
+                            </div>
+                        {/if}
+
+                        <details>
+                            <summary>Contacto</summary>
+                            <p>
+                                La API actual no proporciona datos de contacto.
+                            </p>
+                        </details>
+                        <details>
+                            <summary>Horarios</summary>
+                            <p>La API actual no proporciona horarios.</p>
+                        </details>
+                        <details>
+                            <summary>Galería</summary>
+                            <p>La API actual no proporciona una galería.</p>
+                        </details>
+                    </div>
+
+                    <div class="location">
+                        <h3>Ubicaciones</h3>
+
+                        <ul class="locs-list">
+                            {#each locations as location}
+                                <li class="loc-item">
+                                    <span>{location.direction}</span>
+                                    <button
+                                        class="remove-btn"
+                                        type="button"
+                                        aria-label={`Quitar ${location.direction}`}
+                                        onclick={() =>
+                                            removeLocation(
+                                                location.id_location,
+                                            )}
+                                        disabled={removingLocationId !== null}
+                                    >
+                                        <Trash2 size={16} />
+                                    </button>
+                                </li>
+                            {:else}
+                                <li class="loc-empty">
+                                    Sin ubicaciones registradas.
+                                </li>
+                            {/each}
+                        </ul>
+
+                        <div class="add-location">
+                            <input
+                                type="text"
+                                placeholder="Nueva dirección"
+                                bind:value={locationInput}
+                                onkeydown={(e) =>
+                                    e.key === "Enter" && addLocation()}
+                            />
+                            <button
+                                class="add-btn"
+                                type="button"
+                                onclick={addLocation}
+                                disabled={addingLocation}
+                            >
+                                {#if addingLocation}
+                                    <span class="spinner"></span>
+                                {:else}
+                                    <Plus size={18} />
+                                {/if}
+                                Agregar
+                            </button>
+                        </div>
+
+                        {#if addingLocationError}
+                            <p class="field-error" role="alert">
+                                {addingLocationError}
+                            </p>
+                        {:else if locationsError}
+                            <p class="field-error" role="alert">
+                                {locationsError}
+                            </p>
+                        {/if}
+                    </div>
+                </section>
+
+                <section class="employees-section">
+                    <div class="employees-header">
+                        <h2><Users size={20} /> Empleados del partner</h2>
+                        <button
+                            class="refresh-btn"
+                            type="button"
+                            onclick={loadEmployees}
+                            disabled={employeesLoading}
+                            aria-label="Recargar empleados"
+                        >
+                            {#if employeesLoading}<span class="spinner small"
+                                ></span>{:else}Recargar{/if}
+                        </button>
+                    </div>
+
+                    {#if employeesLoading}
+                        <p class="state small">Cargando empleados...</p>
+                    {:else if employeesError && employees.length === 0}
+                        <p class="field-error" role="alert">{employeesError}</p>
+                    {:else}
+                        <ul class="employees-list">
+                            {#each employees as employee (employee.id_user)}
+                                <li class="employee-item">
+                                    <div class="employee-info">
+                                        <span class="employee-email"
+                                            >{employee.name}
+                                            {employee.lastname}</span
+                                        >
+                                        <span class="employee-name"
+                                            >DNI: {employee.dni}</span
+                                        >
+                                        <span class="employee-name"
+                                            >ID de Usuario: {employee.id_user}</span
+                                        >
+                                        {#if employee.role}
+                                            <span
+                                                class="employee-role"
+                                                class:admin={employee.role ===
+                                                    "PARTNER_ADMIN"}
+                                            >
+                                                {#if employee.role === "PARTNER_ADMIN"}<Crown
+                                                        size={12}
+                                                    />{/if}
+                                                {employee.role}
+                                            </span>
+                                        {/if}
+                                    </div>
+                                    <div class="employee-actions">
+                                        {#if employee.role !== "PARTNER_ADMIN"}
+                                            <button
+                                                class="promote-btn"
+                                                type="button"
+                                                onclick={() =>
+                                                    promoteEmployee(employee)}
+                                                disabled={promotingEmployeeId !==
+                                                    null ||
+                                                    removingEmployeeId !== null}
+                                                title="Hacer PARTNER_ADMIN"
+                                            >
+                                                {#if promotingEmployeeId === employee.id_user}
+                                                    <span
+                                                        class="spinner small dark"
+                                                    ></span>
+                                                {:else}
+                                                    <ShieldCheck size={16} />
+                                                {/if}
+                                                Hacer admin
+                                            </button>
+                                        {:else}
+                                            <span class="admin-badge"
+                                                ><Crown size={14} /> Admin</span
+                                            >
+                                        {/if}
+                                        <button
+                                            class="remove-btn"
+                                            type="button"
+                                            aria-label={`Quitar ${employee.name} ${employee.lastname}`}
+                                            onclick={() =>
+                                                removeEmployee(employee)}
+                                            disabled={removingEmployeeId !==
+                                                null ||
+                                                promotingEmployeeId !== null}
+                                        >
+                                            {#if removingEmployeeId === employee.id_user}
+                                                <span class="spinner small dark"
+                                                ></span>
+                                            {:else}
+                                                <UserMinus size={16} />
+                                            {/if}
+                                        </button>
+                                    </div>
+                                </li>
+                            {:else}
+                                <li class="loc-empty">
+                                    Sin empleados registrados.
+                                </li>
+                            {/each}
+                        </ul>
+                        {#if employeesError}
+                            <p class="field-error" role="alert">
+                                {employeesError}
+                            </p>
+                        {/if}
                     {/if}
 
-                    <details>
-                        <summary>Contacto</summary>
-                        <p>La API actual no proporciona datos de contacto.</p>
-                    </details>
-                    <details>
-                        <summary>Horarios</summary>
-                        <p>La API actual no proporciona horarios.</p>
-                    </details>
-                    <details>
-                        <summary>Galería</summary>
-                        <p>La API actual no proporciona una galería.</p>
-                    </details>
-                </div>
-
-                <div class="location">
-                    <h3>Ubicaciones</h3>
-
-                    <ul class="locs-list">
-                        {#each locations as location}
-                            <li class="loc-item">
-                                <span>{location.direction}</span>
-                                <button
-                                    class="remove-btn"
-                                    type="button"
-                                    aria-label={`Quitar ${location.direction}`}
-                                    onclick={() =>
-                                        removeLocation(location.id_location)}
-                                    disabled={removingLocationId !== null}
-                                >
-                                    <Trash2 size={16} />
-                                </button>
-                            </li>
-                        {:else}
-                            <li class="loc-empty">
-                                Sin ubicaciones registradas.
-                            </li>
-                        {/each}
-                    </ul>
-
-                    <div class="add-location">
+                    <div class="add-employee">
                         <input
                             type="text"
-                            placeholder="Nueva dirección"
-                            bind:value={locationInput}
+                            placeholder="Nombre"
+                            bind:value={employeeNameInput}
                             onkeydown={(e) =>
-                                e.key === "Enter" && addLocation()}
+                                e.key === "Enter" && addEmployee()}
+                        />
+                        <input
+                            type="text"
+                            placeholder="Apellido"
+                            bind:value={employeeLastNameInput}
+                            onkeydown={(e) =>
+                                e.key === "Enter" && addEmployee()}
+                        />
+                        <input
+                            type="text"
+                            placeholder="DNI"
+                            bind:value={employeeDniInput}
+                            onkeydown={(e) =>
+                                e.key === "Enter" && addEmployee()}
                         />
                         <button
                             class="add-btn"
                             type="button"
-                            onclick={addLocation}
-                            disabled={addingLocation}
+                            onclick={addEmployee}
+                            disabled={addingEmployee}
                         >
-                            {#if addingLocation}
+                            {#if addingEmployee}
                                 <span class="spinner"></span>
                             {:else}
-                                <Plus size={18} />
+                                <UserPlus size={18} />
                             {/if}
                             Agregar
                         </button>
                     </div>
-
-                    {#if addingLocationError}
+                    {#if addingEmployeeError}
                         <p class="field-error" role="alert">
-                            {addingLocationError}
+                            {addingEmployeeError}
                         </p>
-                    {:else if locationsError}
-                        <p class="field-error" role="alert">{locationsError}</p>
                     {/if}
-                </div>
-            </section>
+                </section>
 
-            <section class="coupons">
-                <h2>Tus Cupones</h2>
-                <div class="coupon-grid">
-                    {#each benefits as benefit}
-                        <article class="coupon">
-                            <img src={benefit.image} alt={benefit.title} />
-                            <h3>{benefit.title}</h3>
-                            <p>
-                                <b>{benefit.coupons}</b> /
-                                <b>{benefit.max_coupons}</b> CANJEADOS
+                <section class="coupons">
+                    <h2>Tus Cupones</h2>
+                    <div class="coupon-grid">
+                        {#each benefits as benefit}
+                            <article class="coupon">
+                                <img src={benefit.image} alt={benefit.title} />
+                                <h3>{benefit.title}</h3>
+                                <p>
+                                    <b>{benefit.coupons}</b> /
+                                    <b>{benefit.max_coupons}</b> CANJEADOS
+                                </p>
+                            </article>
+                        {:else}
+                            <p class="empty">
+                                Todavía no tenés beneficios cargados.
                             </p>
-                        </article>
-                    {:else}
-                        <p class="empty">
-                            Todavía no tenés beneficios cargados.
-                        </p>
-                    {/each}
-                </div>
-            </section>
+                        {/each}
+                    </div>
+                </section>
             {/if}
         {/if}
     </div>
@@ -719,7 +1077,8 @@
         line-height: 1.25;
     }
     .business-card,
-    .coupons {
+    .coupons,
+    .employees-section {
         border: 1px solid #969696;
         border-radius: 8px;
         padding: 26px 28px;
@@ -1010,6 +1369,172 @@
 
     .coupons {
         margin-top: 28px;
+    }
+
+    .employees-section {
+        margin-top: 28px;
+    }
+    .employees-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 14px;
+    }
+    .employees-header h2 {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 0;
+        font-size: 20px;
+        font-weight: 600;
+    }
+    .refresh-btn {
+        padding: 6px 14px;
+        border: 1px solid #9a9a9a;
+        border-radius: 999px;
+        background: #fff;
+        font: inherit;
+        font-size: 13px;
+        cursor: pointer;
+    }
+    .refresh-btn:disabled {
+        opacity: 0.6;
+        cursor: default;
+    }
+    .employees-list {
+        list-style: none;
+        margin: 0 0 14px;
+        padding: 0;
+        display: grid;
+        gap: 8px;
+    }
+    .employee-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 10px 12px;
+        border: 1px solid #888;
+        border-radius: 6px;
+        font-size: 14px;
+    }
+    .employee-info {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0;
+    }
+    .employee-email {
+        font-weight: 600;
+        word-break: break-all;
+    }
+    .employee-name {
+        color: #555;
+        font-size: 13px;
+    }
+    .employee-role {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        width: fit-content;
+        padding: 1px 8px;
+        border: 1px solid #aaa;
+        border-radius: 999px;
+        font-size: 11px;
+        margin-top: 2px;
+    }
+    .employee-role.admin {
+        border-color: #c9a000;
+        background: #fff8db;
+        color: #7a5a00;
+    }
+    .admin-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 6px 10px;
+        border: 1px solid #c9a000;
+        border-radius: 999px;
+        background: #fff8db;
+        color: #7a5a00;
+        font-size: 13px;
+        font-weight: 600;
+    }
+    .employee-actions {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-shrink: 0;
+    }
+    .promote-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        border: 1px solid #151535;
+        border-radius: 999px;
+        background: #fff;
+        color: #151535;
+        font: inherit;
+        font-size: 13px;
+        cursor: pointer;
+        white-space: nowrap;
+    }
+    .promote-btn:hover {
+        background: #f0f0ff;
+    }
+    .promote-btn:disabled {
+        opacity: 0.5;
+        cursor: default;
+    }
+    .add-employee {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+    .add-employee input {
+        flex: 1;
+        min-width: 0;
+        padding: 9px 11px;
+        border: 1px solid #888;
+        border-radius: 5px;
+        font: inherit;
+        font-size: 14px;
+    }
+    .add-employee input:focus-visible {
+        outline: 2px solid #19194f;
+        outline-offset: 1px;
+    }
+    .add-employee .add-btn {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 14px;
+        border: 1px solid #151535;
+        border-radius: 999px;
+        background: #151535;
+        color: #fff;
+        font: inherit;
+        font-size: 14px;
+        cursor: pointer;
+        flex-shrink: 0;
+        white-space: nowrap;
+    }
+    .add-employee .add-btn:disabled {
+        cursor: progress;
+        opacity: 0.85;
+    }
+    .spinner.small {
+        width: 14px;
+        height: 14px;
+        border-width: 2px;
+    }
+    .spinner.small.dark {
+        border-top-color: #151535;
+    }
+    .state.small {
+        padding: 14px;
     }
     .coupons > h2 {
         text-align: center;
