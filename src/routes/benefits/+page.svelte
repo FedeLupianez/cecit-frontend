@@ -3,6 +3,7 @@
     import BenefitCard from "$lib/components/BenefitCard.svelte";
     import { getFilters, loadCategories } from "$lib/stores/categories.svelte";
     import { onMount } from "svelte";
+    import { toast } from "svelte-sonner";
     import type { Benefit } from "$lib/types/Benefit";
 
     let benefits: Benefit[] = $state([]);
@@ -20,11 +21,13 @@
             const response = await fetch(url);
             if (!response.ok) {
                 console.log("Response does not ok");
+                toast.error("No se pudieron cargar los beneficios");
                 return;
             }
             benefits = await response.json();
         } catch (error) {
             console.log(error);
+            toast.error("No se pudieron cargar los beneficios");
         } finally {
             loading = false;
         }
@@ -184,6 +187,7 @@
                                 max_coupons={benefit.max_coupons}
                                 max_per_user={benefit.max_per_user}
                                 description={benefit.description}
+                                refund_limit={benefit.refund_limit}
                             />
                         </div>
                     {:else}

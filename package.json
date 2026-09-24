@@ -5,8 +5,8 @@
 	"type": "module",
 	"scripts": {
 		"dev": "vite dev",
-        "dev:nologin": "AUTH_DISABLED=true vite dev",
-        "start": "node build",
+		"dev:nologin": "AUTH_DISABLED=true vite dev",
+		"start": "node build",
 		"build": "vite build",
 		"preview": "vite preview",
 		"prepare": "svelte-kit sync || echo ''",
@@ -25,6 +25,7 @@
 	},
 	"dependencies": {
 		"@iconify-svelte/qlementine-icons": "^1.0.6",
-		"lucide-svelte": "^1.0.1"
+		"lucide-svelte": "^1.0.1",
+		"svelte-sonner": "^1.2.1"
 	}
 }

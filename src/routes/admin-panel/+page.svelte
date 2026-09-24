@@ -20,6 +20,7 @@
         Tags,
         Loader2,
     } from "lucide-svelte";
+    import { toast } from "svelte-sonner";
 
     type AccountRole = "USER" | "CECIT_ADMIN" | "PARTNER_ADMIN";
 
@@ -159,11 +160,13 @@
     function setError(message: string) {
         errorGlobal = message;
         successGlobal = "";
+        toast.error(message);
     }
 
     function setSuccess(message: string) {
         successGlobal = message;
         errorGlobal = "";
+        toast.success(message);
     }
 
     const accountsById = $derived(
@@ -352,6 +355,7 @@
             });
             if (!response.ok) {
                 userErrors[account.id_user] = await parseError(response);
+                toast.error(userErrors[account.id_user]);
                 return;
             }
             const updated = await response.json();
@@ -361,6 +365,7 @@
             if (index >= 0) accounts[index] = updated;
             editingUser[account.id_user] = null;
             userSuccess[account.id_user] = "Correo actualizado correctamente.";
+            toast.success(userSuccess[account.id_user]);
             successGlobal = "";
         } catch (cause) {
             userErrors[account.id_user] =
@@ -398,11 +403,13 @@
             });
             if (!response.ok) {
                 userErrors[account.id_user] = await parseError(response);
+                toast.error(userErrors[account.id_user]);
                 return;
             }
             editingUser[account.id_user] = null;
             userSuccess[account.id_user] =
                 "Contraseña actualizada correctamente.";
+            toast.success(userSuccess[account.id_user]);
         } catch (cause) {
             userErrors[account.id_user] =
                 cause instanceof Error
@@ -431,6 +438,7 @@
             });
             if (!response.ok) {
                 userErrors[account.id_user] = await parseError(response);
+                toast.error(userErrors[account.id_user]);
                 return;
             }
             const updated = await response.json();
@@ -535,11 +543,13 @@
             });
             if (!response.ok) {
                 partnerErrors[partner.id_partner] = await parseError(response);
+                toast.error(partnerErrors[partner.id_partner]);
                 return;
             }
             const updated = await response.json();
             updatePartnerInList(updated);
             partnerSuccess[partner.id_partner] = "Nombre actualizado.";
+            toast.success(partnerSuccess[partner.id_partner]);
         } catch (cause) {
             partnerErrors[partner.id_partner] =
                 cause instanceof Error
@@ -573,11 +583,13 @@
             });
             if (!response.ok) {
                 partnerErrors[partner.id_partner] = await parseError(response);
+                toast.error(partnerErrors[partner.id_partner]);
                 return;
             }
             const updated = await response.json();
             updatePartnerInList(updated);
             partnerSuccess[partner.id_partner] = "Imagen actualizada.";
+            toast.success(partnerSuccess[partner.id_partner]);
         } catch (cause) {
             partnerErrors[partner.id_partner] =
                 cause instanceof Error
@@ -618,6 +630,7 @@
             });
             if (!response.ok) {
                 partnerErrors[partner.id_partner] = await parseError(response);
+                toast.error(partnerErrors[partner.id_partner]);
                 return;
             }
             const created = await response.json();
@@ -679,6 +692,7 @@
             );
             if (!response.ok) {
                 partnerErrors[partner.id_partner] = await parseError(response);
+                toast.error(partnerErrors[partner.id_partner]);
                 return;
             }
             partners = partners.filter(
@@ -734,6 +748,7 @@
             });
             if (!response.ok) {
                 partnerCreateError = await parseError(response);
+                toast.error(partnerCreateError);
                 return;
             }
             creatingPartner = false;
@@ -816,6 +831,7 @@
             });
             if (!response.ok) {
                 benefitErrors[benefit.id_benefit] = await parseError(response);
+                toast.error(benefitErrors[benefit.id_benefit]);
                 return;
             }
             const updated = await response.json();
@@ -825,6 +841,7 @@
             if (index >= 0) benefits[index] = updated;
             editingBenefitId = "";
             benefitSuccess[benefit.id_benefit] = "Beneficio actualizado.";
+            toast.success(benefitSuccess[benefit.id_benefit]);
         } catch (cause) {
             benefitErrors[benefit.id_benefit] =
                 cause instanceof Error
@@ -866,6 +883,7 @@
             });
             if (!response.ok) {
                 benefitErrors[benefit.id_benefit] = await parseError(response);
+                toast.error(benefitErrors[benefit.id_benefit]);
                 return;
             }
             const updated = await response.json();
@@ -929,6 +947,7 @@
             if (!response.ok) {
                 categoryErrors[category.id_category] =
                     await parseError(response);
+                toast.error(categoryErrors[category.id_category]);
                 return;
             }
             const updated = await response.json();
@@ -939,6 +958,7 @@
             categorySuccess[category.id_category] = updated.active
                 ? "Categoría activada."
                 : "Categoría desactivada.";
+            toast.success(categorySuccess[category.id_category]);
         } catch (cause) {
             categoryErrors[category.id_category] =
                 cause instanceof Error
@@ -1000,6 +1020,7 @@
         const token = voucherFilter.trim();
         if (!token) {
             voucherErrors._search = "Ingresá el token del voucher.";
+            toast.error(voucherErrors._search);
             return;
         }
         voucherBusy = "_search";
@@ -1046,6 +1067,7 @@
             );
             if (!response.ok) {
                 voucherErrors[target.token] = await parseError(response);
+                toast.error(voucherErrors[target.token]);
                 return;
             }
             const index = vouchers.findIndex((v) => v.token === target.token);
@@ -1094,6 +1116,7 @@
             });
             if (!response.ok) {
                 voucherErrors[voucher.token] = await parseError(response);
+                toast.error(voucherErrors[voucher.token]);
                 return;
             }
             vouchers = vouchers.filter((v) => v.token !== voucher.token);
@@ -1128,6 +1151,7 @@
             });
             if (!response.ok) {
                 voucherCreateError = await parseError(response);
+                toast.error(voucherCreateError);
                 return;
             }
             const created = await response.json();
@@ -1207,13 +1231,6 @@
                 </button>
             {/each}
         </div>
-
-        {#if errorGlobal}
-            <p class="state error" role="alert">{errorGlobal}</p>
-        {/if}
-        {#if successGlobal}
-            <p class="state success" role="status">{successGlobal}</p>
-        {/if}
 
         {#if loadingGlobal}
             <p class="state">Cargando información del panel...</p>
@@ -1429,34 +1446,6 @@
                                                     </div>
                                                 </td>
                                             </tr>
-                                            {#if userErrors[account.id_user] || userSuccess[account.id_user]}
-                                                <tr class="msg-row">
-                                                    <td colspan="6">
-                                                        {#if userErrors[account.id_user]}
-                                                            <p
-                                                                class="field-error"
-                                                                role="alert"
-                                                            >
-                                                                {userErrors[
-                                                                    account
-                                                                        .id_user
-                                                                ]}
-                                                            </p>
-                                                        {/if}
-                                                        {#if userSuccess[account.id_user]}
-                                                            <p
-                                                                class="field-success"
-                                                                role="status"
-                                                            >
-                                                                {userSuccess[
-                                                                    account
-                                                                        .id_user
-                                                                ]}
-                                                            </p>
-                                                        {/if}
-                                                    </td>
-                                                </tr>
-                                            {/if}
                                         {:else}
                                             <tr>
                                                 <td
@@ -1551,11 +1540,6 @@
                                             />
                                         </label>
                                     </div>
-                                    {#if partnerCreateError}
-                                        <p class="field-error" role="alert">
-                                            {partnerCreateError}
-                                        </p>
-                                    {/if}
                                     <div class="form-actions">
                                         <button
                                             class="save-btn"
@@ -1729,27 +1713,6 @@
                                                     </div>
                                                 {/if}
                                             </div>
-
-                                            {#if partnerErrors[partner.id_partner]}
-                                                <p
-                                                    class="field-error"
-                                                    role="alert"
-                                                >
-                                                    {partnerErrors[
-                                                        partner.id_partner
-                                                    ]}
-                                                </p>
-                                            {/if}
-                                            {#if partnerSuccess[partner.id_partner]}
-                                                <p
-                                                    class="field-success"
-                                                    role="status"
-                                                >
-                                                    {partnerSuccess[
-                                                        partner.id_partner
-                                                    ]}
-                                                </p>
-                                            {/if}
                                         {:else}
                                             <p class="directions">
                                                 {partner.directions.length
@@ -1959,24 +1922,6 @@
                                             </p>
                                         {/if}
 
-                                        {#if benefitErrors[benefit.id_benefit]}
-                                            <p class="field-error" role="alert">
-                                                {benefitErrors[
-                                                    benefit.id_benefit
-                                                ]}
-                                            </p>
-                                        {/if}
-                                        {#if benefitSuccess[benefit.id_benefit]}
-                                            <p
-                                                class="field-success"
-                                                role="status"
-                                            >
-                                                {benefitSuccess[
-                                                    benefit.id_benefit
-                                                ]}
-                                            </p>
-                                        {/if}
-
                                         <div class="card-actions">
                                             {#if editingBenefitId === benefit.id_benefit}
                                                 <button
@@ -2124,36 +2069,7 @@
                                                             {/if}
                                                         </button>
                                                     </td>
-                                                </tr>
-                                                {#if categoryErrors[category.id_category] || categorySuccess[category.id_category]}
-                                                    <tr class="msg-row">
-                                                        <td colspan="3">
-                                                            {#if categoryErrors[category.id_category]}
-                                                                <p
-                                                                    class="field-error"
-                                                                    role="alert"
-                                                                >
-                                                                    {categoryErrors[
-                                                                        category
-                                                                            .id_category
-                                                                    ]}
-                                                                </p>
-                                                            {/if}
-                                                            {#if categorySuccess[category.id_category]}
-                                                                <p
-                                                                    class="field-success"
-                                                                    role="status"
-                                                                >
-                                                                    {categorySuccess[
-                                                                        category
-                                                                            .id_category
-                                                                    ]}
-                                                                </p>
-                                                            {/if}
-                                                        </td>
-                                                    </tr>
-                                                {/if}
-                                            {/each}
+                                                </tr>{/each}
                                         </tbody>
                                     </table>
                                 </div>
@@ -2253,11 +2169,6 @@
                                             </select>
                                         </label>
                                     </div>
-                                    {#if voucherCreateError}
-                                        <p class="field-error" role="alert">
-                                            {voucherCreateError}
-                                        </p>
-                                    {/if}
                                     <div class="form-actions">
                                         <button
                                             class="save-btn"
@@ -2309,12 +2220,6 @@
                                     </button>
                                 </div>
                             </div>
-
-                            {#if voucherErrors._search}
-                                <p class="field-error" role="alert">
-                                    {voucherErrors._search}
-                                </p>
-                            {/if}
 
                             {#if searchedVoucher}
                                 <div
@@ -2551,20 +2456,6 @@
                                                     </div>
                                                 </td>
                                             </tr>
-                                            {#if voucherErrors[voucher.token]}
-                                                <tr class="msg-row">
-                                                    <td colspan="7">
-                                                        <p
-                                                            class="field-error"
-                                                            role="alert"
-                                                        >
-                                                            {voucherErrors[
-                                                                voucher.token
-                                                            ]}
-                                                        </p>
-                                                    </td>
-                                                </tr>
-                                            {/if}
                                         {:else}
                                             <tr>
                                                 <td

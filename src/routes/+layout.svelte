@@ -4,6 +4,7 @@
     import Navbar from "$lib/components/Navbar.svelte";
     import Footer from "$lib/components/Footer.svelte";
     import NavigationProgress from "$lib/components/NavigationProgress.svelte";
+    import { Toaster } from "svelte-sonner";
     import { navigating } from "$app/stores";
 
     let { children } = $props();
@@ -28,6 +29,7 @@
     {@render children()}
 </main>
 <Footer />
+<Toaster position="bottom-right" richColors closeButton />
 
 <style>
     main {

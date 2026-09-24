@@ -6,6 +6,7 @@
     import RoleCard from "$lib/components/RoleCard.svelte";
     import { getRoleAccess } from "$lib/access/roleAccess";
     import { Pencil, Mail, Lock, BadgeCheck, Hash } from "lucide-svelte";
+    import { toast } from "svelte-sonner";
 
     const profile = $derived(profileStore.getProfile());
     const access = $derived(getRoleAccess(profile?.role));
@@ -71,6 +72,7 @@
         const new_email = emailInput.trim();
         if (!emailRegex.test(new_email)) {
             emailError = "Ingresa un correo electrónico válido.";
+            toast.error(emailError);
             return;
         }
         if (new_email.toLowerCase() === profile.email.toLowerCase()) {
@@ -79,6 +81,7 @@
         }
         if (!accessToken.getToken()) {
             emailError = "Tu sesión expiró. Volvé a iniciar sesión.";
+            toast.error(emailError);
             return;
         }
         savingEmail = true;
@@ -99,6 +102,7 @@
             });
             if (!response.ok) {
                 emailError = await parseError(response);
+                toast.error(emailError);
                 return;
             }
             profileStore.setProfile({
@@ -108,11 +112,13 @@
             editingEmail = false;
             emailInput = "";
             emailSuccess = "Correo electrónico actualizado correctamente.";
+            toast.success(emailSuccess);
         } catch (cause) {
             emailError =
                 cause instanceof Error
                     ? cause.message
                     : "No se pudo actualizar el correo electrónico.";
+            toast.error(emailError);
         } finally {
             savingEmail = false;
         }
@@ -140,23 +146,28 @@
         if (!profile || savingPassword) return;
         if (!currentPassword) {
             passwordError = "Ingresa tu contraseña actual.";
+            toast.error(passwordError);
             return;
         }
         if (!newPassword) {
             passwordError = "Ingresa una nueva contraseña.";
+            toast.error(passwordError);
             return;
         }
         if (newPassword.length < 6) {
             passwordError =
                 "La nueva contraseña debe tener al menos 6 caracteres.";
+            toast.error(passwordError);
             return;
         }
         if (newPassword !== confirmPassword) {
             passwordError = "Las contraseñas no coinciden.";
+            toast.error(passwordError);
             return;
         }
         if (!accessToken.getToken()) {
             passwordError = "Tu sesión expiró. Volvé a iniciar sesión.";
+            toast.error(passwordError);
             return;
         }
         savingPassword = true;
@@ -176,6 +187,7 @@
             });
             if (!response.ok) {
                 passwordError = await parseError(response);
+                toast.error(passwordError);
                 return;
             }
             changingPassword = false;
@@ -183,11 +195,13 @@
             newPassword = "";
             confirmPassword = "";
             passwordSuccess = "Contraseña actualizada correctamente.";
+            toast.success(passwordSuccess);
         } catch (cause) {
             passwordError =
                 cause instanceof Error
                     ? cause.message
                     : "No se pudo actualizar la contraseña.";
+            toast.error(passwordError);
         } finally {
             savingPassword = false;
         }
@@ -287,19 +301,9 @@
                                         >Cancelar</button
                                     >
                                 </div>
-                                {#if emailError}
-                                    <p class="field-error" role="alert">
-                                        {emailError}
-                                    </p>
-                                {/if}
                             </div>
                         {:else}
                             <p class="field-value">{profile?.email}</p>
-                        {/if}
-                        {#if emailSuccess}
-                            <p class="field-success" role="status">
-                                {emailSuccess}
-                            </p>
                         {/if}
                     </div>
                     {#if !editingEmail}
@@ -361,19 +365,9 @@
                                         >Cancelar</button
                                     >
                                 </div>
-                                {#if passwordError}
-                                    <p class="field-error" role="alert">
-                                        {passwordError}
-                                    </p>
-                                {/if}
                             </div>
                         {:else}
                             <p class="field-value muted">••••••••••••</p>
-                        {/if}
-                        {#if passwordSuccess}
-                            <p class="field-success" role="status">
-                                {passwordSuccess}
-                            </p>
                         {/if}
                     </div>
                     {#if !changingPassword}

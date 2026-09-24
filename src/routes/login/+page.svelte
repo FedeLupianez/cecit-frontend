@@ -2,6 +2,7 @@
     import { accessToken } from "$lib/stores/authStore";
     import { goto } from "$app/navigation";
     import { navigating } from "$app/stores";
+    import { toast } from "svelte-sonner";
 
     let email = $state("");
     let password = $state("");
@@ -20,10 +21,12 @@
         const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!regex.test(email)) {
             error = emailError;
+            toast.error(emailError);
             return;
         }
         if (!password) {
             error = passwdError;
+            toast.error(passwdError);
             return;
         }
         error = "";
@@ -40,9 +43,11 @@
                 throw new Error(`Response status : ${response.status}`);
             const result = await response.json();
             accessToken.setToken(result.access_token);
+            toast.success("Sesión iniciada correctamente");
             await goto("/");
         } catch (rerror) {
             error = "Credenciales Inválidas";
+            toast.error("Credenciales Inválidas");
             loading = false;
             console.log(rerror);
             if (errorTimeout) clearTimeout(errorTimeout);
@@ -98,8 +103,6 @@
                     <div class="spinner" aria-hidden="true"></div>
                     <p>{redirecting ? "Redirigiendo…" : "Iniciando Sesión..."}</p>
                 </div>
-            {:else if !loading && error}
-                <span class="error-box">{error}</span>
             {:else}
                 <button type="submit">Iniciar Sesión</button>
             {/if}

@@ -1,6 +1,7 @@
 <script lang="ts">
     import { accessToken } from "$lib/stores/authStore";
     import { goto } from "$app/navigation";
+    import { toast } from "svelte-sonner";
 
     let partnerNumber: string = $state("");
     let email: string = $state("");
@@ -18,14 +19,17 @@
         const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!regex.test(email)) {
             error = emailError;
+            toast.error(emailError);
             return;
         }
         if (!password) {
             error = passwdError;
+            toast.error(passwdError);
             return;
         }
         if (!partnerNumber) {
             error = numberError;
+            toast.error(numberError);
             return;
         }
         error = "";
@@ -46,9 +50,11 @@
                 throw new Error(`Response status : ${response.status}`);
             const result = await response.json();
             accessToken.setToken(result.access_token);
+            toast.success("Cuenta creada correctamente");
             await goto("/");
         } catch (error) {
             console.log(error);
+            toast.error("No se pudo completar el registro");
         } finally {
             loading = false;
         }
@@ -106,7 +112,6 @@
                 Mostrar contraseña
             </label>
 
-            <p class="error" class:visible={!!error}>{error}</p>
             <button type="submit" disabled={loading} aria-busy={loading || undefined}>
                 {#if loading}
                     Registrando…

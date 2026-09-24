@@ -32,4 +32,5 @@ export interface Benefit {
     coupons: number;
     max_coupons: number;
     max_per_user: number;
+    refund_limit: number;
 }

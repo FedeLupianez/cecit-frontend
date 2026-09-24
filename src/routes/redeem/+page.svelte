@@ -3,6 +3,7 @@
     import { accessToken } from "$lib/stores/authStore";
     import { profileStore } from "$lib/stores/profileStore";
     import { apiFetch } from "$lib/api";
+    import { toast } from "svelte-sonner";
 
     interface VoucherInfo {
         token: string;
@@ -72,11 +73,13 @@
         const token = tokenInput.trim();
         if (!token) {
             error = "Ingresá el token del voucher.";
+            toast.error(error);
             return;
         }
         const authToken = accessToken.getToken();
         if (!authToken) {
             error = "Tu sesión expiró. Volvé a iniciar sesión.";
+            toast.error(error);
             return;
         }
         loading = true;
@@ -88,12 +91,14 @@
             );
             if (response.status === 401 || response.status === 403) {
                 error = "No tenés permiso para canjear beneficios.";
+                toast.error(error);
                 voucher = undefined;
                 voucherState = undefined;
                 return;
             }
             if (response.status === 409) {
                 error = "Este voucher pertenece a otro negocio. No tenés acceso para canjearlo.";
+                toast.error(error);
                 voucher = undefined;
                 voucherState = undefined;
                 return;
@@ -105,6 +110,7 @@
                     response.status === 404
                         ? "No se encontró ningún voucher con ese token."
                         : await parseErrorMessage(response);
+                toast.error(error);
                 return;
             }
             const data = await response.json();
@@ -117,6 +123,7 @@
                 cause instanceof Error
                     ? cause.message
                     : "No se pudo cargar el voucher.";
+            toast.error(error);
         } finally {
             loading = false;
         }
@@ -127,6 +134,7 @@
         const authToken = accessToken.getToken();
         if (!authToken) {
             error = "Tu sesión expiró. Volvé a iniciar sesión.";
+            toast.error(error);
             return;
         }
         actingAction = action;
@@ -139,6 +147,7 @@
             );
             if (!response.ok) {
                 error = await parseErrorMessage(response);
+                toast.error(error);
                 return;
             }
             voucherState = action === "redeem" ? "DELIVERED" : "REJECTED";
@@ -146,11 +155,13 @@
                 action === "redeem"
                     ? "Voucher canjeado correctamente."
                     : "Voucher rechazado correctamente.";
+            toast.success(message);
         } catch (cause) {
             error =
                 cause instanceof Error
                     ? cause.message
                     : "Ocurrió un error al realizar la acción.";
+            toast.error(error);
         } finally {
             actingAction = null;
         }
@@ -200,10 +211,6 @@
                 </button>
             </div>
         </div>
-
-        {#if error}
-            <p class="state error" role="alert">{error}</p>
-        {/if}
 
         {#if voucher}
             <section class="voucher-card">
@@ -289,9 +296,6 @@
                 </button>
             </div>
 
-            {#if message}
-                <p class="state success" role="status">{message}</p>
-            {/if}
         {/if}
     </div>
 </section>

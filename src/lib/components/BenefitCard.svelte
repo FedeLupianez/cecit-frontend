@@ -13,6 +13,7 @@
     import { profileStore } from "$lib/stores/profileStore";
     import { accessToken } from "$lib/stores/authStore";
     import { apiFetch } from "$lib/api";
+    import { toast } from "svelte-sonner";
 
     let {
         benefit_id,
@@ -116,6 +117,7 @@
                 } else {
                     error = "Error al obtener el voucher";
                 }
+                toast.error(error);
                 voucherToken = "";
                 return;
             }
@@ -124,6 +126,7 @@
             voucherToken = data.token;
             await getUserVouchers();
             await getFile();
+            toast.success("Cupón adquirido correctamente");
             isRedeemed = true;
             setTimeout(() => {
                 isRedeemed = false;
@@ -139,6 +142,7 @@
         });
         if (!res.ok) {
             error = "error getting file";
+            toast.error(error);
             return;
         }
         error = "";
@@ -370,9 +374,6 @@
                         <span>Adquirir Cupón</span>
                     {/if}
                 </button>
-                {#if error}
-                    <p class="voucher-error">{error}</p>
-                {/if}
             </div>
         </div>
     </div>

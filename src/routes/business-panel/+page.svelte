@@ -14,7 +14,9 @@
         UserMinus,
         ShieldCheck,
         UserPlus,
+        Mail,
     } from "lucide-svelte";
+    import { toast } from "svelte-sonner";
 
     interface Partner {
         id_partner: string;
@@ -49,7 +51,8 @@
         name: string;
         dni: string;
         lastname: string;
-        role?: string;
+        email?: string | null;
+        role?: string | null;
     }
 
     let partners: Partner[] = $state([]);
@@ -209,6 +212,7 @@
             );
             if (!response.ok) {
                 locationsError = "No se pudieron cargar las ubicaciones.";
+                toast.error(locationsError);
                 locations = [];
                 return;
             }
@@ -216,6 +220,7 @@
             locationsError = "";
         } catch {
             locationsError = "No se pudieron cargar las ubicaciones.";
+                toast.error(locationsError);
         }
     }
 
@@ -291,11 +296,13 @@
             );
             if (!response.ok) {
                 addingEmployeeError = await parseError(response);
+                toast.error(addingEmployeeError);
                 return;
             }
             const created = await response.json().catch(() => null);
             if (created && created.id_user) {
                 employees = [...employees, created];
+                toast.success("Empleado agregado correctamente");
             } else {
                 await loadEmployees();
             }
@@ -331,9 +338,11 @@
             );
             if (!response.ok) {
                 employeesError = await parseError(response);
+                toast.error(employeesError);
                 return;
             }
             employees = employees.filter((e) => e.id_user !== employee.id_user);
+            toast.success("Empleado eliminado correctamente");
         } catch (cause) {
             employeesError =
                 cause instanceof Error
@@ -368,6 +377,7 @@
             });
             if (!response.ok) {
                 employeesError = await parseError(response);
+                toast.error(employeesError);
                 return;
             }
             // Marcar como promovido localmente o recargar
@@ -376,6 +386,7 @@
                     ? { ...e, role: "PARTNER_ADMIN" }
                     : e,
             );
+            toast.success("Empleado promovido a administrador");
         } catch (cause) {
             employeesError =
                 cause instanceof Error
@@ -438,6 +449,7 @@
             });
             if (!response.ok) {
                 nameError = await parseError(response);
+                toast.error(nameError);
                 return;
             }
             const data = await response.json();
@@ -448,6 +460,7 @@
                     : p,
             );
             editingName = false;
+            toast.success("Nombre actualizado correctamente");
         } catch (cause) {
             nameError =
                 cause instanceof Error
@@ -503,6 +516,7 @@
             });
             if (!response.ok) {
                 logoError = await parseError(response);
+                toast.error(logoError);
                 return;
             }
             const data = await response.json();
@@ -513,6 +527,7 @@
                     : p,
             );
             editingLogo = false;
+            toast.success("Logo actualizado correctamente");
         } catch (cause) {
             logoError =
                 cause instanceof Error
@@ -551,11 +566,13 @@
             });
             if (!response.ok) {
                 addingLocationError = await parseError(response);
+                toast.error(addingLocationError);
                 return;
             }
             const created = await response.json();
             locations = [...locations, created];
             locationInput = "";
+            toast.success("Ubicación agregada correctamente");
         } catch (cause) {
             addingLocationError =
                 cause instanceof Error
@@ -585,11 +602,13 @@
             );
             if (!response.ok) {
                 locationsError = await parseError(response);
+                toast.error(locationsError);
                 return;
             }
             locations = locations.filter(
                 (location) => location.id_location !== id,
             );
+            toast.success("Ubicación eliminada correctamente");
         } catch (cause) {
             locationsError =
                 cause instanceof Error
@@ -632,11 +651,8 @@
                 </div>
             </div>
         </div>
-
         {#if loading}
             <p class="state">Cargando información del negocio...</p>
-        {:else if error}
-            <p class="state error" role="alert">{error}</p>
         {:else if partners.length > 0}
             {#if partners.length > 1}
                 <div
@@ -703,11 +719,6 @@
                                         >Cancelar</button
                                     >
                                 </div>
-                                {#if logoError}
-                                    <p class="field-error" role="alert">
-                                        {logoError}
-                                    </p>
-                                {/if}
                             </div>
                         {:else}
                             <button
@@ -765,11 +776,6 @@
                                         >Cancelar</button
                                     >
                                 </div>
-                                {#if nameError}
-                                    <p class="field-error" role="alert">
-                                        {nameError}
-                                    </p>
-                                {/if}
                             </div>
                         {/if}
 
@@ -838,16 +844,6 @@
                                 Agregar
                             </button>
                         </div>
-
-                        {#if addingLocationError}
-                            <p class="field-error" role="alert">
-                                {addingLocationError}
-                            </p>
-                        {:else if locationsError}
-                            <p class="field-error" role="alert">
-                                {locationsError}
-                            </p>
-                        {/if}
                     </div>
                 </section>
 
@@ -868,8 +864,6 @@
 
                     {#if employeesLoading}
                         <p class="state small">Cargando empleados...</p>
-                    {:else if employeesError && employees.length === 0}
-                        <p class="field-error" role="alert">{employeesError}</p>
                     {:else}
                         <ul class="employees-list">
                             {#each employees as employee (employee.id_user)}
@@ -885,21 +879,31 @@
                                         <span class="employee-name"
                                             >ID de Usuario: {employee.id_user}</span
                                         >
-                                        {#if employee.role}
-                                            <span
-                                                class="employee-role"
-                                                class:admin={employee.role ===
-                                                    "PARTNER_ADMIN"}
+                                        {#if employee.email}
+                                            <span class="employee-email-detail"
+                                                ><Mail size={12} /> {employee.email}</span
                                             >
-                                                {#if employee.role === "PARTNER_ADMIN"}<Crown
-                                                        size={12}
-                                                    />{/if}
-                                                {employee.role}
-                                            </span>
+                                        {:else}
+                                            <span class="employee-no-account"
+                                                >Sin cuenta — El usuario no tiene cuenta</span
+                                            >
+                                        {/if}
+                                        {#if employee.role === "PARTNER_ADMIN"}
+                                            <span class="employee-role admin"
+                                                ><Crown size={12} /> PARTNER_ADMIN</span
+                                            >
+                                        {:else if employee.role}
+                                            <span class="employee-role"
+                                                >{employee.role}</span
+                                            >
                                         {/if}
                                     </div>
                                     <div class="employee-actions">
-                                        {#if employee.role !== "PARTNER_ADMIN"}
+                                        {#if employee.role === "PARTNER_ADMIN"}
+                                            <span class="admin-badge"
+                                                ><Crown size={14} /> Admin</span
+                                            >
+                                        {:else if employee.email}
                                             <button
                                                 class="promote-btn"
                                                 type="button"
@@ -919,10 +923,6 @@
                                                 {/if}
                                                 Hacer admin
                                             </button>
-                                        {:else}
-                                            <span class="admin-badge"
-                                                ><Crown size={14} /> Admin</span
-                                            >
                                         {/if}
                                         <button
                                             class="remove-btn"
@@ -949,11 +949,6 @@
                                 </li>
                             {/each}
                         </ul>
-                        {#if employeesError}
-                            <p class="field-error" role="alert">
-                                {employeesError}
-                            </p>
-                        {/if}
                     {/if}
 
                     <div class="add-employee">
@@ -992,11 +987,6 @@
                             Agregar
                         </button>
                     </div>
-                    {#if addingEmployeeError}
-                        <p class="field-error" role="alert">
-                            {addingEmployeeError}
-                        </p>
-                    {/if}
                 </section>
 
                 <section class="coupons">
@@ -1449,6 +1439,27 @@
         border-color: #c9a000;
         background: #fff8db;
         color: #7a5a00;
+    }
+    .employee-email-detail {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        color: #1a1f36;
+        font-size: 13px;
+        word-break: break-all;
+    }
+    .employee-no-account {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        width: fit-content;
+        padding: 1px 8px;
+        border: 1px dashed #c0392b;
+        border-radius: 999px;
+        background: #fdf0f0;
+        color: #a31818;
+        font-size: 11px;
+        font-weight: 600;
     }
     .admin-badge {
         display: inline-flex;

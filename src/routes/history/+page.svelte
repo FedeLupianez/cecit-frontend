@@ -1,6 +1,7 @@
 <script lang="ts">
     import { apiFetch } from "$lib/api";
     import { profileStore } from "$lib/stores/profileStore";
+    import { toast } from "svelte-sonner";
     import Voucher from "./Voucher.svelte";
 
     interface Voucher {
@@ -32,6 +33,7 @@
             vouchers = await response.json();
         } catch (err) {
             console.error("Error al cargar vouchers:", err);
+            toast.error("No se pudieron cargar los cupones");
         } finally {
             loading = false;
             console.log(vouchers);
