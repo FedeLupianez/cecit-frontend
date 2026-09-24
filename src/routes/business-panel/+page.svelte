@@ -353,7 +353,7 @@
         promotingEmployeeId = employee.id_user;
         employeesError = "";
         try {
-            const response = await apiFetch("/api/partners/employees", {
+            const response = await apiFetch("/api/accounts/role", {
                 method: "PATCH",
                 headers: {
                     ...authHeaders(),
@@ -361,8 +361,9 @@
                 },
                 credentials: "include",
                 body: JSON.stringify({
+                    id_account: employee.id_user,
                     id_partner: partner.id_partner,
-                    id_user: employee.id_user,
+                    newRole: "PARTNER_ADMIN",
                 }),
             });
             if (!response.ok) {
@@ -852,7 +853,7 @@
 
                 <section class="employees-section">
                     <div class="employees-header">
-                        <h2><Users size={20} /> Empleados del partner</h2>
+                        <h2><Users size={20} /> Empleados</h2>
                         <button
                             class="refresh-btn"
                             type="button"
