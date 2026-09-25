@@ -13,6 +13,7 @@
         Crown,
         UserMinus,
         ShieldCheck,
+        ShieldOff,
         UserPlus,
         Mail,
     } from "lucide-svelte";
@@ -92,13 +93,12 @@
     let employees: UsersDTO[] = $state([]);
     let employeesLoading = $state(false);
     let employeesError = $state("");
-    let employeeNameInput = $state("");
-    let employeeLastNameInput = $state("");
     let employeeDniInput = $state("");
     let addingEmployee = $state(false);
     let addingEmployeeError = $state("");
     let removingEmployeeId: string | null = $state(null);
     let promotingEmployeeId: string | null = $state(null);
+    let demotingEmployeeId: string | null = $state(null);
 
     const used = $derived(
         benefits.reduce((total, benefit) => total + benefit.coupons, 0),
@@ -220,7 +220,7 @@
             locationsError = "";
         } catch {
             locationsError = "No se pudieron cargar las ubicaciones.";
-                toast.error(locationsError);
+            toast.error(locationsError);
         }
     }
 
@@ -256,17 +256,7 @@
 
     async function addEmployee() {
         if (!partner || addingEmployee) return;
-        const name = employeeNameInput.trim();
-        const lastname = employeeLastNameInput.trim();
         const dni = employeeDniInput.trim();
-        if (!name) {
-            addingEmployeeError = "Ingresá el nombre.";
-            return;
-        }
-        if (!lastname) {
-            addingEmployeeError = "Ingresá el apellido.";
-            return;
-        }
         if (!dni) {
             addingEmployeeError = "Ingresá el DNI.";
             return;
@@ -278,22 +268,18 @@
         addingEmployee = true;
         addingEmployeeError = "";
         try {
-            const response = await apiFetch(
-                `/api/partners/employees?id_partner=${encodeURIComponent(partner.id_partner)}`,
-                {
-                    method: "POST",
-                    headers: {
-                        ...authHeaders(),
-                        "Content-Type": "application/json",
-                    },
-                    credentials: "include",
-                    body: JSON.stringify({
-                        name,
-                        lastname,
-                        dni,
-                    }),
+            const response = await apiFetch(`/api/partners/employees`, {
+                method: "POST",
+                headers: {
+                    ...authHeaders(),
+                    "Content-Type": "application/json",
                 },
-            );
+                credentials: "include",
+                body: JSON.stringify({
+                    id_partner: partner.id_partner,
+                    dni,
+                }),
+            });
             if (!response.ok) {
                 addingEmployeeError = await parseError(response);
                 toast.error(addingEmployeeError);
@@ -305,9 +291,8 @@
                 toast.success("Empleado agregado correctamente");
             } else {
                 await loadEmployees();
+                toast.success("Empleado agregado correctamente");
             }
-            employeeNameInput = "";
-            employeeLastNameInput = "";
             employeeDniInput = "";
         } catch (cause) {
             addingEmployeeError =
@@ -354,7 +339,7 @@
     }
 
     async function promoteEmployee(employee: UsersDTO) {
-        if (!partner || promotingEmployeeId) return;
+        if (!partner || promotingEmployeeId || demotingEmployeeId) return;
         if (!accessToken.getToken()) {
             employeesError = "Tu sesión expiró. Volvé a iniciar sesión.";
             return;
@@ -380,7 +365,6 @@
                 toast.error(employeesError);
                 return;
             }
-            // Marcar como promovido localmente o recargar
             employees = employees.map((e) =>
                 e.id_user === employee.id_user
                     ? { ...e, role: "PARTNER_ADMIN" }
@@ -394,6 +378,47 @@
                     : "No se pudo promover el empleado.";
         } finally {
             promotingEmployeeId = null;
+        }
+    }
+
+    async function demoteEmployee(employee: UsersDTO) {
+        if (!partner || demotingEmployeeId || promotingEmployeeId) return;
+        if (!accessToken.getToken()) {
+            employeesError = "Tu sesión expiró. Volvé a iniciar sesión.";
+            return;
+        }
+        demotingEmployeeId = employee.id_user;
+        employeesError = "";
+        try {
+            const response = await apiFetch("/api/accounts/role", {
+                method: "PATCH",
+                headers: {
+                    ...authHeaders(),
+                    "Content-Type": "application/json",
+                },
+                credentials: "include",
+                body: JSON.stringify({
+                    id_account: employee.id_user,
+                    id_partner: partner.id_partner,
+                    newRole: "USER",
+                }),
+            });
+            if (!response.ok) {
+                employeesError = await parseError(response);
+                toast.error(employeesError);
+                return;
+            }
+            employees = employees.map((e) =>
+                e.id_user === employee.id_user ? { ...e, role: "USER" } : e,
+            );
+            toast.success("Rol de administrador quitado");
+        } catch (cause) {
+            employeesError =
+                cause instanceof Error
+                    ? cause.message
+                    : "No se pudo quitar el rol de administrador.";
+        } finally {
+            demotingEmployeeId = null;
         }
     }
 
@@ -778,21 +803,6 @@
                                 </div>
                             </div>
                         {/if}
-
-                        <details>
-                            <summary>Contacto</summary>
-                            <p>
-                                La API actual no proporciona datos de contacto.
-                            </p>
-                        </details>
-                        <details>
-                            <summary>Horarios</summary>
-                            <p>La API actual no proporciona horarios.</p>
-                        </details>
-                        <details>
-                            <summary>Galería</summary>
-                            <p>La API actual no proporciona una galería.</p>
-                        </details>
                     </div>
 
                     <div class="location">
@@ -877,15 +887,16 @@
                                             >DNI: {employee.dni}</span
                                         >
                                         <span class="employee-name"
-                                            >ID de Usuario: {employee.id_user}</span
+                                            >ID: {employee.id_user}</span
                                         >
                                         {#if employee.email}
                                             <span class="employee-email-detail"
-                                                ><Mail size={12} /> {employee.email}</span
+                                                ><Mail size={12} />
+                                                {employee.email}</span
                                             >
                                         {:else}
                                             <span class="employee-no-account"
-                                                >Sin cuenta — El usuario no tiene cuenta</span
+                                                >Sin cuenta</span
                                             >
                                         {/if}
                                         {#if employee.role === "PARTNER_ADMIN"}
@@ -903,6 +914,27 @@
                                             <span class="admin-badge"
                                                 ><Crown size={14} /> Admin</span
                                             >
+                                            <button
+                                                class="demote-btn"
+                                                type="button"
+                                                onclick={() =>
+                                                    demoteEmployee(employee)}
+                                                disabled={demotingEmployeeId !==
+                                                    null ||
+                                                    promotingEmployeeId !==
+                                                        null ||
+                                                    removingEmployeeId !== null}
+                                                title="Quitar PARTNER_ADMIN"
+                                            >
+                                                {#if demotingEmployeeId === employee.id_user}
+                                                    <span
+                                                        class="spinner small dark"
+                                                    ></span>
+                                                {:else}
+                                                    <ShieldOff size={16} />
+                                                {/if}
+                                                Quitar admin
+                                            </button>
                                         {:else if employee.email}
                                             <button
                                                 class="promote-btn"
@@ -911,6 +943,8 @@
                                                     promoteEmployee(employee)}
                                                 disabled={promotingEmployeeId !==
                                                     null ||
+                                                    demotingEmployeeId !==
+                                                        null ||
                                                     removingEmployeeId !== null}
                                                 title="Hacer PARTNER_ADMIN"
                                             >
@@ -932,7 +966,8 @@
                                                 removeEmployee(employee)}
                                             disabled={removingEmployeeId !==
                                                 null ||
-                                                promotingEmployeeId !== null}
+                                                promotingEmployeeId !== null ||
+                                                demotingEmployeeId !== null}
                                         >
                                             {#if removingEmployeeId === employee.id_user}
                                                 <span class="spinner small dark"
@@ -954,20 +989,6 @@
                     <div class="add-employee">
                         <input
                             type="text"
-                            placeholder="Nombre"
-                            bind:value={employeeNameInput}
-                            onkeydown={(e) =>
-                                e.key === "Enter" && addEmployee()}
-                        />
-                        <input
-                            type="text"
-                            placeholder="Apellido"
-                            bind:value={employeeLastNameInput}
-                            onkeydown={(e) =>
-                                e.key === "Enter" && addEmployee()}
-                        />
-                        <input
-                            type="text"
                             placeholder="DNI"
                             bind:value={employeeDniInput}
                             onkeydown={(e) =>
@@ -987,6 +1008,11 @@
                             Agregar
                         </button>
                     </div>
+                    {#if addingEmployeeError}
+                        <p class="field-error" style="margin-top:8px">
+                            {addingEmployeeError}
+                        </p>
+                    {/if}
                 </section>
 
                 <section class="coupons">
@@ -1497,6 +1523,27 @@
         background: #f0f0ff;
     }
     .promote-btn:disabled {
+        opacity: 0.5;
+        cursor: default;
+    }
+    .demote-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        border: 1px solid #a31818;
+        border-radius: 999px;
+        background: #fff;
+        color: #a31818;
+        font: inherit;
+        font-size: 13px;
+        cursor: pointer;
+        white-space: nowrap;
+    }
+    .demote-btn:hover {
+        background: #fdf0f0;
+    }
+    .demote-btn:disabled {
         opacity: 0.5;
         cursor: default;
     }
