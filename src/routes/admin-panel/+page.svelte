@@ -917,8 +917,6 @@
         }
     }
 
-
-
     /* ------------------------------------------------------------------ */
     /*  CATEGORÍAS                                                         */
     /* ------------------------------------------------------------------ */
@@ -2888,19 +2886,6 @@
     .danger-btn:disabled {
         opacity: 0.5;
         cursor: default;
-    }
-
-    .field-error {
-        margin: 8px 0 0;
-        color: #a31818;
-        font-size: 13px;
-        font-weight: 600;
-    }
-    .field-success {
-        margin: 8px 0 0;
-        color: #137333;
-        font-size: 13px;
-        font-weight: 600;
     }
 
     .create-form {

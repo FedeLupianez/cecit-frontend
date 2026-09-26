@@ -1026,6 +1026,14 @@
                                     <b>{benefit.coupons}</b> /
                                     <b>{benefit.max_coupons}</b> CANJEADOS
                                 </p>
+                                <a
+                                    class="details-btn"
+                                    href={`/business-panel/benefit/${benefit.id_benefit}?id_partner=${encodeURIComponent(
+                                        partner?.id_partner ?? "",
+                                    )}`}
+                                >
+                                    Detalles
+                                </a>
                             </article>
                         {:else}
                             <p class="empty">
@@ -1632,6 +1640,25 @@
         border-radius: 99px;
         font-size: 15px;
         font-weight: 400;
+    }
+    .details-btn {
+        display: block;
+        margin: 0 8px 14px;
+        padding: 8px 12px;
+        border: 1px solid #151535;
+        border-radius: 999px;
+        color: #151535;
+        font-size: 13px;
+        font-weight: 600;
+        text-align: center;
+        text-decoration: none;
+        transition:
+            background 0.15s ease,
+            color 0.15s ease;
+    }
+    .details-btn:hover {
+        background: #151535;
+        color: #fff;
     }
     .state,
     .empty {
