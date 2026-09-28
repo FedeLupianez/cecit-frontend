@@ -25,7 +25,7 @@
     type AccountRole = "USER" | "CECIT_ADMIN" | "PARTNER_ADMIN";
 
     interface Account {
-        id_user: string;
+        id_account: string;
         email: string | null;
         role: AccountRole;
         active: boolean;
@@ -84,7 +84,7 @@
 
     interface Voucher {
         token: string;
-        id_user: string;
+        id_account: string;
         id_benefit: string;
         application_date: string;
         delivery_date: string;
@@ -170,7 +170,7 @@
     }
 
     const accountsById = $derived(
-        new Map(accounts.map((account) => [account.id_user, account])),
+        new Map(accounts.map((account) => [account.id_account, account])),
     );
     const benefitsById = $derived(
         new Map(benefits.map((benefit) => [benefit.id_benefit, benefit])),
@@ -205,6 +205,7 @@
                     return;
                 }
                 accounts = await res.json();
+                console.log(accounts);
             } else if (tab === "negocios") {
                 const res = await fetch("/api/partners/all", {
                     headers: authHeaders(),
@@ -290,7 +291,7 @@
             ? accounts.filter((account) => {
                   const needle = userFilter.trim().toLowerCase();
                   return [
-                      account.id_user,
+                      account.id_account,
                       account.email ?? "",
                       account.name,
                       account.lastname,
@@ -304,21 +305,21 @@
     );
 
     function startEditEmail(account: Account) {
-        if (editingUser[account.id_user]) return;
-        emailInputs[account.id_user] = account.email ?? "";
-        passwordInputs[account.id_user] = "";
-        userErrors[account.id_user] = "";
-        userSuccess[account.id_user] = "";
-        editingUser[account.id_user] = "email";
+        if (editingUser[account.id_account]) return;
+        emailInputs[account.id_account] = account.email ?? "";
+        passwordInputs[account.id_account] = "";
+        userErrors[account.id_account] = "";
+        userSuccess[account.id_account] = "";
+        editingUser[account.id_account] = "email";
     }
 
     function startEditPassword(account: Account) {
-        if (editingUser[account.id_user]) return;
-        emailInputs[account.id_user] = "";
-        passwordInputs[account.id_user] = "";
-        userErrors[account.id_user] = "";
-        userSuccess[account.id_user] = "";
-        editingUser[account.id_user] = "password";
+        if (editingUser[account.id_account]) return;
+        emailInputs[account.id_account] = "";
+        passwordInputs[account.id_account] = "";
+        userErrors[account.id_account] = "";
+        userSuccess[account.id_account] = "";
+        editingUser[account.id_account] = "password";
     }
 
     function cancelEditUser(id: string) {
@@ -327,21 +328,21 @@
     }
 
     async function saveEmail(account: Account) {
-        const new_email = (emailInputs[account.id_user] ?? "").trim();
+        const new_email = (emailInputs[account.id_account] ?? "").trim();
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(new_email)) {
-            userErrors[account.id_user] =
+            userErrors[account.id_account] =
                 "Ingresá un correo electrónico válido.";
             return;
         }
         if (new_email.toLowerCase() === (account.email ?? "").toLowerCase()) {
-            editingUser[account.id_user] = null;
+            editingUser[account.id_account] = null;
             return;
         }
-        savingUser = account.id_user;
-        userErrors[account.id_user] = "";
-        userSuccess[account.id_user] = "";
+        savingUser = account.id_account;
+        userErrors[account.id_account] = "";
+        userSuccess[account.id_account] = "";
         try {
-            const response = await fetch("/api/accounts", {
+            const response = await fetch("/api/auth/update-profile-admin", {
                 method: "PATCH",
                 headers: {
                     ...authHeaders(),
@@ -349,26 +350,27 @@
                 },
                 credentials: "include",
                 body: JSON.stringify({
-                    id_user: account.id_user,
-                    email: new_email,
+                    id_account: account.id_account,
+                    email: account.email,
+                    new_email: new_email
                 }),
             });
             if (!response.ok) {
-                userErrors[account.id_user] = await parseError(response);
-                toast.error(userErrors[account.id_user]);
+                userErrors[account.id_account] = await parseError(response);
+                toast.error(userErrors[account.id_account]);
                 return;
             }
             const updated = await response.json();
             const index = accounts.findIndex(
-                (a) => a.id_user === account.id_user,
+                (a) => a.id_account === account.id_account,
             );
             if (index >= 0) accounts[index] = updated;
-            editingUser[account.id_user] = null;
-            userSuccess[account.id_user] = "Correo actualizado correctamente.";
-            toast.success(userSuccess[account.id_user]);
+            editingUser[account.id_account] = null;
+            userSuccess[account.id_account] = "Correo actualizado correctamente.";
+            toast.success(userSuccess[account.id_account]);
             successGlobal = "";
         } catch (cause) {
-            userErrors[account.id_user] =
+            userErrors[account.id_account] =
                 cause instanceof Error
                     ? cause.message
                     : "No se pudo actualizar.";
@@ -378,19 +380,19 @@
     }
 
     async function savePassword(account: Account) {
-        const password = passwordInputs[account.id_user] ?? "";
+        const password = passwordInputs[account.id_account] ?? "";
         if (!password) {
-            userErrors[account.id_user] = "Ingresá una nueva contraseña.";
+            userErrors[account.id_account] = "Ingresá una nueva contraseña.";
             return;
         }
         if (password.length < 6) {
-            userErrors[account.id_user] =
+            userErrors[account.id_account] =
                 "La contraseña debe tener al menos 6 caracteres.";
             return;
         }
-        savingUser = account.id_user;
-        userErrors[account.id_user] = "";
-        userSuccess[account.id_user] = "";
+        savingUser = account.id_account;
+        userErrors[account.id_account] = "";
+        userSuccess[account.id_account] = "";
         try {
             const response = await fetch("/api/accounts", {
                 method: "PATCH",
@@ -399,19 +401,19 @@
                     "Content-Type": "application/json",
                 },
                 credentials: "include",
-                body: JSON.stringify({ id_user: account.id_user, password }),
+                body: JSON.stringify({ id_account: account.id_account, password }),
             });
             if (!response.ok) {
-                userErrors[account.id_user] = await parseError(response);
-                toast.error(userErrors[account.id_user]);
+                userErrors[account.id_account] = await parseError(response);
+                toast.error(userErrors[account.id_account]);
                 return;
             }
-            editingUser[account.id_user] = null;
-            userSuccess[account.id_user] =
+            editingUser[account.id_account] = null;
+            userSuccess[account.id_account] =
                 "Contraseña actualizada correctamente.";
-            toast.success(userSuccess[account.id_user]);
+            toast.success(userSuccess[account.id_account]);
         } catch (cause) {
-            userErrors[account.id_user] =
+            userErrors[account.id_account] =
                 cause instanceof Error
                     ? cause.message
                     : "No se pudo actualizar.";
@@ -421,8 +423,8 @@
     }
 
     async function toggleActive(account: Account) {
-        savingUser = account.id_user;
-        userErrors[account.id_user] = "";
+        savingUser = account.id_account;
+        userErrors[account.id_account] = "";
         try {
             const response = await fetch("/api/accounts", {
                 method: "PATCH",
@@ -432,25 +434,25 @@
                 },
                 credentials: "include",
                 body: JSON.stringify({
-                    id_user: account.id_user,
+                    id_account: account.id_account,
                     active: !account.active,
                 }),
             });
             if (!response.ok) {
-                userErrors[account.id_user] = await parseError(response);
-                toast.error(userErrors[account.id_user]);
+                userErrors[account.id_account] = await parseError(response);
+                toast.error(userErrors[account.id_account]);
                 return;
             }
             const updated = await response.json();
             const index = accounts.findIndex(
-                (a) => a.id_user === account.id_user,
+                (a) => a.id_account === account.id_account,
             );
             if (index >= 0) accounts[index] = updated;
-            userSuccess[account.id_user] = updated.active
+            userSuccess[account.id_account] = updated.active
                 ? "Cuenta activada."
                 : "Cuenta desactivada.";
         } catch (cause) {
-            userErrors[account.id_user] =
+            userErrors[account.id_account] =
                 cause instanceof Error
                     ? cause.message
                     : "No se pudo actualizar.";
@@ -979,7 +981,7 @@
     let voucherErrors = $state<Record<string, string>>({});
 
     let openingCreatingVoucher = $state(false);
-    let newVoucher = $state({ id_user: "", id_benefit: "" });
+    let newVoucher = $state({ id_account: "", id_benefit: "" });
     let savingVoucher = $state(false);
     let voucherCreateError = $state("");
 
@@ -993,12 +995,12 @@
                 if (!voucherSearch.trim()) return true;
                 const needle = voucherSearch.trim().toLowerCase();
                 if (voucher.token.toLowerCase().includes(needle)) return true;
-                if (voucher.id_user.toLowerCase().includes(needle)) return true;
+                if (voucher.id_account.toLowerCase().includes(needle)) return true;
                 if (voucher.id_benefit.toLowerCase().includes(needle))
                     return true;
                 const benefit = benefitsById.get(voucher.id_benefit);
                 if (benefit?.title.toLowerCase().includes(needle)) return true;
-                const account = accountsById.get(voucher.id_user);
+                const account = accountsById.get(voucher.id_account);
                 if (
                     account &&
                     `${account.name} ${account.lastname}`
@@ -1109,7 +1111,7 @@
                 credentials: "include",
                 body: JSON.stringify({
                     token: voucher.token,
-                    id_user: voucher.id_user,
+                    id_account: voucher.id_account,
                 }),
             });
             if (!response.ok) {
@@ -1128,7 +1130,7 @@
     }
 
     async function createVoucher() {
-        if (!newVoucher.id_user || !newVoucher.id_benefit) {
+        if (!newVoucher.id_account || !newVoucher.id_benefit) {
             voucherCreateError = "Elegí un usuario y un beneficio.";
             return;
         }
@@ -1143,7 +1145,7 @@
                 },
                 credentials: "include",
                 body: JSON.stringify({
-                    id_user: newVoucher.id_user,
+                    id_account: newVoucher.id_account,
                     id_benefit: newVoucher.id_benefit,
                 }),
             });
@@ -1155,7 +1157,7 @@
             const created = await response.json();
             vouchers = [...vouchers, created];
             openingCreatingVoucher = false;
-            newVoucher = { id_user: "", id_benefit: "" };
+            newVoucher = { id_account: "", id_benefit: "" };
             setSuccess("Voucher creado correctamente.");
         } catch (cause) {
             voucherCreateError =
@@ -1270,7 +1272,7 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {#each filteredAccounts as account (account.id_user)}
+                                        {#each filteredAccounts as account (account.id_account)}
                                             <tr>
                                                 <td>
                                                     <strong
@@ -1278,11 +1280,11 @@
                                                         {account.lastname}</strong
                                                     >
                                                     <span class="sub"
-                                                        >{account.dni} · {account.id_user}</span
+                                                        >{account.dni} · {account.id_account}</span
                                                     >
                                                 </td>
                                                 <td>
-                                                    {#if editingUser[account.id_user] === "email"}
+                                                    {#if editingUser[account.id_account] === "email"}
                                                         <div
                                                             class="inline-edit"
                                                         >
@@ -1291,7 +1293,7 @@
                                                                 bind:value={
                                                                     emailInputs[
                                                                         account
-                                                                            .id_user
+                                                                            .id_account
                                                                     ]
                                                                 }
                                                                 onkeydown={(
@@ -1314,7 +1316,7 @@
                                                                             account,
                                                                         )}
                                                                     disabled={savingUser ===
-                                                                        account.id_user}
+                                                                        account.id_account}
                                                                     >Guardar</button
                                                                 >
                                                                 <button
@@ -1322,7 +1324,7 @@
                                                                     type="button"
                                                                     onclick={() =>
                                                                         cancelEditUser(
-                                                                            account.id_user,
+                                                                            account.id_account,
                                                                         )}
                                                                     >Cancelar</button
                                                                 >
@@ -1350,7 +1352,7 @@
                                                                 account,
                                                             )}
                                                         disabled={savingUser ===
-                                                            account.id_user}
+                                                            account.id_account}
                                                     >
                                                         {account.active
                                                             ? "ACTIVA"
@@ -1366,7 +1368,7 @@
                                                 </td>
                                                 <td>
                                                     <div class="row-actions">
-                                                        {#if editingUser[account.id_user] === "password"}
+                                                        {#if editingUser[account.id_account] === "password"}
                                                             <div
                                                                 class="inline-edit"
                                                             >
@@ -1376,7 +1378,7 @@
                                                                     bind:value={
                                                                         passwordInputs[
                                                                             account
-                                                                                .id_user
+                                                                                .id_account
                                                                         ]
                                                                     }
                                                                     onkeydown={(
@@ -1399,7 +1401,7 @@
                                                                                 account,
                                                                             )}
                                                                         disabled={savingUser ===
-                                                                            account.id_user}
+                                                                            account.id_account}
                                                                         >Guardar</button
                                                                     >
                                                                     <button
@@ -1407,13 +1409,13 @@
                                                                         type="button"
                                                                         onclick={() =>
                                                                             cancelEditUser(
-                                                                                account.id_user,
+                                                                                account.id_account,
                                                                             )}
                                                                         >Cancelar</button
                                                                     >
                                                                 </div>
                                                             </div>
-                                                        {:else if editingUser[account.id_user] !== "email"}
+                                                        {:else if editingUser[account.id_account] !== "email"}
                                                             <button
                                                                 class="ico-btn"
                                                                 type="button"
@@ -2129,14 +2131,14 @@
                                         <label>
                                             Usuario
                                             <select
-                                                bind:value={newVoucher.id_user}
+                                                bind:value={newVoucher.id_account}
                                             >
                                                 <option value=""
                                                     >Seleccionar…</option
                                                 >
-                                                {#each accounts as account (account.id_user)}
+                                                {#each accounts as account (account.id_account)}
                                                     <option
-                                                        value={account.id_user}
+                                                        value={account.id_account}
                                                     >
                                                         {account.name}
                                                         {account.lastname}
@@ -2349,11 +2351,11 @@
                                                     {(() => {
                                                         const account =
                                                             accountsById.get(
-                                                                voucher.id_user,
+                                                                voucher.id_account,
                                                             );
                                                         return account
                                                             ? `${account.name} ${account.lastname}`
-                                                            : voucher.id_user;
+                                                            : voucher.id_account;
                                                     })()}
                                                 </td>
                                                 <td>
