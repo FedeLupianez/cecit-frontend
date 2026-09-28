@@ -44,8 +44,6 @@
         }
     }
 
-    const discounts = ["30% OFF", "40% OFF"];
-
     const initialCategory = page.url.searchParams.get("category");
     const initialSearch = page.url.searchParams.get("search");
 
@@ -55,7 +53,6 @@
             : "Todo",
     );
     let selectedPayment = $state("Todo");
-    let selectedDiscount = $state("Todo");
 
     let filteredBenefits = $derived(
         benefits.filter((benefit) => {
@@ -90,13 +87,6 @@
             return;
         }
         selectedPayment = selectedPayment === payment ? "Todo" : payment;
-    }
-
-    /**
-     * @param {string} discount
-     */
-    function selectDiscount(discount: string) {
-        return;
     }
 
     onMount(() => {
@@ -142,22 +132,6 @@
                                 onclick={() => selectPayment(payment)}
                             >
                                 {payment}
-                            </button>
-                        {/each}
-                    </div>
-                </div>
-
-                <div class="filter-group">
-                    <h2>Descuentos</h2>
-
-                    <div class="filter-buttons">
-                        {#each discounts as discount}
-                            <button
-                                type="button"
-                                class:active={selectedDiscount === discount}
-                                onclick={() => selectDiscount(discount)}
-                            >
-                                {discount}
                             </button>
                         {/each}
                     </div>
