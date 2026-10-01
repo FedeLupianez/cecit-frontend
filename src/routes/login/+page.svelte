@@ -66,7 +66,7 @@
     <div class="login-card">
         <div class="left">
             <p class="title">¡Hola!</p>
-            <p class="text">Bienvenido de vuelta.</p>
+            <p class="text">Bienvenido nuevamente.</p>
             <p class="text">Ingresa los datos para iniciar sesión</p>
             <p class="signup-text">
                 ¿No tenés cuenta?
@@ -101,7 +101,9 @@
             {#if loading}
                 <div class="loading-container" role="status">
                     <div class="spinner" aria-hidden="true"></div>
-                    <p>{redirecting ? "Redirigiendo…" : "Iniciando Sesión..."}</p>
+                    <p>
+                        {redirecting ? "Redirigiendo…" : "Iniciando Sesión..."}
+                    </p>
                 </div>
             {:else}
                 <button type="submit">Iniciar Sesión</button>
