@@ -26,6 +26,7 @@ const accessByRole: Record<AccountRole, RoleAccess> = {
     CECIT_ADMIN: {
         label: "Administrador",
         actions: [
+            { label: "Solicitudes de beneficios", href: "/benefit-requests" },
             { label: "Crear Beneficio", href: "/create-benefit" },
             { label: "Panel de administrador", href: "/admin-panel" },
             { label: "Historial", href: "/history" },
