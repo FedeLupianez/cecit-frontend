@@ -1,32 +1,39 @@
 <script lang="ts">
     import { accessToken } from "$lib/stores/authStore";
     import { goto } from "$app/navigation";
+    import { toast } from "svelte-sonner";
 
     let partnerNumber: string = $state("");
     let email: string = $state("");
     let password: string = $state("");
     let showPassword: boolean = $state(false);
     let error: string = $state("");
+    let loading: boolean = $state(false);
     const passwdError = "Ingresa una contraseña";
     const emailError = "Ingresa un correo electrónico válido.";
     const numberError = "Ingresa tu número de socio";
 
     async function login(e: Event) {
         e.preventDefault();
+        if (loading) return;
         const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!regex.test(email)) {
             error = emailError;
+            toast.error(emailError);
             return;
         }
         if (!password) {
             error = passwdError;
+            toast.error(passwdError);
             return;
         }
         if (!partnerNumber) {
             error = numberError;
+            toast.error(numberError);
             return;
         }
         error = "";
+        loading = true;
 
         try {
             const response = await fetch("/api/auth/register", {
@@ -43,9 +50,13 @@
                 throw new Error(`Response status : ${response.status}`);
             const result = await response.json();
             accessToken.setToken(result.access_token);
-            goto("/");
+            toast.success("Cuenta creada correctamente");
+            await goto("/");
         } catch (error) {
             console.log(error);
+            toast.error("No se pudo completar el registro");
+        } finally {
+            loading = false;
         }
     }
 </script>
@@ -101,8 +112,13 @@
                 Mostrar contraseña
             </label>
 
-            <p class="error" class:visible={!!error}>{error}</p>
-            <button type="submit">Registrarme</button>
+            <button type="submit" disabled={loading} aria-busy={loading || undefined}>
+                {#if loading}
+                    Registrando…
+                {:else}
+                    Registrarme
+                {/if}
+            </button>
         </form>
     </div>
 </section>
@@ -204,6 +220,10 @@
         background: var(--primary-blue-light);
         border: 1px solid var(--primary-blue-light);
     }
+    button:disabled {
+        cursor: progress;
+        opacity: 0.8;
+    }
     .error {
         color: #d32f2f;
         font-size: 0.9rem;
@@ -219,5 +239,43 @@
 
     .error.visible {
         visibility: visible;
+    }
+
+    @media (max-width: 700px) {
+        .login-card {
+            width: 92%;
+            height: auto;
+            flex-direction: column;
+            padding: 1.5rem;
+        }
+
+        .left,
+        .right {
+            max-width: 100%;
+            width: 100%;
+        }
+
+        .left {
+            padding: 0;
+            margin-bottom: 1.5rem;
+            align-items: center;
+            text-align: center;
+        }
+
+        .right {
+            align-items: stretch;
+        }
+
+        .title {
+            font-size: 2.2rem;
+        }
+
+        .text {
+            font-size: 1.4rem;
+        }
+
+        button {
+            width: 100%;
+        }
     }
 </style>

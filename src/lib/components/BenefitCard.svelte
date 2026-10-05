@@ -1,9 +1,19 @@
 <script lang="ts">
     import { onMount } from "svelte";
-    import { Clock, X, Info, Wallet, Ticket, Users } from "lucide-svelte";
+    import {
+        Clock,
+        X,
+        Info,
+        Wallet,
+        Ticket,
+        Users,
+        HandCoins,
+    } from "lucide-svelte";
     import favicon from "$lib/assets/favicon.svg";
     import { profileStore } from "$lib/stores/profileStore";
     import { accessToken } from "$lib/stores/authStore";
+    import { apiFetch } from "$lib/api";
+    import { toast } from "svelte-sonner";
 
     let {
         benefit_id,
@@ -11,33 +21,60 @@
         image,
         partner,
         methods,
+        startDate,
         endDate,
         direction,
         logo,
         coupons,
         max_coupons,
         max_per_user,
+        description,
+        type,
+        refund_limit,
     }: {
         benefit_id: string;
         title: string;
         image: string;
         partner: string;
         methods: string[];
+        startDate: string;
         endDate: string;
         direction: string;
         logo: string;
         coupons: number;
         max_coupons: number;
         max_per_user: number;
+        description: string;
+        type: string;
+        refund_limit: number | null;
     } = $props();
 
-    const endDateFormated = $derived(
-        new Date(endDate).toLocaleDateString("es-ES", {
-            day: "numeric",
-            month: "long",
+    function formatDateTime(iso: string | undefined): string {
+        if (!iso) return "";
+        const d = new Date(iso);
+        if (isNaN(d.getTime())) return iso;
+        const date = d.toLocaleDateString("es-ES", {
+            day: "2-digit",
+            month: "2-digit",
             year: "numeric",
-        }),
-    );
+        });
+        const time = d.toLocaleTimeString("es-ES", {
+            hour: "2-digit",
+            minute: "2-digit",
+        });
+        return `${date} ${time}`;
+    }
+
+    const startDateFormatted = $derived(formatDateTime(startDate));
+    const endDateFormatted = $derived(formatDateTime(endDate));
+
+    const validityText = $derived.by(() => {
+        if (startDateFormatted && endDateFormatted) {
+            return `${startDateFormatted} — ${endDateFormatted}`;
+        }
+        if (endDateFormatted) return `Hasta ${endDateFormatted}`;
+        return "";
+    });
 
     let user_vouchers = $state<number>(0);
     let error = $state("");
@@ -62,13 +99,10 @@
         isLoading = true;
         try {
             const profile = profileStore.getProfile();
-            const tmpAccessToken = accessToken.getToken();
-            const result = await fetch("/api/vouchers/create", {
+            const result = await apiFetch("/api/vouchers/create", {
                 method: "POST",
-                credentials: "include",
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization: `Bearer ${tmpAccessToken}`,
                 },
                 body: JSON.stringify({
                     id_user: profile?.user_id,
@@ -83,6 +117,7 @@
                 } else {
                     error = "Error al obtener el voucher";
                 }
+                toast.error(error);
                 voucherToken = "";
                 return;
             }
@@ -91,6 +126,7 @@
             voucherToken = data.token;
             await getUserVouchers();
             await getFile();
+            toast.success("Cupón adquirido correctamente");
             isRedeemed = true;
             setTimeout(() => {
                 isRedeemed = false;
@@ -101,16 +137,12 @@
     }
 
     async function getFile() {
-        const tmpAccessToken = accessToken.getToken();
-        const res = await fetch(`/api/vouchers/file?token=${voucherToken}`, {
+        const res = await apiFetch(`/api/vouchers/file?token=${voucherToken}`, {
             method: "GET",
-            credentials: "include",
-            headers: {
-                Authorization: `Bearer ${tmpAccessToken}`,
-            },
         });
         if (!res.ok) {
             error = "error getting file";
+            toast.error(error);
             return;
         }
         error = "";
@@ -135,12 +167,8 @@
                 id_account: tmpProfile.user_id,
                 id_benefit: benefit_id,
             });
-            const res = await fetch(`/api/vouchers/userbenefit?${params}`, {
+            const res = await apiFetch(`/api/vouchers/userbenefit?${params}`, {
                 method: "GET",
-                credentials: "include",
-                headers: {
-                    Authorization: `Bearer ${tmpAccessToken}`,
-                },
             });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const data = await res.json();
@@ -175,8 +203,6 @@
         <div class="content">
             <div class="title-row">
                 <h2>{title}</h2>
-
-                <button class="info-btn">Más información</button>
             </div>
 
             <div class="bottom">
@@ -218,33 +244,24 @@
             >
                 <X size={28} />
             </button>
-            <h3 class="expanded-title">{title}</h3>
+            <div class="expanded-title-wrap">
+                <h3 class="expanded-title">{title}</h3>
+            </div>
             <div class="expanded-info">
                 <div class="expanded-data">
                     <div class="expanded-col-1">
                         <div class="expanded-data-container">
-                            <Clock size={70} class="expanded-data-icon"></Clock>
+                            <Clock size={40} class="expanded-data-icon"></Clock>
                             <div class="end-date-info">
-                                <p class="expanded-data-title">FECHA VIGENTE</p>
+                                <p class="expanded-data-title">VIGENCIA</p>
                                 <p class="expanded-data-var">
-                                    {endDateFormated}
+                                    {validityText}
                                 </p>
                             </div>
                         </div>
 
-                        <!-- <div class="expanded-data-container"> -->
-                        <!--     <HandCoins size={70} class="expanded-data-icon" -->
-                        <!--     ></HandCoins> -->
-                        <!--     <div class="refund-limit-info"> -->
-                        <!--         <p class="expanded-data-title"> -->
-                        <!--             TOPE DE REINTEGRO -->
-                        <!--         </p> -->
-                        <!--         <p class="expanded-data-var">{endDate}</p> -->
-                        <!--     </div> -->
-                        <!-- </div> -->
-
                         <div class="expanded-data-container">
-                            <Wallet size={70} class="expanded-data-icon"
+                            <Wallet size={40} class="expanded-data-icon"
                             ></Wallet>
                             <div class="payment-method-info">
                                 <p class="expanded-data-title">
@@ -256,8 +273,23 @@
                             </div>
                         </div>
 
+                        {#if type === "Descuento" && refund_limit != null}
+                            <div class="expanded-data-container">
+                                <HandCoins size={40} class="expanded-data-icon"
+                                ></HandCoins>
+                                <div class="payment-method-info">
+                                    <p class="expanded-data-title">
+                                        TOPE DE REINTEGRO
+                                    </p>
+                                    <p class="expanded-data-var">
+                                        {refund_limit}
+                                    </p>
+                                </div>
+                            </div>
+                        {/if}
+
                         <div class="expanded-data-container">
-                            <Ticket size={70} class="expanded-data-icon"
+                            <Ticket size={40} class="expanded-data-icon"
                             ></Ticket>
                             <div class="coupons-info">
                                 <p class="expanded-data-title">DISPONIBLES</p>
@@ -268,7 +300,7 @@
                         </div>
 
                         <div class="expanded-data-container">
-                            <Users size={70} class="expanded-data-icon"></Users>
+                            <Users size={40} class="expanded-data-icon"></Users>
                             <div class="user-coupons-info">
                                 <p class="expanded-data-title">TUS CUPONES</p>
                                 <p class="expanded-data-var">
@@ -276,18 +308,35 @@
                                 </p>
                             </div>
                         </div>
+
+                        <div class="description">
+                            <div class="terms-header">
+                                <Info size={28}></Info>
+                                <p>DESCRIPCIÓN</p>
+                            </div>
+                            <p class="terms-text">
+                                {description}
+                            </p>
+                        </div>
                     </div>
                     <div class="expanded-col-2">
                         <div class="map-container">
                             <p>SUCURSALES</p>
-                            <!-- <iframe -->
-                            <!--     src={`https://www.google.com/maps?q=${encodeURIComponent(direction)}&output=embed`} -->
-                            <!--     style="border:0;" -->
-                            <!--     loading="lazy" -->
-                            <!--     allowfullscreen -->
-                            <!--     title="SUCURSALES" -->
-                            <!-- ></iframe> -->
-                            <div class="map"></div>
+                            {#if direction && direction.trim() !== ""}
+                                <iframe
+                                    src={`https://www.google.com/maps?q=${encodeURIComponent(direction)}&zoom=19&output=embed`}
+                                    style="border:0;"
+                                    loading="lazy"
+                                    allowfullscreen
+                                    title="SUCURSALES"
+                                    class="map"
+                                    referrerpolicy="no-referrer-when-downgrade"
+                                ></iframe>
+                            {:else}
+                                <div class="map no-location">
+                                    <p>No hay ubicación disponible</p>
+                                </div>
+                            {/if}
                         </div>
                         <div class="terms">
                             <div class="terms-header">
@@ -299,6 +348,8 @@
                                 partir de la fecha canjeada. Si el cupón no ha
                                 sido utilizado en ese periodo, perderá su
                                 validez y volverá a reactivarse en el sistema.
+                                El objeto del beneficio estará sujeto a stock
+                                del comercio que publique el beneficio.
                             </p>
                         </div>
                     </div>
@@ -323,9 +374,6 @@
                         <span>Adquirir Cupón</span>
                     {/if}
                 </button>
-                {#if error}
-                    <p class="voucher-error">{error}</p>
-                {/if}
             </div>
         </div>
     </div>
@@ -352,6 +400,10 @@
 
     .compact-card {
         overflow: hidden;
+
+        display: flex;
+        flex-direction: column;
+        height: 310px;
     }
 
     .compact-card > img {
@@ -360,10 +412,16 @@
         object-fit: cover;
 
         display: block;
+        flex-shrink: 0;
     }
 
     .content {
         padding: 8px 10px 14px;
+
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-height: 0;
     }
 
     .title-row {
@@ -382,7 +440,10 @@
         line-height: 1.1;
         letter-spacing: 0;
 
-        white-space: nowrap;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
         overflow: hidden;
         text-overflow: ellipsis;
     }
@@ -394,6 +455,8 @@
         justify-content: space-between;
         align-items: center;
         gap: 12px;
+
+        margin-top: auto;
     }
 
     .business {
@@ -431,21 +494,6 @@
         border: none;
         font-family: inherit;
         cursor: pointer;
-    }
-
-    .info-btn {
-        min-width: max-content;
-
-        padding: 6px 13px;
-
-        border: 1px solid #c4c7cf;
-        border-radius: 999px;
-
-        background: transparent;
-        color: #8a8d95;
-
-        font-size: 14px;
-        font-weight: 500;
     }
 
     .expanded-backdrop {
@@ -500,18 +548,33 @@
         z-index: 1;
     }
 
-    .expanded-title {
-        color: white;
-        font-size: 2rem;
-        white-space: nowrap;
-        z-index: 1;
-        margin: 0;
-        text-transform: uppercase;
-        width: 80px;
+    .expanded-title-wrap {
+        width: 4rem;
+        flex: 0 0 4rem;
+
         display: flex;
         align-items: center;
         justify-content: center;
-        transform: rotate(-90deg);
+
+        z-index: 1;
+    }
+
+    .expanded-title {
+        color: white;
+        font-size: 1.6rem;
+        margin: 0;
+        text-transform: uppercase;
+
+        height: 100%;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        /* stylelint-disable-next-line */
+        writing-mode: vertical-rl;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .close-btn {
@@ -557,7 +620,7 @@
         flex-direction: column;
         align-items: flex-start;
         justify-content: center;
-        gap: 1.5rem;
+        gap: 0.8rem;
         overflow: hidden;
     }
 
@@ -566,15 +629,15 @@
         flex-direction: row;
         align-items: center;
         justify-content: center;
-        gap: 1rem;
-        transform: translateX(-1rem);
+        gap: 0.6rem;
+        transform: translateX(-0.5rem);
     }
 
     .expanded-data-title {
-        font-size: 2.5rem;
+        font-size: 1.8rem;
     }
     .expanded-data-var {
-        font-size: 2rem;
+        font-size: 1.4rem;
     }
 
     .voucher-error {
@@ -670,8 +733,14 @@
         display: flex;
         width: 100%;
         height: 18rem;
-        background-color: red;
+        background-color: #e5e7eb;
         border-radius: 16px;
+        align-items: center;
+        justify-content: center;
+        color: #6b7280;
+        font-size: 1.2rem;
+        font-weight: 600;
+        overflow: hidden;
     }
 
     .terms {
@@ -679,6 +748,15 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
+        gap: 1rem;
+    }
+
+    .description {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
         gap: 1rem;
     }
 
@@ -708,29 +786,30 @@
         .content {
             padding: 10px 12px 14px;
             display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
+            flex-direction: column;
+            flex-wrap: nowrap;
+            gap: 0;
         }
 
         .title-row {
-            display: contents;
+            display: flex;
         }
 
         h2 {
-            order: 1;
             width: 100%;
             max-width: 100%;
             font-size: 20px;
             line-height: 1.05;
-            white-space: nowrap;
         }
 
         .bottom {
-            display: contents;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: auto;
         }
 
         .business {
-            order: 2;
             width: 100%;
         }
 
@@ -738,25 +817,100 @@
             font-size: 15px;
         }
 
-        .info-btn {
-            order: 3;
-        }
-
-        .info-btn,
         .coupon-btn {
-            width: auto;
-            min-width: 0;
-            padding: 8px 13px;
-            font-size: 13px;
-        }
-
-        .coupon-btn {
-            order: 4;
             margin-left: auto;
         }
 
         .expanded-backdrop {
-            display: none;
+            padding: 0;
+            align-items: stretch;
+        }
+
+        .expanded-card {
+            width: 100%;
+            height: 100%;
+            border-radius: 0;
+            flex-direction: column;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .expanded-title-wrap {
+            width: 100%;
+            flex: 0 0 auto;
+            height: auto;
+            padding: 16px 48px 12px 16px;
+        }
+
+        .expanded-title {
+            writing-mode: horizontal-tb;
+            font-size: 1.2rem;
+            text-align: left;
+            height: auto;
+            width: auto;
+        }
+
+        .close-btn {
+            position: relative;
+            top: auto;
+            right: auto;
+            align-self: flex-end;
+            margin: 8px 12px 0;
+            width: 36px;
+            height: 36px;
+            background: #f3f4f6;
+        }
+
+        .expanded-info {
+            border-radius: 0;
+            height: auto;
+            min-height: 0;
+        }
+
+        .expanded-data {
+            flex-direction: column;
+            height: auto;
+            padding: 0 16px 20px;
+            gap: 16px;
+        }
+
+        .expanded-col-1 {
+            width: 100%;
+            gap: 12px;
+            overflow: visible;
+        }
+
+        .expanded-col-2 {
+            width: 100%;
+            align-items: stretch;
+            padding-top: 0;
+            gap: 16px;
+        }
+
+        .expanded-data-title {
+            font-size: 0.75rem;
+        }
+
+        .expanded-data-var {
+            font-size: 0.9rem;
+        }
+
+        .map {
+            height: 14rem;
+        }
+
+        .terms-text {
+            width: 100%;
+            font-size: 0.85rem;
+        }
+
+        .expanded-coupon-btn {
+            transform: none;
+            width: calc(100% - 32px);
+            margin: 0 16px 24px;
+            padding: 1rem;
+            font-size: 1.1rem;
+            text-align: center;
         }
     }
 </style>

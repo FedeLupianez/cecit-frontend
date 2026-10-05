@@ -1,18 +1,46 @@
 <script>
+    import { goto } from "$app/navigation";
     import { Search } from "lucide-svelte";
 
     const banner =
         "https://www.fotorevista.com.ar/SFotos/16/10/22/161022142707g.jpg";
+    let search_text = $state("");
+    let searching = $state(false);
+
+    async function to_search() {
+        if (!search_text || searching) return;
+        searching = true;
+        try {
+            await goto(`/benefits?search=${encodeURIComponent(search_text)}`);
+        } finally {
+            searching = false;
+        }
+    }
 </script>
 
 <section class="hero">
     <img loading="lazy" src={banner} alt="banner" />
 
     <div class="search-box">
-        <input placeholder="Busca por palabra clave o marca" />
+        <input
+            placeholder="Busca por palabra clave o marca"
+            bind:value={search_text}
+            onkeydown={(e) => e.key === "Enter" && to_search()}
+            disabled={searching}
+        />
 
-        <button>
-            <Search size={20} />
+        <button
+            onclick={to_search}
+            disabled={searching}
+            class:is-pending={searching}
+            aria-busy={searching || undefined}
+            aria-label={searching ? "Buscando…" : "Buscar beneficios"}
+        >
+            {#if searching}
+                <span class="mini-spinner light" aria-hidden="true"></span>
+            {:else}
+                <Search size={20} />
+            {/if}
         </button>
     </div>
 </section>
@@ -76,6 +104,19 @@
         display: flex;
         align-items: center;
         justify-content: center;
+        cursor: pointer;
+    }
+
+    button:disabled {
+        cursor: progress;
+        opacity: 0.85;
+    }
+
+    .mini-spinner.light {
+        border-color: rgba(255, 255, 255, 0.35);
+        border-top-color: #fff;
+        width: 20px;
+        height: 20px;
     }
 
     @media (max-width: 768px) {

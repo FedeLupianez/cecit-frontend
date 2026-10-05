@@ -8,27 +8,9 @@
 
     import BenefitCard from "./BenefitCard.svelte";
     import { loadCategories, getFilters } from "$lib/stores/categories.svelte";
-    interface Benefit {
-        id_benefit: string;
-        id_admin: string;
-        id_partner: string;
-        partner: string;
-        type: string;
-        categories: string[];
-        payment_methods: string[];
-        logo: string;
-        direction: string;
-        start_date: string;
-        end_date: string;
-        image: string;
-        title: string;
-        description: string;
-        coupons: number;
-        max_coupons: number;
-        max_per_user: number;
-    }
+    import type { Benefit } from "$lib/types/Benefit";
 
-    let { title = "Beneficios populares", endpoint = "/api/benefits/all" } =
+    let { title = "Beneficios populares", endpoint = "/api/benefits/actives" } =
         $props();
 
     let benefits: Benefit[] = $state([]);
@@ -54,7 +36,7 @@
 
     onMount(() => load_benefits());
 
-    import { ChevronLeft, ChevronRight } from "lucide-svelte";
+    import { ChevronLeft, ChevronRight, TicketX } from "lucide-svelte";
 
     /*
   ==========================================
@@ -94,6 +76,65 @@
                   benefit.categories.includes(activeFilter),
               ),
     );
+
+    /*
+  ==========================================
+  SCROLL DE FILTROS CON MOUSE (drag + Shift+rueda)
+  ==========================================
+  */
+
+    let filtersEl: HTMLDivElement | null = $state(null);
+    let draggingFilters = $state(false);
+    let dragMoved = false;
+    let dragStartX = 0;
+    let dragStartScroll = 0;
+
+    function onFiltersPointerDown(e: PointerEvent) {
+        if (e.pointerType !== "mouse" || e.button !== 0 || !filtersEl) return;
+        draggingFilters = true;
+        dragMoved = false;
+        dragStartX = e.clientX;
+        dragStartScroll = filtersEl.scrollLeft;
+    }
+
+    function onFiltersPointerMove(e: PointerEvent) {
+        if (!draggingFilters || !filtersEl || e.pointerType !== "mouse")
+            return;
+        const dx = e.clientX - dragStartX;
+        if (Math.abs(dx) > 5) dragMoved = true;
+        if (dragMoved) filtersEl.scrollLeft = dragStartScroll - dx;
+    }
+
+    function endFiltersDrag() {
+        if (!draggingFilters) return;
+        draggingFilters = false;
+        // Suprime el click que sigue a un arrastre
+        if (dragMoved) {
+            setTimeout(() => {
+                dragMoved = false;
+            }, 0);
+        }
+    }
+
+    function onFiltersWheel(e: WheelEvent) {
+        if (!filtersEl) return;
+        const maxScroll = filtersEl.scrollWidth - filtersEl.clientWidth;
+        if (maxScroll <= 0) return;
+        // Shift+rueda: traducir scroll vertical a horizontal
+        if (e.shiftKey && e.deltaY !== 0) {
+            e.preventDefault();
+            filtersEl.scrollLeft += e.deltaY;
+        }
+    }
+
+    function handleFilterClick(e: MouseEvent, filter: string) {
+        if (dragMoved) {
+            e.preventDefault();
+            e.stopPropagation();
+            return;
+        }
+        selectFilter(filter);
+    }
 
     /**
      * @param {string} filter
@@ -178,22 +219,49 @@
         </div>
     </div>
 
-    <div class="filters">
-        {#each filters as filter}
-            <button
-                class:active={activeFilter === filter}
-                onclick={() => selectFilter(filter)}
-            >
-                {filter}
-            </button>
-        {/each}
+    <div
+        class="filters"
+        class:dragging={draggingFilters}
+        bind:this={filtersEl}
+        role="group"
+        aria-label="Filtros por categoría"
+        aria-busy={filters.length === 0}
+        onpointerdown={onFiltersPointerDown}
+        onpointermove={onFiltersPointerMove}
+        onpointerup={endFiltersDrag}
+        onpointercancel={endFiltersDrag}
+        onpointerleave={endFiltersDrag}
+        onwheel={onFiltersWheel}
+    >
+        {#if filters.length === 0}
+            {#each Array(6) as _, i (i)}
+                <div class="filter-skeleton" aria-hidden="true"></div>
+            {/each}
+        {:else}
+            {#each filters as filter}
+                <button
+                    class:active={activeFilter === filter}
+                    onclick={(e) => handleFilterClick(e, filter)}
+                >
+                    {filter}
+                </button>
+            {/each}
+        {/if}
     </div>
 
-    <div class="carousel-wrapper">
+    <div class="carousel-wrapper" aria-busy={loading}>
         {#if loading}
-            <div class="loading-container">
+            <div class="loading-container" role="status" aria-label="Cargando beneficios">
                 <div class="spinner"></div>
                 <p>Cargando Beneficios</p>
+            </div>
+        {:else if filteredBenefits.length === 0}
+            <div class="empty-state" role="status">
+                <TicketX size={48} strokeWidth={1.5} />
+                <p class="empty-title">No hay beneficios para mostrar</p>
+                <p class="empty-subtitle">
+                    Por el momento no hay beneficios en esta sección
+                </p>
             </div>
         {:else}
             <button
@@ -213,13 +281,15 @@
                             title={benefit.title}
                             image={benefit.image}
                             partner={benefit.partner}
+                            startDate={benefit.start_date}
                             endDate={benefit.end_date}
                             methods={benefit.payment_methods}
                             logo={benefit.logo}
-                            direction={benefit.direction}
+                            direction={benefit.directions?.join(", ") ?? ""}
                             max_coupons={benefit.max_coupons}
                             coupons={benefit.coupons}
                             max_per_user={benefit.max_per_user}
+                            description={benefit.description}
                         />
                     </div>
                 {/each}
@@ -328,9 +398,11 @@
 
     .filters {
         margin-top: 11px;
+        min-height: 32px;
 
         display: flex;
         gap: 9px;
+        align-items: center;
 
         overflow-x: auto;
         overflow-y: hidden;
@@ -338,6 +410,36 @@
 
         scrollbar-width: none;
         -webkit-overflow-scrolling: touch;
+
+        cursor: grab;
+    }
+
+    .filters.dragging {
+        cursor: grabbing;
+        scroll-behavior: auto;
+    }
+
+    .filters.dragging button {
+        user-select: none;
+    }
+
+    .filter-skeleton {
+        flex: 0 0 auto;
+        min-width: 111px;
+        height: 32px;
+        border-radius: 999px;
+        background: #e1e3e8;
+        animation: skeleton-pulse 1.4s ease-in-out infinite;
+    }
+
+    @keyframes skeleton-pulse {
+        0%,
+        100% {
+            opacity: 1;
+        }
+        50% {
+            opacity: 0.45;
+        }
     }
 
     .filters::-webkit-scrollbar {
@@ -406,6 +508,7 @@ CARRUSEL
         position: relative;
 
         width: calc(100% + 120px);
+        min-height: 20rem;
     }
 
     .carousel {
@@ -445,11 +548,44 @@ CARRUSEL
         display: flex;
         flex-direction: column;
         align-items: center;
+        justify-content: center;
         gap: 16px;
+        min-height: 20rem;
         padding: 60px 0;
         color: #151535;
         font-size: 16px;
         font-weight: 600;
+    }
+
+    .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        min-height: 20rem;
+        margin: 0 60px;
+        padding: 40px 16px;
+        text-align: center;
+        color: #b8bcc4;
+    }
+
+    .empty-state :global(svg) {
+        color: #c9ccd3;
+    }
+
+    .empty-state .empty-title {
+        margin: 8px 0 0;
+        font-size: 17px;
+        font-weight: 700;
+        color: #b8bcc4;
+    }
+
+    .empty-state .empty-subtitle {
+        margin: 0;
+        font-size: 14px;
+        font-weight: 500;
+        color: #c9ccd3;
     }
 
     .spinner {
@@ -532,6 +668,16 @@ CARRUSEL
         .carousel-wrapper {
             margin-left: 0;
             width: 100%;
+            min-height: 20rem;
+        }
+
+        .loading-container,
+        .empty-state {
+            min-height: 20rem;
+        }
+
+        .empty-state {
+            margin: 0;
         }
 
         h2 {
@@ -561,6 +707,11 @@ CARRUSEL
             padding: 0 18px;
 
             font-size: 15px;
+        }
+
+        .filter-skeleton {
+            min-width: 92px;
+            height: 34px;
         }
 
         .carousel {

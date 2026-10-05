@@ -18,21 +18,28 @@ export interface RoleAccess {
 const accessByRole: Record<AccountRole, RoleAccess> = {
     USER: {
         label: "Usuario",
-        actions: [{ label: "Configuración", href: "/profile#configuration" }]
+        actions: [
+            { label: "Configuración", href: "/profile#configuration" },
+            { label: "Historial", href: "/history" },
+        ]
     },
     CECIT_ADMIN: {
         label: "Administrador",
         actions: [
-            { label: "Configuración", href: "/profile#configuration" },
-            { label: "Panel de administrador", href: "/profile#admin-panel" },
-            { label: "Crear beneficio", href: "/profile#create-benefit" }
+            { label: "Solicitudes de beneficios", href: "/benefit-requests" },
+            { label: "Crear Beneficio", href: "/create-benefit" },
+            { label: "Panel de administrador", href: "/admin-panel" },
+            { label: "Historial", href: "/history" },
+            { label: "Configuración", href: "/profile#configuration" }
         ]
     },
     PARTNER_ADMIN: {
         label: "Negociante",
         actions: [
-            { label: "Configuración", href: "/profile#configuration" },
-            { label: "Panel de negocio", href: "/business-panel" }
+            { label: "Canjear Cupón", href: "/redeem" },
+            { label: "Panel de negocio", href: "/business-panel" },
+            { label: "Historial", href: "/history" },
+            { label: "Configuración", href: "/profile#configuration" }
         ]
     }
 };

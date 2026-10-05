@@ -1,0 +1,3236 @@
+<script lang="ts">
+    import { fly, slide } from "svelte/transition";
+    import { goto } from "$app/navigation";
+    import { accessToken } from "$lib/stores/authStore";
+    import { profileStore } from "$lib/stores/profileStore";
+    // Alias: todos los fetch de este panel pasan por el wrapper con
+    // Authorization automática y reintento tras refresh ante 401.
+    import { apiFetch as fetch } from "$lib/api";
+    import {
+        Pencil,
+        Plus,
+        Trash2,
+        Eye,
+        Users,
+        Store,
+        Ticket,
+        BadgePercent,
+        XCircle,
+        CheckCircle2,
+        Tags,
+        Loader2,
+    } from "lucide-svelte";
+    import { toast } from "svelte-sonner";
+
+    type AccountRole = "USER" | "CECIT_ADMIN" | "PARTNER_ADMIN";
+
+    interface Account {
+        id_account: string;
+        email: string | null;
+        role: AccountRole;
+        active: boolean;
+        last_activity: string;
+        name: string;
+        lastname: string;
+        dni: string;
+    }
+
+    interface Partner {
+        id_partner: string;
+        name: string;
+        logo: string;
+        directions: string[];
+        active: boolean;
+    }
+
+    interface LocationItem {
+        id_location: number;
+        id_partner: string;
+        direction: string;
+    }
+
+    interface Benefit {
+        id_benefit: string;
+        id_admin: string;
+        id_partner: string;
+        partner: string;
+        type: string;
+        categories: string[];
+        payment_methods: string[];
+        logo: string;
+        directions: string[];
+        start_date: string;
+        end_date: string;
+        image: string;
+        title: string;
+        description: string;
+        coupons: number;
+        max_coupons: number;
+        max_per_user: number;
+        status?: string;
+    }
+
+    interface BenefitType {
+        id_type: number;
+        name: string;
+    }
+
+    interface Category {
+        id_category: number;
+        name: string;
+        icon_url: string;
+        active: boolean;
+    }
+
+    interface Voucher {
+        token: string;
+        id_account: string;
+        id_benefit: string;
+        application_date: string;
+        delivery_date: string;
+        limit_date: string;
+        status: "PENDING" | "DELIVERED" | "EXPIRED" | "REJECTED";
+    }
+
+    interface VoucherLookup {
+        token: string;
+        status: "PENDING" | "DELIVERED" | "EXPIRED" | "REJECTED";
+        title: string;
+        image: string;
+        partner: string;
+        endDate: string;
+        logo: string;
+        user_name: string;
+        user_dni: string;
+        directions: string[];
+        methods: string[];
+    }
+
+    type Tab =
+        | "usuarios"
+        | "negocios"
+        | "beneficios"
+        | "vouchers"
+        | "categorias";
+
+    const tabs: { id: Tab; label: string; icon: any }[] = [
+        { id: "usuarios", label: "Usuarios", icon: Users },
+        { id: "negocios", label: "Negocios", icon: Store },
+        { id: "beneficios", label: "Beneficios", icon: BadgePercent },
+        { id: "vouchers", label: "Vouchers", icon: Ticket },
+        { id: "categorias", label: "Categorías", icon: Tags },
+    ];
+
+    let activeTab: Tab = $state("usuarios");
+
+    $effect(() => {
+        const profile = profileStore.getProfile();
+        if (profile && profile.role !== "CECIT_ADMIN") goto("/");
+    });
+
+    let loadingGlobal = $state(true);
+    let errorGlobal = $state("");
+    let successGlobal = $state("");
+
+    let accounts: Account[] = $state([]);
+    let partners: Partner[] = $state([]);
+    let benefits: Benefit[] = $state([]);
+    let benefitTypes: BenefitType[] = $state([]);
+    let vouchers: Voucher[] = $state([]);
+    let categories: Category[] = $state([]);
+
+    function authHeaders() {
+        return { Authorization: `Bearer ${accessToken.getToken()}` };
+    }
+
+    async function parseError(response: Response) {
+        try {
+            const data = await response.json();
+            if (data?.message) {
+                return Array.isArray(data.message)
+                    ? data.message.join(", ")
+                    : String(data.message);
+            }
+        } catch {
+            /* sin cuerpo JSON */
+        }
+        return "Ocurrió un error.";
+    }
+
+    function setError(message: string) {
+        errorGlobal = message;
+        successGlobal = "";
+        toast.error(message);
+    }
+
+    function setSuccess(message: string) {
+        successGlobal = message;
+        errorGlobal = "";
+        toast.success(message);
+    }
+
+    const accountsById = $derived(
+        new Map(accounts.map((account) => [account.id_account, account])),
+    );
+    const benefitsById = $derived(
+        new Map(benefits.map((benefit) => [benefit.id_benefit, benefit])),
+    );
+
+    let loadedTabs = $state(new Set<Tab>());
+
+    async function ensureTabData(tab: Tab) {
+        if (loadedTabs.has(tab)) return;
+        errorGlobal = "";
+        try {
+            const token = accessToken.getToken();
+            if (!token) {
+                setError("Tu sesión expiró. Volvé a iniciar sesión.");
+                return;
+            }
+            loadingGlobal = true;
+
+            if (tab === "usuarios") {
+                const res = await fetch("/api/accounts/all", {
+                    headers: authHeaders(),
+                    credentials: "include",
+                });
+                if (res.status === 401 || res.status === 403) {
+                    setError(
+                        "No tenés permiso para ver el panel de administrador.",
+                    );
+                    return;
+                }
+                if (!res.ok) {
+                    setError("No se pudieron cargar los usuarios.");
+                    return;
+                }
+                accounts = await res.json();
+                console.log(accounts);
+            } else if (tab === "negocios") {
+                const res = await fetch("/api/partners/all", {
+                    headers: authHeaders(),
+                    credentials: "include",
+                });
+                if (!res.ok) {
+                    setError("No se pudieron cargar los negocios.");
+                    return;
+                }
+                partners = await res.json();
+            } else if (tab === "beneficios") {
+                const [partnersRes, benefitsRes, typesRes] = await Promise.all([
+                    fetch("/api/partners/all", {
+                        headers: authHeaders(),
+                        credentials: "include",
+                    }),
+                    fetch("/api/benefits/all"),
+                    fetch("/api/benefit-types/all"),
+                ]);
+                if (!partnersRes.ok || !benefitsRes.ok) {
+                    setError("No se pudieron cargar los beneficios.");
+                    return;
+                }
+                partners = await partnersRes.json();
+                benefits = await benefitsRes.json();
+                benefitTypes = typesRes.ok ? await typesRes.json() : [];
+            } else if (tab === "vouchers") {
+                const [accountsRes, benefitsRes, vouchersRes] =
+                    await Promise.all([
+                        fetch("/api/accounts/all", {
+                            headers: authHeaders(),
+                            credentials: "include",
+                        }),
+                        fetch("/api/benefits/all"),
+                        fetch("/api/vouchers/all"),
+                    ]);
+                if (!accountsRes.ok || !benefitsRes.ok) {
+                    setError("No se pudieron cargar los vouchers.");
+                    return;
+                }
+                accounts = await accountsRes.json();
+                benefits = await benefitsRes.json();
+                vouchers = vouchersRes.ok ? await vouchersRes.json() : [];
+            } else if (tab === "categorias") {
+                const res = await fetch("/api/categories/all");
+                if (!res.ok) {
+                    setError("No se pudieron cargar las categorías.");
+                    return;
+                }
+                categories = await res.json();
+            }
+
+            loadedTabs.add(tab);
+        } catch (cause) {
+            setError(
+                cause instanceof Error
+                    ? cause.message
+                    : "No se pudieron cargar los datos.",
+            );
+        } finally {
+            loadingGlobal = false;
+        }
+    }
+
+    $effect(() => {
+        ensureTabData(activeTab);
+    });
+
+    /* ------------------------------------------------------------------ */
+    /*  USUARIOS                                                           */
+    /* ------------------------------------------------------------------ */
+
+    let userFilter = $state("");
+    let editingUser = $state<Record<string, "email" | "password" | null>>({});
+    let emailInputs = $state<Record<string, string>>({});
+    let passwordInputs = $state<Record<string, string>>({});
+    let savingUser = $state("");
+    let userErrors = $state<Record<string, string>>({});
+    let userSuccess = $state<Record<string, string>>({});
+
+    const filteredAccounts = $derived(
+        userFilter.trim()
+            ? accounts.filter((account) => {
+                  const needle = userFilter.trim().toLowerCase();
+                  return [
+                      account.id_account,
+                      account.email ?? "",
+                      account.name,
+                      account.lastname,
+                      account.dni,
+                  ]
+                      .join(" ")
+                      .toLowerCase()
+                      .includes(needle);
+              })
+            : accounts,
+    );
+
+    function startEditEmail(account: Account) {
+        if (editingUser[account.id_account]) return;
+        emailInputs[account.id_account] = account.email ?? "";
+        passwordInputs[account.id_account] = "";
+        userErrors[account.id_account] = "";
+        userSuccess[account.id_account] = "";
+        editingUser[account.id_account] = "email";
+    }
+
+    function startEditPassword(account: Account) {
+        if (editingUser[account.id_account]) return;
+        emailInputs[account.id_account] = "";
+        passwordInputs[account.id_account] = "";
+        userErrors[account.id_account] = "";
+        userSuccess[account.id_account] = "";
+        editingUser[account.id_account] = "password";
+    }
+
+    function cancelEditUser(id: string) {
+        editingUser[id] = null;
+        userErrors[id] = "";
+    }
+
+    async function saveEmail(account: Account) {
+        const new_email = (emailInputs[account.id_account] ?? "").trim();
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(new_email)) {
+            userErrors[account.id_account] =
+                "Ingresá un correo electrónico válido.";
+            return;
+        }
+        if (new_email.toLowerCase() === (account.email ?? "").toLowerCase()) {
+            editingUser[account.id_account] = null;
+            return;
+        }
+        savingUser = account.id_account;
+        userErrors[account.id_account] = "";
+        userSuccess[account.id_account] = "";
+        try {
+            const response = await fetch("/api/auth/update-profile-admin", {
+                method: "PATCH",
+                headers: {
+                    ...authHeaders(),
+                    "Content-Type": "application/json",
+                },
+                credentials: "include",
+                body: JSON.stringify({
+                    id_account: account.id_account,
+                    email: account.email,
+                    new_email: new_email
+                }),
+            });
+            if (!response.ok) {
+                userErrors[account.id_account] = await parseError(response);
+                toast.error(userErrors[account.id_account]);
+                return;
+            }
+            const updated = await response.json();
+            const index = accounts.findIndex(
+                (a) => a.id_account === account.id_account,
+            );
+            if (index >= 0) accounts[index] = updated;
+            editingUser[account.id_account] = null;
+            userSuccess[account.id_account] = "Correo actualizado correctamente.";
+            toast.success(userSuccess[account.id_account]);
+            successGlobal = "";
+        } catch (cause) {
+            userErrors[account.id_account] =
+                cause instanceof Error
+                    ? cause.message
+                    : "No se pudo actualizar.";
+        } finally {
+            savingUser = "";
+        }
+    }
+
+    async function savePassword(account: Account) {
+        const password = passwordInputs[account.id_account] ?? "";
+        if (!password) {
+            userErrors[account.id_account] = "Ingresá una nueva contraseña.";
+            return;
+        }
+        if (password.length < 6) {
+            userErrors[account.id_account] =
+                "La contraseña debe tener al menos 6 caracteres.";
+            return;
+        }
+        savingUser = account.id_account;
+        userErrors[account.id_account] = "";
+        userSuccess[account.id_account] = "";
+        try {
+            const response = await fetch("/api/accounts", {
+                method: "PATCH",
+                headers: {
+                    ...authHeaders(),
+                    "Content-Type": "application/json",
+                },
+                credentials: "include",
+                body: JSON.stringify({ id_account: account.id_account, password }),
+            });
+            if (!response.ok) {
+                userErrors[account.id_account] = await parseError(response);
+                toast.error(userErrors[account.id_account]);
+                return;
+            }
+            editingUser[account.id_account] = null;
+            userSuccess[account.id_account] =
+                "Contraseña actualizada correctamente.";
+            toast.success(userSuccess[account.id_account]);
+        } catch (cause) {
+            userErrors[account.id_account] =
+                cause instanceof Error
+                    ? cause.message
+                    : "No se pudo actualizar.";
+        } finally {
+            savingUser = "";
+        }
+    }
+
+    async function toggleActive(account: Account) {
+        savingUser = account.id_account;
+        userErrors[account.id_account] = "";
+        try {
+            const response = await fetch("/api/accounts", {
+                method: "PATCH",
+                headers: {
+                    ...authHeaders(),
+                    "Content-Type": "application/json",
+                },
+                credentials: "include",
+                body: JSON.stringify({
+                    id_account: account.id_account,
+                    active: !account.active,
+                }),
+            });
+            if (!response.ok) {
+                userErrors[account.id_account] = await parseError(response);
+                toast.error(userErrors[account.id_account]);
+                return;
+            }
+            const updated = await response.json();
+            const index = accounts.findIndex(
+                (a) => a.id_account === account.id_account,
+            );
+            if (index >= 0) accounts[index] = updated;
+            userSuccess[account.id_account] = updated.active
+                ? "Cuenta activada."
+                : "Cuenta desactivada.";
+        } catch (cause) {
+            userErrors[account.id_account] =
+                cause instanceof Error
+                    ? cause.message
+                    : "No se pudo actualizar.";
+        } finally {
+            savingUser = "";
+        }
+    }
+
+    /* ------------------------------------------------------------------ */
+    /*  NEGOCIOS                                                           */
+    /* ------------------------------------------------------------------ */
+
+    let editingPartner = $state("");
+    let partnerNameInputs = $state<Record<string, string>>({});
+    let partnerLogoInputs = $state<Record<string, string>>({});
+    let partnerLocationInputs = $state<Record<string, string>>({});
+    let locationsByPartner = $state<Record<string, LocationItem[]>>({});
+    let locationsLoading = $state<Record<string, boolean>>({});
+    let partnerBusy = $state<Record<string, boolean>>({});
+    let partnerErrors = $state<Record<string, string>>({});
+    let partnerSuccess = $state<Record<string, string>>({});
+
+    let creatingPartner = $state(false);
+    let newPartner = $state({
+        partner_name: "",
+        email: "",
+        password: "",
+        logo: "",
+        directions: "",
+    });
+    let savingPartner = $state(false);
+    let partnerCreateError = $state("");
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    async function ensureLocations(partnerId: string) {
+        if (locationsByPartner[partnerId] || locationsLoading[partnerId])
+            return;
+        locationsByPartner[partnerId] = [];
+        locationsLoading[partnerId] = true;
+        try {
+            const response = await fetch(
+                `/api/partners/locations?id_partner=${encodeURIComponent(partnerId)}`,
+                { headers: authHeaders(), credentials: "include" },
+            );
+            locationsByPartner[partnerId] = response.ok
+                ? await response.json()
+                : [];
+        } catch {
+            locationsByPartner[partnerId] = [];
+        } finally {
+            locationsLoading[partnerId] = false;
+        }
+    }
+
+    function openPartnerEdit(partner: Partner) {
+        editingPartner = partner.id_partner;
+        partnerNameInputs[partner.id_partner] = partner.name;
+        partnerLogoInputs[partner.id_partner] = partner.logo;
+        partnerLocationInputs[partner.id_partner] = "";
+        partnerErrors[partner.id_partner] = "";
+        partnerSuccess[partner.id_partner] = "";
+        ensureLocations(partner.id_partner);
+    }
+
+    function closePartnerEdit() {
+        editingPartner = "";
+    }
+
+    async function updatePartnerName(partner: Partner) {
+        const new_name = partnerNameInputs[partner.id_partner]?.trim();
+        if (!new_name) {
+            partnerErrors[partner.id_partner] = "Ingresá un nombre.";
+            return;
+        }
+        partnerBusy[partner.id_partner] = true;
+        partnerErrors[partner.id_partner] = "";
+        try {
+            const response = await fetch("/api/partners/name", {
+                method: "PATCH",
+                headers: {
+                    ...authHeaders(),
+                    "Content-Type": "application/json",
+                },
+                credentials: "include",
+                body: JSON.stringify({
+                    id_partner: partner.id_partner,
+                    new_name,
+                }),
+            });
+            if (!response.ok) {
+                partnerErrors[partner.id_partner] = await parseError(response);
+                toast.error(partnerErrors[partner.id_partner]);
+                return;
+            }
+            const updated = await response.json();
+            updatePartnerInList(updated);
+            partnerSuccess[partner.id_partner] = "Nombre actualizado.";
+            toast.success(partnerSuccess[partner.id_partner]);
+        } catch (cause) {
+            partnerErrors[partner.id_partner] =
+                cause instanceof Error
+                    ? cause.message
+                    : "No se pudo actualizar.";
+        } finally {
+            partnerBusy[partner.id_partner] = false;
+        }
+    }
+
+    async function updatePartnerLogo(partner: Partner) {
+        const new_logo = partnerLogoInputs[partner.id_partner]?.trim();
+        if (!new_logo) {
+            partnerErrors[partner.id_partner] = "Ingresá la URL de la imagen.";
+            return;
+        }
+        partnerBusy[partner.id_partner] = true;
+        partnerErrors[partner.id_partner] = "";
+        try {
+            const response = await fetch("/api/partners/logo", {
+                method: "PATCH",
+                headers: {
+                    ...authHeaders(),
+                    "Content-Type": "application/json",
+                },
+                credentials: "include",
+                body: JSON.stringify({
+                    id_partner: partner.id_partner,
+                    new_logo,
+                }),
+            });
+            if (!response.ok) {
+                partnerErrors[partner.id_partner] = await parseError(response);
+                toast.error(partnerErrors[partner.id_partner]);
+                return;
+            }
+            const updated = await response.json();
+            updatePartnerInList(updated);
+            partnerSuccess[partner.id_partner] = "Imagen actualizada.";
+            toast.success(partnerSuccess[partner.id_partner]);
+        } catch (cause) {
+            partnerErrors[partner.id_partner] =
+                cause instanceof Error
+                    ? cause.message
+                    : "No se pudo actualizar.";
+        } finally {
+            partnerBusy[partner.id_partner] = false;
+        }
+    }
+
+    function updatePartnerInList(updated: Partner) {
+        const index = partners.findIndex(
+            (p) => p.id_partner === updated.id_partner,
+        );
+        if (index >= 0) partners[index] = updated;
+    }
+
+    async function addPartnerLocation(partner: Partner) {
+        const direction = partnerLocationInputs[partner.id_partner]?.trim();
+        if (!direction) {
+            partnerErrors[partner.id_partner] = "Ingresá una dirección.";
+            return;
+        }
+        partnerBusy[partner.id_partner] = true;
+        partnerErrors[partner.id_partner] = "";
+        try {
+            const response = await fetch("/api/partners/locations", {
+                method: "POST",
+                headers: {
+                    ...authHeaders(),
+                    "Content-Type": "application/json",
+                },
+                credentials: "include",
+                body: JSON.stringify({
+                    id_partner: partner.id_partner,
+                    direction,
+                }),
+            });
+            if (!response.ok) {
+                partnerErrors[partner.id_partner] = await parseError(response);
+                toast.error(partnerErrors[partner.id_partner]);
+                return;
+            }
+            const created = await response.json();
+            locationsByPartner[partner.id_partner] = [
+                ...(locationsByPartner[partner.id_partner] ?? []),
+                created,
+            ];
+            partnerLocationInputs[partner.id_partner] = "";
+        } catch (cause) {
+            partnerErrors[partner.id_partner] =
+                cause instanceof Error ? cause.message : "No se pudo agregar.";
+        } finally {
+            partnerBusy[partner.id_partner] = false;
+        }
+    }
+
+    async function removePartnerLocation(
+        partnerId: string,
+        id_location: number,
+    ) {
+        partnerBusy[partnerId] = true;
+        partnerErrors[partnerId] = "";
+        try {
+            const response = await fetch(
+                `/api/partners/locations?id_location=${encodeURIComponent(String(id_location))}`,
+                {
+                    method: "DELETE",
+                    headers: authHeaders(),
+                    credentials: "include",
+                },
+            );
+            if (!response.ok) {
+                partnerErrors[partnerId] = await parseError(response);
+                return;
+            }
+            locationsByPartner[partnerId] = (
+                locationsByPartner[partnerId] ?? []
+            ).filter((location) => location.id_location !== id_location);
+        } catch (cause) {
+            partnerErrors[partnerId] =
+                cause instanceof Error ? cause.message : "No se pudo quitar.";
+        } finally {
+            partnerBusy[partnerId] = false;
+        }
+    }
+
+    async function deletePartner(partner: Partner) {
+        if (!confirm(`¿Eliminar el negocio "${partner.name}"?`)) return;
+        partnerBusy[partner.id_partner] = true;
+        partnerErrors[partner.id_partner] = "";
+        try {
+            const response = await fetch(
+                `/api/partners/id/${partner.id_partner}`,
+                {
+                    method: "DELETE",
+                    headers: authHeaders(),
+                    credentials: "include",
+                },
+            );
+            if (!response.ok) {
+                partnerErrors[partner.id_partner] = await parseError(response);
+                toast.error(partnerErrors[partner.id_partner]);
+                return;
+            }
+            partners = partners.filter(
+                (p) => p.id_partner !== partner.id_partner,
+            );
+            setSuccess("Negocio eliminado correctamente.");
+        } catch (cause) {
+            partnerErrors[partner.id_partner] =
+                cause instanceof Error ? cause.message : "No se pudo eliminar.";
+        } finally {
+            partnerBusy[partner.id_partner] = false;
+        }
+    }
+
+    async function createPartner() {
+        const directions = newPartner.directions
+            .split(",")
+            .map((d) => d.trim())
+            .filter(Boolean);
+        if (!newPartner.partner_name.trim()) {
+            partnerCreateError = "Ingresá el nombre del negocio.";
+            return;
+        }
+        if (!emailRegex.test(newPartner.email.trim())) {
+            partnerCreateError = "Ingresá un correo electrónico válido.";
+            return;
+        }
+        if (!newPartner.password) {
+            partnerCreateError = "Ingresá una contraseña.";
+            return;
+        }
+        if (!newPartner.logo.trim()) {
+            partnerCreateError = "Ingresá la URL del logo.";
+            return;
+        }
+        savingPartner = true;
+        partnerCreateError = "";
+        try {
+            const response = await fetch("/api/partners", {
+                method: "POST",
+                headers: {
+                    ...authHeaders(),
+                    "Content-Type": "application/json",
+                },
+                credentials: "include",
+                body: JSON.stringify({
+                    partner_name: newPartner.partner_name.trim(),
+                    email: newPartner.email.trim().toLowerCase(),
+                    password: newPartner.password,
+                    logo: newPartner.logo.trim(),
+                    directions,
+                }),
+            });
+            if (!response.ok) {
+                partnerCreateError = await parseError(response);
+                toast.error(partnerCreateError);
+                return;
+            }
+            creatingPartner = false;
+            newPartner = {
+                partner_name: "",
+                email: "",
+                password: "",
+                logo: "",
+                directions: "",
+            };
+            setSuccess("Negocio creado correctamente.");
+            loadedTabs.delete("negocios");
+            await ensureTabData("negocios");
+        } catch (cause) {
+            partnerCreateError =
+                cause instanceof Error ? cause.message : "No se pudo crear.";
+        } finally {
+            savingPartner = false;
+        }
+    }
+
+    /* ------------------------------------------------------------------ */
+    /*  BENEFICIOS                                                         */
+    /* ------------------------------------------------------------------ */
+
+    let benefitFilter = $state("");
+
+    let editingBenefitId = $state("");
+    let benefitDrafts = $state<Record<string, Partial<Benefit>>>({});
+    let benefitBusy = $state("");
+    let benefitErrors = $state<Record<string, string>>({});
+    let benefitSuccess = $state<Record<string, string>>({});
+
+    const filteredBenefits = $derived(
+        benefitFilter.trim()
+            ? benefits.filter((benefit) =>
+                  benefit.title
+                      .toLowerCase()
+                      .includes(benefitFilter.trim().toLowerCase()),
+              )
+            : benefits,
+    );
+
+    function startEditBenefit(benefit: Benefit) {
+        editingBenefitId = benefit.id_benefit;
+        benefitDrafts[benefit.id_benefit] = {
+            title: benefit.title,
+            description: benefit.description,
+            image: benefit.image,
+            start_date: benefit.start_date,
+            end_date: benefit.end_date,
+            max_coupons: benefit.max_coupons,
+            max_per_user: benefit.max_per_user,
+            status: benefit.status ?? "ACTIVE",
+        };
+        benefitErrors[benefit.id_benefit] = "";
+        benefitSuccess[benefit.id_benefit] = "";
+    }
+
+    function cancelEditBenefit() {
+        editingBenefitId = "";
+    }
+
+    async function saveBenefit(benefit: Benefit) {
+        const draft = benefitDrafts[benefit.id_benefit];
+        benefitBusy = benefit.id_benefit;
+        benefitErrors[benefit.id_benefit] = "";
+        try {
+            const response = await fetch("/api/benefits", {
+                method: "PATCH",
+                headers: {
+                    ...authHeaders(),
+                    "Content-Type": "application/json",
+                },
+                credentials: "include",
+                body: JSON.stringify({
+                    id_benefit: benefit.id_benefit,
+                    ...draft,
+                }),
+            });
+            if (!response.ok) {
+                benefitErrors[benefit.id_benefit] = await parseError(response);
+                toast.error(benefitErrors[benefit.id_benefit]);
+                return;
+            }
+            const updated = await response.json();
+            const index = benefits.findIndex(
+                (b) => b.id_benefit === benefit.id_benefit,
+            );
+            if (index >= 0) benefits[index] = updated;
+            editingBenefitId = "";
+            benefitSuccess[benefit.id_benefit] = "Beneficio actualizado.";
+            toast.success(benefitSuccess[benefit.id_benefit]);
+        } catch (cause) {
+            benefitErrors[benefit.id_benefit] =
+                cause instanceof Error
+                    ? cause.message
+                    : "No se pudo actualizar.";
+        } finally {
+            benefitBusy = "";
+        }
+    }
+
+    async function toggleBenefitStatus(
+        benefit: Benefit,
+        nextStatus: "ACTIVE" | "INACTIVE",
+    ) {
+        const action = nextStatus === "ACTIVE" ? "activar" : "desactivar";
+        if (
+            !confirm(
+                `¿${nextStatus === "ACTIVE" ? "Activar" : "Desactivar"} el beneficio "${benefit.title}"?`,
+            )
+        )
+            return;
+        benefitBusy = benefit.id_benefit;
+        benefitErrors[benefit.id_benefit] = "";
+        try {
+            const endpoint: string =
+                nextStatus === "ACTIVE"
+                    ? "/api/benefits/activate"
+                    : "/api/benefits/deactivate";
+            const response = await fetch(endpoint, {
+                method: "PATCH",
+                headers: {
+                    ...authHeaders(),
+                    "Content-Type": "application/json",
+                },
+                credentials: "include",
+                body: JSON.stringify({
+                    id_benefit: benefit.id_benefit,
+                }),
+            });
+            if (!response.ok) {
+                benefitErrors[benefit.id_benefit] = await parseError(response);
+                toast.error(benefitErrors[benefit.id_benefit]);
+                return;
+            }
+            const updated = await response.json();
+            const index = benefits.findIndex(
+                (b) => b.id_benefit === benefit.id_benefit,
+            );
+            if (index >= 0) benefits[index] = updated;
+            else
+                benefits = benefits.map((b) =>
+                    b.id_benefit === benefit.id_benefit ? updated : b,
+                );
+            // Fallback si el backend no devuelve el objeto actualizado pero sí 200
+            if (!updated?.status) {
+                benefits = benefits.map((b) =>
+                    b.id_benefit === benefit.id_benefit
+                        ? { ...b, status: nextStatus }
+                        : b,
+                );
+            }
+            benefitSuccess[benefit.id_benefit] =
+                nextStatus === "ACTIVE"
+                    ? "Beneficio activado."
+                    : "Beneficio desactivado.";
+        } catch (cause) {
+            benefitErrors[benefit.id_benefit] =
+                cause instanceof Error
+                    ? cause.message
+                    : `No se pudo ${action}.`;
+        } finally {
+            benefitBusy = "";
+        }
+    }
+
+    /* ------------------------------------------------------------------ */
+    /*  CATEGORÍAS                                                         */
+    /* ------------------------------------------------------------------ */
+
+    let categoryBusy = $state(0);
+    let categoryErrors = $state<Record<number, string>>({});
+    let categorySuccess = $state<Record<number, string>>({});
+
+    async function toggleCategory(category: Category) {
+        categoryBusy = category.id_category;
+        categoryErrors[category.id_category] = "";
+        categorySuccess[category.id_category] = "";
+        try {
+            const response = await fetch(
+                `/api/categories/${category.id_category}`,
+                {
+                    method: "PATCH",
+                    headers: {
+                        ...authHeaders(),
+                        "Content-Type": "application/json",
+                    },
+                    credentials: "include",
+                    body: JSON.stringify({ active: !category.active }),
+                },
+            );
+            if (!response.ok) {
+                categoryErrors[category.id_category] =
+                    await parseError(response);
+                toast.error(categoryErrors[category.id_category]);
+                return;
+            }
+            const updated = await response.json();
+            const index = categories.findIndex(
+                (c) => c.id_category === updated.id_category,
+            );
+            if (index >= 0) categories[index] = updated;
+            categorySuccess[category.id_category] = updated.active
+                ? "Categoría activada."
+                : "Categoría desactivada.";
+            toast.success(categorySuccess[category.id_category]);
+        } catch (cause) {
+            categoryErrors[category.id_category] =
+                cause instanceof Error
+                    ? cause.message
+                    : "No se pudo actualizar.";
+        } finally {
+            categoryBusy = 0;
+        }
+    }
+
+    /* ------------------------------------------------------------------ */
+    /*  VOUCHERS                                                           */
+    /* ------------------------------------------------------------------ */
+
+    let voucherFilter = $state("");
+    let voucherStatus = $state("ALL");
+    let voucherSearch = $state("");
+    let searchedVoucher: VoucherLookup | undefined = $state();
+    let voucherBusy = $state("");
+    let voucherErrors = $state<Record<string, string>>({});
+
+    let openingCreatingVoucher = $state(false);
+    let newVoucher = $state({ id_account: "", id_benefit: "" });
+    let savingVoucher = $state(false);
+    let voucherCreateError = $state("");
+
+    const filteredVouchers = $derived(
+        vouchers
+            .filter(
+                (voucher) =>
+                    voucherStatus === "ALL" || voucher.status === voucherStatus,
+            )
+            .filter((voucher) => {
+                if (!voucherSearch.trim()) return true;
+                const needle = voucherSearch.trim().toLowerCase();
+                if (voucher.token.toLowerCase().includes(needle)) return true;
+                if (voucher.id_account.toLowerCase().includes(needle)) return true;
+                if (voucher.id_benefit.toLowerCase().includes(needle))
+                    return true;
+                const benefit = benefitsById.get(voucher.id_benefit);
+                if (benefit?.title.toLowerCase().includes(needle)) return true;
+                const account = accountsById.get(voucher.id_account);
+                if (
+                    account &&
+                    `${account.name} ${account.lastname}`
+                        .toLowerCase()
+                        .includes(needle)
+                )
+                    return true;
+                return false;
+            }),
+    );
+
+    function voucherLabel(voucher: VoucherLookup) {
+        return `${voucher.token} · ${voucher.partner}`;
+    }
+
+    async function searchVoucher() {
+        const token = voucherFilter.trim();
+        if (!token) {
+            voucherErrors._search = "Ingresá el token del voucher.";
+            toast.error(voucherErrors._search);
+            return;
+        }
+        voucherBusy = "_search";
+        voucherErrors._search = "";
+        try {
+            const response = await fetch(
+                `/api/vouchers/bytoken?token=${encodeURIComponent(token)}`,
+                { headers: authHeaders(), credentials: "include" },
+            );
+            if (!response.ok) {
+                voucherErrors._search =
+                    response.status === 404
+                        ? "No se encontró ningún voucher con ese token."
+                        : await parseError(response);
+                searchedVoucher = undefined;
+                return;
+            }
+            searchedVoucher = await response.json();
+            voucherFilter = "";
+        } catch (cause) {
+            voucherErrors._search =
+                cause instanceof Error
+                    ? cause.message
+                    : "No se pudo cargar el voucher.";
+        } finally {
+            voucherBusy = "";
+        }
+    }
+
+    async function voucherAction(
+        target: { token: string; status: string },
+        action: "redeem" | "reject",
+    ) {
+        voucherBusy = `${target.token}:${action}`;
+        voucherErrors[target.token] = "";
+        try {
+            const response = await fetch(
+                `/api/vouchers?action=${action}&token=${encodeURIComponent(target.token)}`,
+                {
+                    method: "PATCH",
+                    headers: authHeaders(),
+                    credentials: "include",
+                },
+            );
+            if (!response.ok) {
+                voucherErrors[target.token] = await parseError(response);
+                toast.error(voucherErrors[target.token]);
+                return;
+            }
+            const index = vouchers.findIndex((v) => v.token === target.token);
+            if (index >= 0) {
+                const current = vouchers[index];
+                vouchers[index] = {
+                    ...current,
+                    status: action === "redeem" ? "DELIVERED" : "REJECTED",
+                };
+            }
+            if (searchedVoucher?.token === target.token) {
+                searchedVoucher = {
+                    ...searchedVoucher,
+                    status: action === "redeem" ? "DELIVERED" : "REJECTED",
+                };
+            }
+            setSuccess(
+                action === "redeem"
+                    ? "Voucher canjeado correctamente."
+                    : "Voucher rechazado correctamente.",
+            );
+        } catch (cause) {
+            voucherErrors[target.token] =
+                cause instanceof Error ? cause.message : "No se pudo realizar.";
+        } finally {
+            voucherBusy = "";
+        }
+    }
+
+    async function deleteVoucher(voucher: Voucher) {
+        if (!confirm(`¿Eliminar el voucher ${voucher.token}?`)) return;
+        voucherBusy = voucher.token;
+        voucherErrors[voucher.token] = "";
+        try {
+            const response = await fetch("/api/vouchers", {
+                method: "DELETE",
+                headers: {
+                    ...authHeaders(),
+                    "Content-Type": "application/json",
+                },
+                credentials: "include",
+                body: JSON.stringify({
+                    token: voucher.token,
+                    id_account: voucher.id_account,
+                }),
+            });
+            if (!response.ok) {
+                voucherErrors[voucher.token] = await parseError(response);
+                toast.error(voucherErrors[voucher.token]);
+                return;
+            }
+            vouchers = vouchers.filter((v) => v.token !== voucher.token);
+            setSuccess("Voucher eliminado correctamente.");
+        } catch (cause) {
+            voucherErrors[voucher.token] =
+                cause instanceof Error ? cause.message : "No se pudo eliminar.";
+        } finally {
+            voucherBusy = "";
+        }
+    }
+
+    async function createVoucher() {
+        if (!newVoucher.id_account || !newVoucher.id_benefit) {
+            voucherCreateError = "Elegí un usuario y un beneficio.";
+            return;
+        }
+        savingVoucher = true;
+        voucherCreateError = "";
+        try {
+            const response = await fetch("/api/vouchers/create", {
+                method: "POST",
+                headers: {
+                    ...authHeaders(),
+                    "Content-Type": "application/json",
+                },
+                credentials: "include",
+                body: JSON.stringify({
+                    id_account: newVoucher.id_account,
+                    id_benefit: newVoucher.id_benefit,
+                }),
+            });
+            if (!response.ok) {
+                voucherCreateError = await parseError(response);
+                toast.error(voucherCreateError);
+                return;
+            }
+            const created = await response.json();
+            vouchers = [...vouchers, created];
+            openingCreatingVoucher = false;
+            newVoucher = { id_account: "", id_benefit: "" };
+            setSuccess("Voucher creado correctamente.");
+        } catch (cause) {
+            voucherCreateError =
+                cause instanceof Error ? cause.message : "No se pudo crear.";
+        } finally {
+            savingVoucher = false;
+        }
+    }
+
+    function formatDate(value: string) {
+        if (!value) return "—";
+        // Las fechas "YYYY-MM-DD" se parsean como UTC y se corren un día
+        // en timezones negativos: construirlas como fecha local.
+        const parts = value.slice(0, 10).split("-").map(Number);
+        let date: Date;
+        if (parts.length === 3 && parts.every((n) => !Number.isNaN(n))) {
+            date = new Date(parts[0], parts[1] - 1, parts[2]);
+        } else {
+            date = new Date(value);
+        }
+        if (Number.isNaN(date.getTime())) return value;
+        return date.toLocaleDateString("es-ES", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+        });
+    }
+
+    function formatLastActivity(value: string) {
+        if (!value) return "—";
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return value;
+        return date.toLocaleString("es-ES", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+        });
+    }
+</script>
+
+<svelte:head><title>Panel de administrador | CeCIT</title></svelte:head>
+
+<section class="admin-panel">
+    <div class="inner">
+        <div class="intro-row">
+            <div>
+                <h1>Panel de Administrador</h1>
+                <p>
+                    Gestioná usuarios, negocios, beneficios y vouchers del
+                    sistema CeCIT.
+                </p>
+            </div>
+        </div>
+
+        <div class="tabs" role="tablist" aria-label="Secciones del panel">
+            {#each tabs as tab (tab.id)}
+                <button
+                    type="button"
+                    role="tab"
+                    aria-selected={activeTab === tab.id}
+                    class:active={activeTab === tab.id}
+                    onclick={() => (activeTab = tab.id)}
+                >
+                    {#if tab.icon}
+                        {@const Icon = tab.icon}
+                        <Icon size={16} />
+                    {/if}
+                    {tab.label}
+                </button>
+            {/each}
+        </div>
+
+        {#if loadingGlobal}
+            <p class="state">Cargando información del panel...</p>
+        {:else}
+            {#key activeTab}
+                <div
+                    class="tab-panel"
+                    role="tabpanel"
+                    in:fly={{ y: 14, duration: 220 }}
+                >
+                    {#if activeTab === "usuarios"}
+                        <section class="section">
+                            <header class="section-head">
+                                <div>
+                                    <h2>Usuarios</h2>
+                                    <p>
+                                        Visualizá las cuentas y modificá su
+                                        correo o contraseña.
+                                    </p>
+                                </div>
+                                <input
+                                    class="search"
+                                    type="search"
+                                    placeholder="Buscar por nombre, DNI o email…"
+                                    bind:value={userFilter}
+                                />
+                            </header>
+
+                            <div class="table-wrap">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Socio</th>
+                                            <th>Email</th>
+                                            <th>Rol</th>
+                                            <th>Estado</th>
+                                            <th>Última actividad</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {#each filteredAccounts as account (account.id_account)}
+                                            <tr>
+                                                <td>
+                                                    <strong
+                                                        >{account.name}
+                                                        {account.lastname}</strong
+                                                    >
+                                                    <span class="sub"
+                                                        >{account.dni} · {account.id_account}</span
+                                                    >
+                                                </td>
+                                                <td>
+                                                    {#if editingUser[account.id_account] === "email"}
+                                                        <div
+                                                            class="inline-edit"
+                                                        >
+                                                            <input
+                                                                type="email"
+                                                                bind:value={
+                                                                    emailInputs[
+                                                                        account
+                                                                            .id_account
+                                                                    ]
+                                                                }
+                                                                onkeydown={(
+                                                                    e,
+                                                                ) =>
+                                                                    e.key ===
+                                                                        "Enter" &&
+                                                                    saveEmail(
+                                                                        account,
+                                                                    )}
+                                                            />
+                                                            <div
+                                                                class="edit-actions"
+                                                            >
+                                                                <button
+                                                                    class="save-btn"
+                                                                    type="button"
+                                                                    onclick={() =>
+                                                                        saveEmail(
+                                                                            account,
+                                                                        )}
+                                                                    disabled={savingUser ===
+                                                                        account.id_account}
+                                                                    >Guardar</button
+                                                                >
+                                                                <button
+                                                                    class="cancel-btn"
+                                                                    type="button"
+                                                                    onclick={() =>
+                                                                        cancelEditUser(
+                                                                            account.id_account,
+                                                                        )}
+                                                                    >Cancelar</button
+                                                                >
+                                                            </div>
+                                                        </div>
+                                                    {:else}
+                                                        <span class="mono"
+                                                            >{account.email ??
+                                                                "—"}</span
+                                                        >
+                                                    {/if}
+                                                </td>
+                                                <td>
+                                                    <span class="role-badge"
+                                                        >{account.role}</span
+                                                    >
+                                                </td>
+                                                <td>
+                                                    <button
+                                                        class="status-btn"
+                                                        class:on={account.active}
+                                                        type="button"
+                                                        onclick={() =>
+                                                            toggleActive(
+                                                                account,
+                                                            )}
+                                                        disabled={savingUser ===
+                                                            account.id_account}
+                                                    >
+                                                        {account.active
+                                                            ? "ACTIVA"
+                                                            : "INACTIVA"}
+                                                    </button>
+                                                </td>
+                                                <td>
+                                                    <span class="mono"
+                                                        >{formatLastActivity(
+                                                            account.last_activity,
+                                                        )}</span
+                                                    >
+                                                </td>
+                                                <td>
+                                                    <div class="row-actions">
+                                                        {#if editingUser[account.id_account] === "password"}
+                                                            <div
+                                                                class="inline-edit"
+                                                            >
+                                                                <input
+                                                                    type="password"
+                                                                    placeholder="Nueva contraseña"
+                                                                    bind:value={
+                                                                        passwordInputs[
+                                                                            account
+                                                                                .id_account
+                                                                        ]
+                                                                    }
+                                                                    onkeydown={(
+                                                                        e,
+                                                                    ) =>
+                                                                        e.key ===
+                                                                            "Enter" &&
+                                                                        savePassword(
+                                                                            account,
+                                                                        )}
+                                                                />
+                                                                <div
+                                                                    class="edit-actions"
+                                                                >
+                                                                    <button
+                                                                        class="save-btn"
+                                                                        type="button"
+                                                                        onclick={() =>
+                                                                            savePassword(
+                                                                                account,
+                                                                            )}
+                                                                        disabled={savingUser ===
+                                                                            account.id_account}
+                                                                        >Guardar</button
+                                                                    >
+                                                                    <button
+                                                                        class="cancel-btn"
+                                                                        type="button"
+                                                                        onclick={() =>
+                                                                            cancelEditUser(
+                                                                                account.id_account,
+                                                                            )}
+                                                                        >Cancelar</button
+                                                                    >
+                                                                </div>
+                                                            </div>
+                                                        {:else if editingUser[account.id_account] !== "email"}
+                                                            <button
+                                                                class="ico-btn"
+                                                                type="button"
+                                                                title="Cambiar email"
+                                                                onclick={() =>
+                                                                    startEditEmail(
+                                                                        account,
+                                                                    )}
+                                                            >
+                                                                <Pencil
+                                                                    size={14}
+                                                                />
+                                                            </button>
+                                                            <button
+                                                                class="ico-btn"
+                                                                type="button"
+                                                                title="Cambiar contraseña"
+                                                                onclick={() =>
+                                                                    startEditPassword(
+                                                                        account,
+                                                                    )}
+                                                            >
+                                                                <Eye
+                                                                    size={14}
+                                                                />
+                                                            </button>
+                                                        {/if}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        {:else}
+                                            <tr>
+                                                <td
+                                                    colspan="6"
+                                                    class="empty-cell"
+                                                >
+                                                    No hay usuarios para
+                                                    mostrar.
+                                                </td>
+                                            </tr>
+                                        {/each}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </section>
+                    {:else if activeTab === "negocios"}
+                        <section class="section">
+                            <header class="section-head">
+                                <div>
+                                    <h2>Negocios</h2>
+                                    <p>
+                                        Administrá los negocios asociados tal
+                                        como un negociante.
+                                    </p>
+                                </div>
+                                <button
+                                    class="add-btn"
+                                    type="button"
+                                    onclick={() =>
+                                        (creatingPartner = !creatingPartner)}
+                                >
+                                    <Plus size={16} />
+                                    {creatingPartner
+                                        ? "Cancelar"
+                                        : "Nuevo negocio"}
+                                </button>
+                            </header>
+
+                            {#if creatingPartner}
+                                <form
+                                    class="create-form expand-panel"
+                                    transition:slide={{ duration: 220 }}
+                                    onsubmit={(e) => {
+                                        e.preventDefault();
+                                        createPartner();
+                                    }}
+                                >
+                                    <h3>Nuevo negocio</h3>
+                                    <div class="form-grid">
+                                        <label>
+                                            Nombre
+                                            <input
+                                                type="text"
+                                                placeholder="Nombre del negocio"
+                                                bind:value={
+                                                    newPartner.partner_name
+                                                }
+                                            />
+                                        </label>
+                                        <label>
+                                            Email del admin
+                                            <input
+                                                type="email"
+                                                placeholder="admin@negocio.com"
+                                                bind:value={newPartner.email}
+                                            />
+                                        </label>
+                                        <label>
+                                            Contraseña del admin
+                                            <input
+                                                type="password"
+                                                placeholder="••••••••"
+                                                bind:value={newPartner.password}
+                                            />
+                                        </label>
+                                        <label>
+                                            Logo (URL)
+                                            <input
+                                                type="url"
+                                                placeholder="https://…"
+                                                bind:value={newPartner.logo}
+                                            />
+                                        </label>
+                                        <label class="full">
+                                            Direcciones (separadas por coma)
+                                            <input
+                                                type="text"
+                                                placeholder="Calle 1, Calle 2"
+                                                bind:value={
+                                                    newPartner.directions
+                                                }
+                                            />
+                                        </label>
+                                    </div>
+                                    <div class="form-actions">
+                                        <button
+                                            class="save-btn"
+                                            type="submit"
+                                            disabled={savingPartner}
+                                        >
+                                            {savingPartner
+                                                ? "Guardando…"
+                                                : "Crear negocio"}
+                                        </button>
+                                    </div>
+                                </form>
+                            {/if}
+
+                            <div class="cards-grid">
+                                {#each partners as partner (partner.id_partner)}
+                                    <article class="data-card">
+                                        <div class="card-top">
+                                            <img
+                                                class="partner-logo"
+                                                src={partner.logo}
+                                                alt={`Logo de ${partner.name}`}
+                                            />
+                                            <div class="card-title">
+                                                <h3>{partner.name}</h3>
+                                                <span
+                                                    class="role-badge"
+                                                    class:off={!partner.active}
+                                                    >{partner.active
+                                                        ? "ACTIVO"
+                                                        : "INACTIVO"}</span
+                                                >
+                                            </div>
+                                        </div>
+
+                                        {#if editingPartner === partner.id_partner}
+                                            <div class="edit-field">
+                                                <label>Nombre</label>
+                                                <div class="row">
+                                                    <input
+                                                        type="text"
+                                                        bind:value={
+                                                            partnerNameInputs[
+                                                                partner
+                                                                    .id_partner
+                                                            ]
+                                                        }
+                                                        onkeydown={(e) =>
+                                                            e.key === "Enter" &&
+                                                            updatePartnerName(
+                                                                partner,
+                                                            )}
+                                                    />
+                                                    <button
+                                                        class="save-btn"
+                                                        type="button"
+                                                        onclick={() =>
+                                                            updatePartnerName(
+                                                                partner,
+                                                            )}
+                                                        disabled={partnerBusy[
+                                                            partner.id_partner
+                                                        ]}>Guardar</button
+                                                    >
+                                                </div>
+                                            </div>
+                                            <div class="edit-field">
+                                                <label>Logo (URL)</label>
+                                                <div class="row">
+                                                    <input
+                                                        type="url"
+                                                        bind:value={
+                                                            partnerLogoInputs[
+                                                                partner
+                                                                    .id_partner
+                                                            ]
+                                                        }
+                                                        onkeydown={(e) =>
+                                                            e.key === "Enter" &&
+                                                            updatePartnerLogo(
+                                                                partner,
+                                                            )}
+                                                    />
+                                                    <button
+                                                        class="save-btn"
+                                                        type="button"
+                                                        onclick={() =>
+                                                            updatePartnerLogo(
+                                                                partner,
+                                                            )}
+                                                        disabled={partnerBusy[
+                                                            partner.id_partner
+                                                        ]}>Guardar</button
+                                                    >
+                                                </div>
+                                            </div>
+
+                                            <div class="edit-field">
+                                                <label>Ubicaciones</label>
+                                                {#if locationsLoading[partner.id_partner]}
+                                                    <p class="muted">
+                                                        Cargando…
+                                                    </p>
+                                                {:else}
+                                                    <ul class="locs-list">
+                                                        {#each locationsByPartner[partner.id_partner] ?? [] as location (location.id_location)}
+                                                            <li
+                                                                class="loc-item"
+                                                            >
+                                                                <span
+                                                                    >{location.direction}</span
+                                                                >
+                                                                <button
+                                                                    class="remove-btn"
+                                                                    type="button"
+                                                                    aria-label={`Quitar ${location.direction}`}
+                                                                    onclick={() =>
+                                                                        removePartnerLocation(
+                                                                            partner.id_partner,
+                                                                            location.id_location,
+                                                                        )}
+                                                                    disabled={partnerBusy[
+                                                                        partner
+                                                                            .id_partner
+                                                                    ] !==
+                                                                        undefined}
+                                                                >
+                                                                    <Trash2
+                                                                        size={14}
+                                                                    />
+                                                                </button>
+                                                            </li>
+                                                        {:else}
+                                                            <li
+                                                                class="loc-empty"
+                                                            >
+                                                                Sin ubicaciones
+                                                                registradas.
+                                                            </li>
+                                                        {/each}
+                                                    </ul>
+                                                    <div class="row">
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Nueva dirección"
+                                                            bind:value={
+                                                                partnerLocationInputs[
+                                                                    partner
+                                                                        .id_partner
+                                                                ]
+                                                            }
+                                                            onkeydown={(e) =>
+                                                                e.key ===
+                                                                    "Enter" &&
+                                                                addPartnerLocation(
+                                                                    partner,
+                                                                )}
+                                                        />
+                                                        <button
+                                                            class="add-btn"
+                                                            type="button"
+                                                            onclick={() =>
+                                                                addPartnerLocation(
+                                                                    partner,
+                                                                )}
+                                                            disabled={partnerBusy[
+                                                                partner
+                                                                    .id_partner
+                                                            ]}>Agregar</button
+                                                        >
+                                                    </div>
+                                                {/if}
+                                            </div>
+                                        {:else}
+                                            <p class="directions">
+                                                {partner.directions.length
+                                                    ? partner.directions.join(
+                                                          " · ",
+                                                      )
+                                                    : "Sin ubicaciones registradas."}
+                                            </p>
+                                        {/if}
+
+                                        <div class="card-actions">
+                                            {#if editingPartner === partner.id_partner}
+                                                <button
+                                                    class="cancel-btn"
+                                                    type="button"
+                                                    onclick={closePartnerEdit}
+                                                    >Terminar</button
+                                                >
+                                            {:else}
+                                                <button
+                                                    class="edit-btn"
+                                                    type="button"
+                                                    onclick={() =>
+                                                        openPartnerEdit(
+                                                            partner,
+                                                        )}
+                                                >
+                                                    <Pencil size={13} />
+                                                    Editar
+                                                </button>
+                                            {/if}
+                                            <button
+                                                class="danger-btn"
+                                                type="button"
+                                                onclick={() =>
+                                                    deletePartner(partner)}
+                                                disabled={partnerBusy[
+                                                    partner.id_partner
+                                                ] !== undefined}
+                                            >
+                                                <Trash2 size={14} />
+                                                Eliminar
+                                            </button>
+                                        </div>
+                                    </article>
+                                {:else}
+                                    <p class="empty">
+                                        No hay negocios para mostrar.
+                                    </p>
+                                {/each}
+                            </div>
+                        </section>
+                    {:else if activeTab === "beneficios"}
+                        <section class="section">
+                            <header class="section-head">
+                                <div>
+                                    <h2>Beneficios</h2>
+                                    <p>
+                                        Editá o activá/desactivá los beneficios
+                                        publicados.
+                                    </p>
+                                </div>
+                                <input
+                                    class="search"
+                                    type="search"
+                                    placeholder="Buscar por título…"
+                                    bind:value={benefitFilter}
+                                />
+                            </header>
+
+                            <div class="cards-grid">
+                                {#each filteredBenefits as benefit (benefit.id_benefit)}
+                                    <article
+                                        class="data-card"
+                                        class:inactive={benefit.status ===
+                                            "INACTIVE"}
+                                    >
+                                        <div class="card-top">
+                                            <img
+                                                class="benefit-img"
+                                                src={benefit.image}
+                                                alt={benefit.title}
+                                            />
+                                            <div class="card-title">
+                                                <h3>{benefit.title}</h3>
+                                                <span class="sub"
+                                                    >{benefit.partner}</span
+                                                >
+                                            </div>
+                                        </div>
+
+                                        {#if editingBenefitId === benefit.id_benefit}
+                                            <div class="edit-field">
+                                                <label>Título</label>
+                                                <input
+                                                    type="text"
+                                                    bind:value={
+                                                        benefitDrafts[
+                                                            benefit.id_benefit
+                                                        ].title
+                                                    }
+                                                />
+                                            </div>
+                                            <div class="edit-field">
+                                                <label>Descripción</label>
+                                                <textarea
+                                                    rows="2"
+                                                    bind:value={
+                                                        benefitDrafts[
+                                                            benefit.id_benefit
+                                                        ].description
+                                                    }
+                                                ></textarea>
+                                            </div>
+                                            <div class="edit-field">
+                                                <label>Imagen (URL)</label>
+                                                <input
+                                                    type="url"
+                                                    bind:value={
+                                                        benefitDrafts[
+                                                            benefit.id_benefit
+                                                        ].image
+                                                    }
+                                                />
+                                            </div>
+                                            <div class="edit-field row-2">
+                                                <label>
+                                                    Inicio
+                                                    <input
+                                                        type="date"
+                                                        bind:value={
+                                                            benefitDrafts[
+                                                                benefit
+                                                                    .id_benefit
+                                                            ].start_date
+                                                        }
+                                                    />
+                                                </label>
+                                                <label>
+                                                    Fin
+                                                    <input
+                                                        type="date"
+                                                        bind:value={
+                                                            benefitDrafts[
+                                                                benefit
+                                                                    .id_benefit
+                                                            ].end_date
+                                                        }
+                                                    />
+                                                </label>
+                                            </div>
+                                            <div class="edit-field row-2">
+                                                <label>
+                                                    Cupones máximos
+                                                    <input
+                                                        type="number"
+                                                        min="1"
+                                                        bind:value={
+                                                            benefitDrafts[
+                                                                benefit
+                                                                    .id_benefit
+                                                            ].max_coupons
+                                                        }
+                                                    />
+                                                </label>
+                                                <label>
+                                                    Máx. por usuario
+                                                    <input
+                                                        type="number"
+                                                        min="1"
+                                                        bind:value={
+                                                            benefitDrafts[
+                                                                benefit
+                                                                    .id_benefit
+                                                            ].max_per_user
+                                                        }
+                                                    />
+                                                </label>
+                                            </div>
+                                            <div class="edit-field">
+                                                <label>Estado</label>
+                                                <select
+                                                    bind:value={
+                                                        benefitDrafts[
+                                                            benefit.id_benefit
+                                                        ].status
+                                                    }
+                                                >
+                                                    <option value="ACTIVE"
+                                                        >ACTIVE</option
+                                                    >
+                                                    <option value="INACTIVE"
+                                                        >INACTIVE</option
+                                                    >
+                                                    <option value="PENDING"
+                                                        >PENDING</option
+                                                    >
+                                                </select>
+                                            </div>
+                                        {:else}
+                                            <p class="desc">
+                                                {benefit.description}
+                                            </p>
+                                            <p class="sub">
+                                                {benefit.type} · {benefit.coupons}/
+                                                {benefit.max_coupons} canjeados
+                                            </p>
+                                        {/if}
+
+                                        <div class="card-actions">
+                                            {#if editingBenefitId === benefit.id_benefit}
+                                                <button
+                                                    class="save-btn"
+                                                    type="button"
+                                                    onclick={() =>
+                                                        saveBenefit(benefit)}
+                                                    disabled={benefitBusy ===
+                                                        benefit.id_benefit}
+                                                    >Guardar</button
+                                                >
+                                                <button
+                                                    class="cancel-btn"
+                                                    type="button"
+                                                    onclick={cancelEditBenefit}
+                                                    >Cancelar</button
+                                                >
+                                            {:else}
+                                                <button
+                                                    class="edit-btn"
+                                                    type="button"
+                                                    onclick={() =>
+                                                        startEditBenefit(
+                                                            benefit,
+                                                        )}
+                                                >
+                                                    <Pencil size={13} />
+                                                    Editar
+                                                </button>
+                                            {/if}
+                                            {#if benefit.status === "INACTIVE"}
+                                                <button
+                                                    class="success-btn"
+                                                    type="button"
+                                                    onclick={() =>
+                                                        toggleBenefitStatus(
+                                                            benefit,
+                                                            "ACTIVE",
+                                                        )}
+                                                    disabled={benefitBusy ===
+                                                        benefit.id_benefit}
+                                                >
+                                                    <CheckCircle2 size={14} />
+                                                    Activar
+                                                </button>
+                                            {:else}
+                                                <button
+                                                    class="danger-btn"
+                                                    type="button"
+                                                    onclick={() =>
+                                                        toggleBenefitStatus(
+                                                            benefit,
+                                                            "INACTIVE",
+                                                        )}
+                                                    disabled={benefitBusy ===
+                                                        benefit.id_benefit}
+                                                >
+                                                    <XCircle size={14} />
+                                                    Desactivar
+                                                </button>
+                                            {/if}
+                                        </div>
+                                    </article>
+                                {:else}
+                                    <p class="empty">
+                                        No hay beneficios para mostrar.
+                                    </p>
+                                {/each}
+                            </div>
+                        </section>
+                    {:else if activeTab === "categorias"}
+                        <section class="section">
+                            <header class="section-head">
+                                <div>
+                                    <h2>Categorías</h2>
+                                    <p>
+                                        Activá o desactivá las categorías de
+                                        cupones.
+                                    </p>
+                                </div>
+                            </header>
+
+                            {#if categories.length === 0}
+                                <p class="empty">
+                                    No hay categorías para mostrar.
+                                </p>
+                            {:else}
+                                <div class="table-wrap">
+                                    <table class="data-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Categoría</th>
+                                                <th>Estado</th>
+                                                <th>Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {#each categories as category (category.id_category)}
+                                                <tr>
+                                                    <td>
+                                                        <strong
+                                                            >{category.name}</strong
+                                                        >
+                                                    </td>
+                                                    <td>
+                                                        <button
+                                                            class="status-btn"
+                                                            class:on={category.active}
+                                                            type="button"
+                                                            onclick={() =>
+                                                                toggleCategory(
+                                                                    category,
+                                                                )}
+                                                            disabled={categoryBusy ===
+                                                                category.id_category}
+                                                        >
+                                                            {category.active
+                                                                ? "ACTIVA"
+                                                                : "INACTIVA"}
+                                                        </button>
+                                                    </td>
+                                                    <td>
+                                                        <button
+                                                            class="ico-btn"
+                                                            class:ok={!category.active}
+                                                            type="button"
+                                                            title={category.active
+                                                                ? "Desactivar"
+                                                                : "Activar"}
+                                                            onclick={() =>
+                                                                toggleCategory(
+                                                                    category,
+                                                                )}
+                                                            disabled={categoryBusy ===
+                                                                category.id_category}
+                                                        >
+                                                            {#if category.active}
+                                                                <XCircle
+                                                                    size={15}
+                                                                />
+                                                            {:else}
+                                                                <CheckCircle2
+                                                                    size={15}
+                                                                />
+                                                            {/if}
+                                                        </button>
+                                                    </td>
+                                                </tr>{/each}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {/if}
+                        </section>
+                    {:else if activeTab === "vouchers"}
+                        <section class="section">
+                            <header class="section-head">
+                                <div>
+                                    <h2>Vouchers</h2>
+                                    <p>
+                                        Consultá, canjeá, rechazá o creá
+                                        vouchers.
+                                    </p>
+                                </div>
+                                <div class="head-actions">
+                                    <select
+                                        class="filter-select"
+                                        bind:value={voucherStatus}
+                                    >
+                                        <option value="ALL"
+                                            >Todos los estados</option
+                                        >
+                                        <option value="PENDING">PENDING</option>
+                                        <option value="DELIVERED"
+                                            >DELIVERED</option
+                                        >
+                                        <option value="EXPIRED">EXPIRED</option>
+                                        <option value="REJECTED"
+                                            >REJECTED</option
+                                        >
+                                    </select>
+                                    <button
+                                        class="add-btn"
+                                        type="button"
+                                        onclick={() =>
+                                            (openingCreatingVoucher =
+                                                !openingCreatingVoucher)}
+                                    >
+                                        <Plus size={16} />
+                                        {openingCreatingVoucher
+                                            ? "Cancelar"
+                                            : "Nuevo voucher"}
+                                    </button>
+                                </div>
+                            </header>
+
+                            {#if openingCreatingVoucher}
+                                <form
+                                    class="create-form expand-panel"
+                                    transition:slide={{ duration: 220 }}
+                                    onsubmit={(e) => {
+                                        e.preventDefault();
+                                        createVoucher();
+                                    }}
+                                >
+                                    <h3>Nuevo voucher</h3>
+                                    <div class="form-grid">
+                                        <label>
+                                            Usuario
+                                            <select
+                                                bind:value={newVoucher.id_account}
+                                            >
+                                                <option value=""
+                                                    >Seleccionar…</option
+                                                >
+                                                {#each accounts as account (account.id_account)}
+                                                    <option
+                                                        value={account.id_account}
+                                                    >
+                                                        {account.name}
+                                                        {account.lastname}
+                                                        {account.dni
+                                                            ? `· ${account.dni}`
+                                                            : ""}
+                                                    </option>
+                                                {/each}
+                                            </select>
+                                        </label>
+                                        <label>
+                                            Beneficio
+                                            <select
+                                                bind:value={
+                                                    newVoucher.id_benefit
+                                                }
+                                            >
+                                                <option value=""
+                                                    >Seleccionar…</option
+                                                >
+                                                {#each benefits as benefit (benefit.id_benefit)}
+                                                    <option
+                                                        value={benefit.id_benefit}
+                                                    >
+                                                        {benefit.title} · {benefit.partner}
+                                                    </option>
+                                                {/each}
+                                            </select>
+                                        </label>
+                                    </div>
+                                    <div class="form-actions">
+                                        <button
+                                            class="save-btn"
+                                            type="submit"
+                                            disabled={savingVoucher}
+                                        >
+                                            {savingVoucher
+                                                ? "Guardando…"
+                                                : "Crear voucher"}
+                                        </button>
+                                    </div>
+                                </form>
+                            {/if}
+
+                            <div class="search-box search-voucher">
+                                <input
+                                    type="text"
+                                    placeholder="Buscar por token, socio o beneficio…"
+                                    bind:value={voucherSearch}
+                                />
+                            </div>
+
+                            <div class="lookup-box">
+                                <label for="voucherLookupInput">
+                                    Consultar voucher por token
+                                </label>
+                                <div class="lookup-row">
+                                    <input
+                                        id="voucherLookupInput"
+                                        type="text"
+                                        placeholder="Ingresá el token…"
+                                        bind:value={voucherFilter}
+                                        onkeydown={(e) => {
+                                            if (e.key === "Enter") {
+                                                e.preventDefault();
+                                                searchVoucher();
+                                            }
+                                        }}
+                                    />
+                                    <button
+                                        class="search-btn"
+                                        type="button"
+                                        onclick={searchVoucher}
+                                        disabled={voucherBusy === "_search"}
+                                    >
+                                        {voucherBusy === "_search"
+                                            ? "Buscando…"
+                                            : "Buscar"}
+                                    </button>
+                                </div>
+                            </div>
+
+                            {#if searchedVoucher}
+                                <div
+                                    class="voucher-lookup expand-panel"
+                                    transition:slide={{ duration: 220 }}
+                                >
+                                    <h3>Voucher {searchedVoucher.token}</h3>
+                                    <p class="sub">
+                                        {voucherLabel(searchedVoucher)}
+                                    </p>
+                                    <dl class="lookup-grid">
+                                        <div>
+                                            <dt>BENEFICIO</dt>
+                                            <dd>{searchedVoucher.title}</dd>
+                                        </div>
+                                        <div>
+                                            <dt>NEGOCIO</dt>
+                                            <dd>{searchedVoucher.partner}</dd>
+                                        </div>
+                                        <div>
+                                            <dt>SOCIO</dt>
+                                            <dd>
+                                                {searchedVoucher.user_name}
+                                                {searchedVoucher.user_dni
+                                                    ? `(${searchedVoucher.user_dni})`
+                                                    : ""}
+                                            </dd>
+                                        </div>
+                                        <div>
+                                            <dt>VIGENTE HASTA</dt>
+                                            <dd>
+                                                {formatDate(
+                                                    searchedVoucher.endDate,
+                                                )}
+                                            </dd>
+                                        </div>
+                                    </dl>
+                                    <div class="state-bar">
+                                        <span
+                                            class="status-chip"
+                                            class:resolved={searchedVoucher.status !==
+                                                "PENDING"}
+                                        >
+                                            {searchedVoucher.status}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="card-actions">
+                                    <button
+                                        class="success-btn"
+                                        type="button"
+                                        onclick={() => {
+                                            if (searchedVoucher)
+                                                voucherAction(
+                                                    searchedVoucher,
+                                                    "redeem",
+                                                );
+                                        }}
+                                        disabled={!searchedVoucher ||
+                                            searchedVoucher.status !==
+                                                "PENDING" ||
+                                            voucherBusy ===
+                                                `${searchedVoucher.token}:redeem` ||
+                                            voucherBusy ===
+                                                `${searchedVoucher.token}:reject`}
+                                    >
+                                        {#if voucherBusy === `${searchedVoucher?.token}:redeem`}
+                                            <Loader2 size={14} class="spin" />
+                                            Canjeando…
+                                        {:else}
+                                            <CheckCircle2 size={14} />
+                                            Canjear
+                                        {/if}
+                                    </button>
+                                    <button
+                                        class="danger-btn"
+                                        type="button"
+                                        onclick={() => {
+                                            if (searchedVoucher)
+                                                voucherAction(
+                                                    searchedVoucher,
+                                                    "reject",
+                                                );
+                                        }}
+                                        disabled={!searchedVoucher ||
+                                            searchedVoucher.status !==
+                                                "PENDING" ||
+                                            voucherBusy ===
+                                                `${searchedVoucher.token}:redeem` ||
+                                            voucherBusy ===
+                                                `${searchedVoucher.token}:reject`}
+                                    >
+                                        {#if voucherBusy === `${searchedVoucher?.token}:reject`}
+                                            <Loader2 size={14} class="spin" />
+                                            Rechazando…
+                                        {:else}
+                                            <XCircle size={14} />
+                                            Rechazar
+                                        {/if}
+                                    </button>
+                                </div>
+                            {/if}
+
+                            <div class="table-wrap">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Canjeado</th>
+                                            <th>Token</th>
+                                            <th>Socio</th>
+                                            <th>Beneficio</th>
+                                            <th>Vigencia</th>
+                                            <th>Estado</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {#each filteredVouchers as voucher (voucher.token)}
+                                            <tr>
+                                                <td
+                                                    >{formatDate(
+                                                        voucher.application_date,
+                                                    )}</td
+                                                >
+                                                <td class="mono token"
+                                                    >{voucher.token}</td
+                                                >
+                                                <td>
+                                                    {(() => {
+                                                        const account =
+                                                            accountsById.get(
+                                                                voucher.id_account,
+                                                            );
+                                                        return account
+                                                            ? `${account.name} ${account.lastname}`
+                                                            : voucher.id_account;
+                                                    })()}
+                                                </td>
+                                                <td>
+                                                    {benefitsById.get(
+                                                        voucher.id_benefit,
+                                                    )?.title ??
+                                                        voucher.id_benefit}
+                                                </td>
+                                                <td
+                                                    >{formatDate(
+                                                        voucher.limit_date,
+                                                    )}</td
+                                                >
+                                                <td>
+                                                    <span
+                                                        class="status-btn"
+                                                        class:on={voucher.status ===
+                                                            "PENDING" ||
+                                                            voucher.status ===
+                                                                "DELIVERED"}
+                                                    >
+                                                        {voucher.status}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <div class="row-actions">
+                                                        <button
+                                                            class="ico-btn ok"
+                                                            type="button"
+                                                            title="Canjear"
+                                                            onclick={() =>
+                                                                voucherAction(
+                                                                    voucher,
+                                                                    "redeem",
+                                                                )}
+                                                            disabled={voucher.status !==
+                                                                "PENDING" ||
+                                                                voucherBusy ===
+                                                                    `${voucher.token}:redeem` ||
+                                                                voucherBusy ===
+                                                                    `${voucher.token}:reject`}
+                                                        >
+                                                            {#if voucherBusy === `${voucher.token}:redeem`}
+                                                                <Loader2
+                                                                    size={15}
+                                                                    class="spin"
+                                                                />
+                                                            {:else}
+                                                                <CheckCircle2
+                                                                    size={15}
+                                                                />
+                                                            {/if}
+                                                        </button>
+                                                        <button
+                                                            class="ico-btn bad"
+                                                            type="button"
+                                                            title="Rechazar"
+                                                            onclick={() =>
+                                                                voucherAction(
+                                                                    voucher,
+                                                                    "reject",
+                                                                )}
+                                                            disabled={voucher.status !==
+                                                                "PENDING" ||
+                                                                voucherBusy ===
+                                                                    `${voucher.token}:redeem` ||
+                                                                voucherBusy ===
+                                                                    `${voucher.token}:reject`}
+                                                        >
+                                                            {#if voucherBusy === `${voucher.token}:reject`}
+                                                                <Loader2
+                                                                    size={15}
+                                                                    class="spin"
+                                                                />
+                                                            {:else}
+                                                                <XCircle
+                                                                    size={15}
+                                                                />
+                                                            {/if}
+                                                        </button>
+                                                        <button
+                                                            class="ico-btn"
+                                                            type="button"
+                                                            title="Eliminar"
+                                                            onclick={() =>
+                                                                deleteVoucher(
+                                                                    voucher,
+                                                                )}
+                                                            disabled={voucherBusy ===
+                                                                voucher.token ||
+                                                                voucherBusy ===
+                                                                    `${voucher.token}:redeem` ||
+                                                                voucherBusy ===
+                                                                    `${voucher.token}:reject`}
+                                                        >
+                                                            <Trash2 size={15} />
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        {:else}
+                                            <tr>
+                                                <td
+                                                    colspan="7"
+                                                    class="empty-cell"
+                                                >
+                                                    No hay vouchers para
+                                                    mostrar.
+                                                </td>
+                                            </tr>
+                                        {/each}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </section>
+                    {/if}
+                </div>
+            {/key}
+        {/if}
+    </div>
+</section>
+
+<style>
+    .admin-panel {
+        min-height: 70vh;
+        padding: 44px 24px 88px;
+        background: #f4f6fb;
+        color: #1a1f36;
+    }
+    .inner {
+        width: min(100%, 1240px);
+        margin: 0 auto;
+    }
+    .intro-row > div {
+        max-width: 640px;
+    }
+    h1 {
+        margin: 0;
+        font-size: 30px;
+        color: #151535;
+    }
+    .intro-row > div > p {
+        margin: 6px 0 0;
+        font-size: 17px;
+        line-height: 1.3;
+        color: #6b7280;
+    }
+
+    .tabs {
+        display: flex;
+        gap: 10px;
+        margin: 26px 0 24px;
+        flex-wrap: wrap;
+    }
+    .tabs button {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 10px 18px;
+        border: 1px solid #cdd3e2;
+        border-radius: 999px;
+        background: #fff;
+        color: #1a1f36;
+        font: inherit;
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+        transition:
+            background-color 0.15s ease,
+            border-color 0.15s ease,
+            color 0.15s ease;
+    }
+    .tabs button:hover {
+        border-color: var(--primary-blue);
+        color: var(--primary-blue);
+    }
+    .tabs button.active {
+        border-color: var(--primary-blue);
+        background: var(--primary-blue);
+        color: #fff;
+        animation: tab-pop 0.18s ease;
+    }
+    .tabs button:focus-visible {
+        outline: 2px solid var(--primary-blue);
+        outline-offset: 2px;
+    }
+
+    @keyframes tab-pop {
+        0% {
+            transform: scale(0.96);
+        }
+        100% {
+            transform: scale(1);
+        }
+    }
+
+    /* Contenedor del tab activo: anima cada cambio de panel */
+    .tab-panel {
+        animation: tab-panel-in 0.22s ease;
+        transform-origin: top center;
+    }
+
+    @keyframes tab-panel-in {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Despliegue de paneles de info / formularios / editores */
+    .expand-panel {
+        transform-origin: top center;
+    }
+
+    .inline-edit,
+    .edit-field {
+        animation: expand-in 0.18s ease;
+        transform-origin: top center;
+    }
+
+    @keyframes expand-in {
+        from {
+            opacity: 0;
+            transform: translateY(-6px) scaleY(0.98);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0) scaleY(1);
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .tab-panel,
+        .tabs button.active,
+        .inline-edit,
+        .edit-field {
+            animation: none;
+        }
+        :global(.spin) {
+            animation: none;
+        }
+    }
+
+    .section {
+        border: 1px solid #e2e5ef;
+        border-radius: 16px;
+        background: #fff;
+        padding: 24px;
+        box-shadow: 0 10px 24px rgb(20 24 60 / 6%);
+    }
+    .section-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 18px;
+        margin-bottom: 18px;
+        flex-wrap: wrap;
+    }
+    .section-head h2 {
+        margin: 0;
+        color: var(--primary-blue);
+        font-size: 21px;
+    }
+    .section-head p {
+        margin: 6px 0 0;
+        color: #6b7280;
+        font-size: 14px;
+    }
+    .head-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .state {
+        margin: 0 0 18px;
+        padding: 18px 22px;
+        border: 1px solid #aaa;
+        border-radius: 8px;
+    }
+    .error {
+        color: #a31818;
+    }
+    .success {
+        color: #137333;
+    }
+    .empty,
+    .muted {
+        color: #6b7280;
+    }
+
+    .search {
+        min-width: 240px;
+        padding: 10px 13px;
+        border: 1px solid #cdd3e2;
+        border-radius: 9px;
+        font: inherit;
+        font-size: 14px;
+    }
+    .filter-select {
+        padding: 10px 13px;
+        border: 1px solid #cdd3e2;
+        border-radius: 9px;
+        background: #fff;
+        font: inherit;
+        font-size: 14px;
+        cursor: pointer;
+    }
+    .search:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    textarea:focus-visible {
+        outline: 2px solid var(--primary-blue);
+        outline-offset: 1px;
+    }
+
+    .table-wrap {
+        overflow-x: auto;
+        border: 1px solid #e7e9f2;
+        border-radius: 12px;
+    }
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+    }
+    .data-table th {
+        text-align: left;
+        padding: 12px 14px;
+        background: #eef0f7;
+        color: #4b5468;
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.4px;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+    .data-table td {
+        padding: 12px 14px;
+        border-top: 1px solid #eef0f6;
+        vertical-align: middle;
+    }
+    .data-table tbody tr:hover {
+        background: #fafbfe;
+    }
+    .sub {
+        display: block;
+        margin-top: 3px;
+        color: #8a8d95;
+        font-size: 12px;
+    }
+    .mono {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 13px;
+    }
+    .token {
+        letter-spacing: 0.25em;
+        font-weight: 700;
+    }
+    .empty-cell {
+        text-align: center;
+        color: #8a8d95;
+        padding: 30px;
+    }
+    .msg-row td {
+        border-top: 0;
+    }
+
+    .role-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: #eef0f7;
+        color: #4b5468;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.4px;
+    }
+    .role-badge.off {
+        background: #fbeaea;
+        color: #a31818;
+    }
+
+    .status-btn {
+        padding: 5px 11px;
+        border: 1px solid #b8bcc9;
+        border-radius: 999px;
+        background: #fff;
+        color: #6b7280;
+        font: inherit;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.4px;
+        cursor: pointer;
+    }
+    .status-btn.on {
+        border-color: #bfdfc9;
+        background: #effaf1;
+        color: #137333;
+    }
+    .status-btn:disabled {
+        cursor: progress;
+        opacity: 0.6;
+    }
+
+    .row-actions {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        flex-wrap: wrap;
+    }
+    .ico-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        background: #fff;
+        color: #4b5468;
+        cursor: pointer;
+    }
+    .ico-btn:hover {
+        background: #f3f4f6;
+    }
+    .ico-btn.ok:hover {
+        border-color: #137333;
+        color: #137333;
+    }
+    .ico-btn.bad:hover {
+        border-color: #a31818;
+        color: #a31818;
+    }
+    .ico-btn:disabled {
+        opacity: 0.4;
+        cursor: default;
+    }
+
+    :global(.spin) {
+        animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+        from {
+            transform: rotate(0deg);
+        }
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    .inline-edit {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        max-width: 300px;
+    }
+    .inline-edit input {
+        padding: 8px 10px;
+        border: 1px solid #cdd3e2;
+        border-radius: 8px;
+        font: inherit;
+        font-size: 14px;
+    }
+    .edit-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .save-btn,
+    .cancel-btn,
+    .edit-btn,
+    .add-btn,
+    .danger-btn,
+    .success-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 8px 15px;
+        border-radius: 999px;
+        font: inherit;
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+    }
+    .save-btn,
+    .success-btn {
+        border: 1px solid #137333;
+        background: #137333;
+        color: #fff;
+    }
+    .save-btn:disabled,
+    .success-btn:disabled {
+        cursor: progress;
+        opacity: 0.7;
+    }
+    .cancel-btn,
+    .edit-btn {
+        border: 1px solid #cdd3e2;
+        background: #fff;
+        color: #374151;
+    }
+    .cancel-btn:hover,
+    .edit-btn:hover {
+        background: #f3f4f6;
+    }
+    .add-btn {
+        border: 1px solid var(--primary-blue);
+        background: var(--primary-blue);
+        color: #fff;
+    }
+    .add-btn:hover {
+        background: #26266f;
+    }
+    .danger-btn {
+        border: 1px solid #a31818;
+        background: #fff;
+        color: #a31818;
+    }
+    .danger-btn:hover {
+        background: #fdf0f0;
+    }
+    .danger-btn:disabled {
+        opacity: 0.5;
+        cursor: default;
+    }
+
+    .create-form {
+        margin-bottom: 22px;
+        padding: 18px;
+        border: 1px solid #dfe3ee;
+        border-radius: 12px;
+        background: #fafbfe;
+    }
+    .create-form h3 {
+        margin: 0 0 14px;
+        color: #151535;
+        font-size: 17px;
+    }
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+        gap: 14px;
+    }
+    .form-grid .full {
+        grid-column: 1 / -1;
+    }
+    .form-grid label {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        font-size: 13px;
+        font-weight: 700;
+        color: #4b5468;
+    }
+    .form-grid input,
+    .form-grid select,
+    .form-grid textarea,
+    .edit-field input,
+    .edit-field select,
+    .edit-field textarea {
+        padding: 9px 11px;
+        border: 1px solid #cdd3e2;
+        border-radius: 8px;
+        background: #fff;
+        font: inherit;
+        font-size: 14px;
+        resize: vertical;
+    }
+    .form-actions {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 14px;
+    }
+    .form-actions .save-btn {
+        padding: 10px 20px;
+    }
+
+    .cards-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 18px;
+    }
+    .data-card {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        padding: 18px;
+        border: 1px solid #e2e5ef;
+        border-radius: 12px;
+        background: #fff;
+    }
+    .data-card.inactive {
+        opacity: 0.55;
+    }
+    .card-top {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+    }
+    .partner-logo,
+    .benefit-img {
+        width: 74px;
+        height: 74px;
+        border-radius: 8px;
+        object-fit: cover;
+        background: #eee;
+        flex-shrink: 0;
+    }
+    .card-title {
+        min-width: 0;
+    }
+    .card-title h3 {
+        margin: 0 0 6px;
+        font-size: 16px;
+        line-height: 1.25;
+        overflow-wrap: anywhere;
+    }
+    .directions,
+    .desc {
+        margin: 0;
+        color: #4b5468;
+        font-size: 13px;
+        line-height: 1.5;
+        overflow-wrap: anywhere;
+    }
+    .card-actions {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        margin-top: auto;
+        flex-wrap: wrap;
+    }
+
+    .edit-field {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+    .edit-field > label {
+        font-size: 12px;
+        font-weight: 800;
+        color: #4b5468;
+        letter-spacing: 0.3px;
+    }
+    .edit-field .row {
+        display: flex;
+        gap: 8px;
+    }
+    .edit-field .row input {
+        flex: 1;
+        min-width: 0;
+    }
+    .edit-field.row-2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+    .edit-field.row-2 label {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        font-size: 12px;
+        font-weight: 800;
+        color: #4b5468;
+    }
+
+    .locs-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        gap: 7px;
+    }
+    .loc-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 8px 10px;
+        border: 1px solid #dfe3ee;
+        border-radius: 8px;
+        font-size: 13px;
+    }
+    .loc-empty {
+        padding: 10px;
+        border: 1px dashed #cdd3e2;
+        border-radius: 8px;
+        color: #8a8d95;
+        font-size: 13px;
+    }
+    .remove-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        border: 1px solid #e0c9c9;
+        border-radius: 7px;
+        background: transparent;
+        color: #a31818;
+        cursor: pointer;
+        flex-shrink: 0;
+    }
+    .remove-btn:hover {
+        background: #fdf0f0;
+    }
+    .remove-btn:disabled {
+        opacity: 0.5;
+        cursor: default;
+    }
+
+    .search-voucher {
+        margin: 0 0 14px;
+    }
+    .search-box input {
+        width: 100%;
+        padding: 10px 13px;
+        border: 1px solid #cdd3e2;
+        border-radius: 9px;
+        font: inherit;
+        font-size: 14px;
+    }
+
+    .lookup-box {
+        margin-bottom: 14px;
+        padding: 14px 16px;
+        border: 1px dashed #cdd3e2;
+        border-radius: 12px;
+        background: #eef1fa;
+    }
+    .lookup-box label {
+        display: block;
+        margin-bottom: 8px;
+        font-size: 12px;
+        font-weight: 800;
+        color: #4b5468;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+    }
+    .lookup-row {
+        display: flex;
+        gap: 10px;
+    }
+    .lookup-row input {
+        flex: 1;
+        padding: 10px 13px;
+        border: 1px solid #cdd3e2;
+        border-radius: 9px;
+        font: inherit;
+        font-size: 14px;
+    }
+    .search-btn {
+        padding: 10px 18px;
+        border: none;
+        border-radius: 9px;
+        background: var(--primary-blue);
+        color: #fff;
+        font: inherit;
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+        flex-shrink: 0;
+    }
+    .search-btn:disabled {
+        opacity: 0.55;
+        cursor: default;
+    }
+
+    .voucher-lookup {
+        margin: 4px 0 14px;
+        padding: 18px;
+        border: 1px solid #cdd3e2;
+        border-radius: 12px;
+        background: #fafbfe;
+    }
+    .voucher-lookup h3 {
+        margin: 0 0 4px;
+        font-size: 17px;
+    }
+    .lookup-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px 22px;
+        margin: 14px 0 0;
+    }
+    .lookup-grid dt {
+        color: #8a8d95;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.4px;
+    }
+    .lookup-grid dd {
+        margin: 3px 0 0;
+        font-size: 14px;
+        overflow-wrap: anywhere;
+    }
+    .state-bar {
+        margin-top: 12px;
+    }
+    .status-chip {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 999px;
+        background: #2ecc71;
+        color: #fff;
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.4px;
+    }
+    .status-chip.resolved {
+        background: #8a8d95;
+    }
+
+    @media (max-width: 720px) {
+        .admin-panel {
+            padding: 30px 16px 64px;
+        }
+        .section {
+            padding: 16px;
+        }
+        .cards-grid {
+            grid-template-columns: 1fr;
+        }
+        .lookup-grid {
+            grid-template-columns: 1fr;
+        }
+        .edit-field.row-2 {
+            grid-template-columns: 1fr;
+        }
+        .intro-row {
+            flex-direction: column;
+            gap: 16px;
+        }
+        .tabs {
+            overflow-x: auto;
+            flex-wrap: nowrap;
+            scrollbar-width: none;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: 4px;
+        }
+        .tabs::-webkit-scrollbar {
+            display: none;
+        }
+        .tabs button {
+            flex: 0 0 auto;
+            white-space: nowrap;
+        }
+        .section-head {
+            flex-direction: column;
+            gap: 12px;
+        }
+        .section-head .search {
+            min-width: 0;
+            width: 100%;
+        }
+        .head-actions {
+            width: 100%;
+        }
+        .head-actions .filter-select {
+            flex: 1;
+            min-width: 0;
+        }
+        .lookup-row {
+            flex-direction: column;
+        }
+        .lookup-row .search-btn {
+            width: 100%;
+        }
+    }
+</style>

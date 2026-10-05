@@ -1,6 +1,8 @@
 <script lang="ts">
     import { accessToken } from "$lib/stores/authStore";
     import { goto } from "$app/navigation";
+    import { navigating } from "$app/stores";
+    import { toast } from "svelte-sonner";
 
     let email = $state("");
     let password = $state("");
@@ -9,16 +11,22 @@
     const passwdError = "Ingresa una contraseña";
     const emailError = "Ingresa un correo electrónico válido.";
     let loading: boolean = $state(false);
+    let errorTimeout: ReturnType<typeof setTimeout> | undefined;
+
+    // loading = fetch login, $navigating = redirección a "/" (layout hace refresh+profile)
+    let redirecting = $derived(loading && $navigating !== null);
 
     async function login(e: Event) {
         e.preventDefault();
         const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!regex.test(email)) {
             error = emailError;
+            toast.error(emailError);
             return;
         }
         if (!password) {
             error = passwdError;
+            toast.error(passwdError);
             return;
         }
         error = "";
@@ -35,9 +43,17 @@
                 throw new Error(`Response status : ${response.status}`);
             const result = await response.json();
             accessToken.setToken(result.access_token);
-            goto("/");
-        } catch (error) {
-            console.log(error);
+            toast.success("Sesión iniciada correctamente");
+            await goto("/");
+        } catch (rerror) {
+            error = "Credenciales Inválidas";
+            toast.error("Credenciales Inválidas");
+            loading = false;
+            console.log(rerror);
+            if (errorTimeout) clearTimeout(errorTimeout);
+            errorTimeout = setTimeout(() => {
+                error = "";
+            }, 3000);
         }
     }
 </script>
@@ -50,8 +66,12 @@
     <div class="login-card">
         <div class="left">
             <p class="title">¡Hola!</p>
-            <p class="text">Bienvenido de vuelta.</p>
+            <p class="text">Bienvenido nuevamente.</p>
             <p class="text">Ingresa los datos para iniciar sesión</p>
+            <p class="signup-text">
+                ¿No tenés cuenta?
+                <a href="/signup" class="signup-link">Creá tu cuenta</a>
+            </p>
         </div>
         <form onsubmit={login} class="right" novalidate>
             <input
@@ -78,11 +98,12 @@
                 Mostrar contraseña
             </label>
 
-            <p class="error" class:visible={!!error}>{error}</p>
             {#if loading}
-                <div class="loading-container">
-                    <div class="spinner"></div>
-                    <p>Iniciando Sesión...</p>
+                <div class="loading-container" role="status">
+                    <div class="spinner" aria-hidden="true"></div>
+                    <p>
+                        {redirecting ? "Redirigiendo…" : "Iniciando Sesión..."}
+                    </p>
                 </div>
             {:else}
                 <button type="submit">Iniciar Sesión</button>
@@ -178,6 +199,24 @@
         margin: 0;
     }
 
+    .signup-text {
+        margin: 1.2rem 0 0;
+        padding: 0;
+        font-size: 1.1rem;
+        color: #333;
+    }
+
+    .signup-link {
+        color: var(--primary-blue);
+        font-weight: 700;
+        text-decoration: underline;
+        text-underline-offset: 3px;
+    }
+
+    .signup-link:hover {
+        color: var(--primary-blue-light);
+    }
+
     .login {
         width: 100%;
         padding: 1rem;
@@ -211,12 +250,35 @@
         background: var(--primary-blue-light);
         border: 1px solid var(--primary-blue-light);
     }
-    .error {
-        color: #d32f2f;
-        font-size: 0.9rem;
-        margin: 0;
-        min-height: 1.2rem;
-        visibility: hidden;
+
+    .error-box {
+        color: #b71c1c;
+        font-weight: 500;
+        font-size: 0.95rem;
+        padding: 0.6rem 1rem;
+        border-radius: 10px;
+        background: #ffebee;
+        border: 1px solid #ef9a9a;
+        display: inline-block;
+        animation: shake 0.4s ease;
+        max-width: 100%;
+        word-break: break-word;
+    }
+
+    @keyframes shake {
+        0%,
+        100% {
+            transform: translateX(0);
+        }
+        25% {
+            transform: translateX(-4px);
+        }
+        50% {
+            transform: translateX(4px);
+        }
+        75% {
+            transform: translateX(-2px);
+        }
     }
 
     .loginerror {
@@ -224,7 +286,41 @@
         border: 1px solid #d32f2f;
     }
 
-    .error.visible {
-        visibility: visible;
+    @media (max-width: 700px) {
+        .login-card {
+            width: 92%;
+            height: auto;
+            flex-direction: column;
+            padding: 1.5rem;
+        }
+
+        .left,
+        .right {
+            max-width: 100%;
+            width: 100%;
+        }
+
+        .left {
+            padding: 0;
+            margin-bottom: 1.5rem;
+            align-items: center;
+            text-align: center;
+        }
+
+        .right {
+            align-items: stretch;
+        }
+
+        .title {
+            font-size: 2.2rem;
+        }
+
+        .text {
+            font-size: 1.4rem;
+        }
+
+        button {
+            width: 100%;
+        }
     }
 </style>

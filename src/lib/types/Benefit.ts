@@ -1,0 +1,36 @@
+export interface BenefitsCreateDTO {
+    id_admin: string;
+    id_partner: string;
+    id_type: number;
+    start_date: string;
+    end_date: string;
+    image: string;
+    title: string;
+    description: string;
+    coupons: number;
+    max_coupons: number;
+    max_per_user: number;
+    payment_methods: string[];
+    refund_limit: number | null;
+}
+
+export interface Benefit {
+    id_benefit: string;
+    id_admin: string;
+    id_partner: string;
+    partner: string;
+    type: string;
+    categories: string[];
+    payment_methods: string[];
+    logo: string;
+    directions: string[];
+    start_date: string;
+    end_date: string;
+    image: string;
+    title: string;
+    description: string;
+    coupons: number;
+    max_coupons: number;
+    max_per_user: number;
+    refund_limit: number;
+}
