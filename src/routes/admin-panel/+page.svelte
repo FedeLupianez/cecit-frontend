@@ -352,7 +352,7 @@
                 body: JSON.stringify({
                     id_account: account.id_account,
                     email: account.email,
-                    new_email: new_email
+                    new_email: new_email,
                 }),
             });
             if (!response.ok) {
@@ -366,7 +366,8 @@
             );
             if (index >= 0) accounts[index] = updated;
             editingUser[account.id_account] = null;
-            userSuccess[account.id_account] = "Correo actualizado correctamente.";
+            userSuccess[account.id_account] =
+                "Correo actualizado correctamente.";
             toast.success(userSuccess[account.id_account]);
             successGlobal = "";
         } catch (cause) {
@@ -401,7 +402,10 @@
                     "Content-Type": "application/json",
                 },
                 credentials: "include",
-                body: JSON.stringify({ id_account: account.id_account, password }),
+                body: JSON.stringify({
+                    id_account: account.id_account,
+                    password,
+                }),
             });
             if (!response.ok) {
                 userErrors[account.id_account] = await parseError(response);
@@ -995,7 +999,8 @@
                 if (!voucherSearch.trim()) return true;
                 const needle = voucherSearch.trim().toLowerCase();
                 if (voucher.token.toLowerCase().includes(needle)) return true;
-                if (voucher.id_account.toLowerCase().includes(needle)) return true;
+                if (voucher.id_account.toLowerCase().includes(needle))
+                    return true;
                 if (voucher.id_benefit.toLowerCase().includes(needle))
                     return true;
                 const benefit = benefitsById.get(voucher.id_benefit);
@@ -2131,7 +2136,9 @@
                                         <label>
                                             Usuario
                                             <select
-                                                bind:value={newVoucher.id_account}
+                                                bind:value={
+                                                    newVoucher.id_account
+                                                }
                                             >
                                                 <option value=""
                                                     >Seleccionar…</option

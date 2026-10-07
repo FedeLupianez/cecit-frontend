@@ -40,7 +40,7 @@
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    id_user: partnerNumber,
+                    id_account: partnerNumber,
                     email: email,
                     password: password,
                 }),
@@ -112,7 +112,11 @@
                 Mostrar contraseña
             </label>
 
-            <button type="submit" disabled={loading} aria-busy={loading || undefined}>
+            <button
+                type="submit"
+                disabled={loading}
+                aria-busy={loading || undefined}
+            >
                 {#if loading}
                     Registrando…
                 {:else}
