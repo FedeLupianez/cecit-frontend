@@ -530,7 +530,7 @@
         width: 72rem;
         height: 35rem;
 
-        background: #f4f5f7;
+        background: #151535;
         border: 1px solid #7f8188;
         border-radius: 16px;
         display: flex;

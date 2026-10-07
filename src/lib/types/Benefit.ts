@@ -14,6 +14,17 @@ export interface BenefitsCreateDTO {
     refund_limit: number | null;
 }
 
+/**
+ * El backend ya expone estos estados en la columna `status` de `Benefits`.
+ * `PENDING` marca un beneficio creado por un PARTNER_ADMIN a la espera de que
+ * un CECIT_ADMIN lo acepte, y `REJECTED` uno que fue rechazado.
+ */
+export type BenefitStatus =
+    | "ACTIVE"
+    | "INACTIVE"
+    | "PENDING"
+    | "REJECTED";
+
 export interface Benefit {
     id_benefit: string;
     id_admin: string;
@@ -33,4 +44,5 @@ export interface Benefit {
     max_coupons: number;
     max_per_user: number;
     refund_limit: number;
+    status?: BenefitStatus;
 }

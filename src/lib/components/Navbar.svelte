@@ -132,7 +132,12 @@
         </div>
     </div>
 
-    <button class="menu-btn" type="button" aria-label="Abrir menú" onclick={toggleMobileMenu}>
+    <button
+        class="menu-btn"
+        type="button"
+        aria-label="Abrir menú"
+        onclick={toggleMobileMenu}
+    >
         <Menu size={34} strokeWidth={2.5} />
     </button>
 </nav>
@@ -165,25 +170,47 @@
             </div>
 
             <div class="mobile-drawer-links">
-                <a href="http://centrodecomercioag.com.ar/" onclick={closeMobileMenu}>Institucional</a>
-                <a href="http://centrodecomercioag.com.ar/hacete-socio/" onclick={closeMobileMenu}>Hacete socio</a>
-                <a href="http://centrodecomercioag.com.ar/contacto/" onclick={closeMobileMenu}>Contacto</a>
+                <a
+                    href="http://centrodecomercioag.com.ar/"
+                    onclick={closeMobileMenu}>Institucional</a
+                >
+                <a
+                    href="http://centrodecomercioag.com.ar/hacete-socio/"
+                    onclick={closeMobileMenu}>Hacete socio</a
+                >
+                <a
+                    href="http://centrodecomercioag.com.ar/contacto/"
+                    onclick={closeMobileMenu}>Contacto</a
+                >
             </div>
 
             <div class="mobile-drawer-user">
                 {#if !profile}
-                    <a href="/login" class="mobile-login-link" onclick={closeMobileMenu}>
+                    <a
+                        href="/login"
+                        class="mobile-login-link"
+                        onclick={closeMobileMenu}
+                    >
                         <User24Icon height="2.0em" class="profile-icon" />
                         <span>Iniciar sesión</span>
                     </a>
                 {:else}
                     <div class="mobile-user-info">
-                        <img src={avatar} alt="profileImage" class="profile-icon" />
+                        <img
+                            src={avatar}
+                            alt="profileImage"
+                            class="profile-icon"
+                        />
                         <span>{profile.email}</span>
                     </div>
                     {#if access}
                         <div class="mobile-role-card">
-                            <RoleCard {access} compact onLogout={logout} logoutPending={loggingOut} />
+                            <RoleCard
+                                {access}
+                                compact
+                                onLogout={logout}
+                                logoutPending={loggingOut}
+                            />
                         </div>
                     {/if}
                 {/if}
@@ -333,8 +360,12 @@
     }
 
     @keyframes fade-in {
-        from { opacity: 0; }
-        to { opacity: 1; }
+        from {
+            opacity: 0;
+        }
+        to {
+            opacity: 1;
+        }
     }
 
     .mobile-drawer {
@@ -349,8 +380,12 @@
     }
 
     @keyframes slide-in {
-        from { transform: translateX(100%); }
-        to { transform: translateX(0); }
+        from {
+            transform: translateX(100%);
+        }
+        to {
+            transform: translateX(0);
+        }
     }
 
     .mobile-drawer-header {

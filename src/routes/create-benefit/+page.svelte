@@ -9,10 +9,28 @@
     import { profileStore } from "$lib/stores/profileStore";
     import type { BenefitsCreateDTO } from "$lib/types/Benefit";
 
+    /** La página la pueden usar CECIT_ADMIN (crea directo) y PARTNER_ADMIN
+     * (crea una solicitud que un CECIT_ADMIN tiene que aprobar). */
+    const CREATOR_ROLES = ["CECIT_ADMIN", "PARTNER_ADMIN"];
+
     $effect(() => {
         const profile = profileStore.getProfile();
-        if (profile && profile.role !== "CECIT_ADMIN") goto("/");
+        if (profile && !CREATOR_ROLES.includes(profile.role ?? "")) goto("/");
     });
+
+    const role = $derived(profileStore.getProfile()?.role ?? "");
+
+    const isPartnerAdmin = $derived(role === "PARTNER_ADMIN");
+
+    /** Un PARTNER_ADMIN sólo puede crear para los negocios que administra.
+     * El backend expone el listado en GET /partners-admins/me/all. */
+    let ownPartners = $state<{ id_partner: string; name: string }[]>([]);
+
+    let ownPartnersError = $state("");
+
+    /** Con un solo negocio no hay nada que elegir: se fuerza automáticamente.
+     * Con varios, se muestra el selector acotado a esos negocios. */
+    const needsPartnerSelect = $derived(ownPartners.length > 1);
 
     let title = $state("");
 
@@ -60,12 +78,28 @@
             : [...paymentMethods, method];
     }
 
+    async function parseError(response: Response) {
+        try {
+            const data = await response.json();
+            if (data?.message) {
+                return Array.isArray(data.message)
+                    ? data.message.join(", ")
+                    : String(data.message);
+            }
+        } catch {
+            /* sin cuerpo JSON */
+        }
+        return "Ocurrió un error.";
+    }
+
     async function loadOptions() {
         const [typesResponse, paymentsResponse, partnersResponse] =
             await Promise.all([
                 fetch("/api/benefit-types/all"),
                 fetch("/api/payment-methods/all"),
-                apiFetch("/api/partners/all"),
+                isPartnerAdmin
+                    ? Promise.resolve(null)
+                    : apiFetch("/api/partners/all"),
             ]);
 
         if (typesResponse.ok) types = await typesResponse.json();
@@ -73,7 +107,38 @@
         if (paymentsResponse.ok) {
             payments = await paymentsResponse.json();
         }
-        if (partnersResponse.ok) partners = await partnersResponse.json();
+        if (partnersResponse?.ok) partners = await partnersResponse.json();
+
+        if (isPartnerAdmin) await loadOwnPartners();
+    }
+
+    /** Un PARTNER_ADMIN nunca ve la lista global de negocios: se limita a los
+     * suyos para que no pueda crear una solicitud a nombre de un tercero. */
+    async function loadOwnPartners() {
+        ownPartnersError = "";
+        try {
+            const response = await apiFetch("/api/partners-admins/me/all");
+            if (response.status === 401 || response.status === 403) {
+                ownPartnersError = "No tenés permiso para ver tus negocios.";
+                return;
+            }
+            if (!response.ok) throw new Error(await parseError(response));
+
+            const data = await response.json();
+            ownPartners = Array.isArray(data) ? data : [];
+            if (ownPartners.length === 0) {
+                ownPartnersError = "No tenés negocios asociados.";
+                return;
+            }
+            if (!needsPartnerSelect) {
+                selectedPartner = ownPartners[0].id_partner;
+            }
+        } catch (cause) {
+            ownPartnersError =
+                cause instanceof Error
+                    ? cause.message
+                    : "No se pudieron obtener tus negocios.";
+        }
     }
 
     async function createBenefit(event: SubmitEvent) {
@@ -95,8 +160,9 @@
             !endDate ||
             !title.trim()
         ) {
-            statusMessage =
-                "Completá el título, tipo, negocio y período de publicación.";
+            statusMessage = isPartnerAdmin
+                ? "Completá el título, tipo y período de publicación."
+                : "Completá el título, tipo, negocio y período de publicación.";
 
             return;
         }
@@ -130,7 +196,11 @@
                 refund_limit: parsedRefundLimit,
             };
 
-            const response = await apiFetch("/api/benefits", {
+            const endpoint = isPartnerAdmin
+                ? "/api/benefits/request"
+                : "/api/benefits";
+
+            const response = await apiFetch(endpoint, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -138,14 +208,21 @@
                 body: JSON.stringify(payload),
             });
 
-            if (!response.ok) throw new Error("No se pudo crear el beneficio.");
+            if (!response.ok) {
+                if (response.status === 401 || response.status === 403) {
+                    throw new Error(
+                        "No tenés permiso para crear beneficios con este negocio.",
+                    );
+                }
+                throw new Error(await parseError(response));
+            }
 
             showSuccessModal = true;
             // reset form para permitir crear otro sin navegar
             title = "";
             description = "";
             selectedType = "";
-            selectedPartner = "";
+            selectedPartner = needsPartnerSelect ? "" : selectedPartner;
             paymentMethods = [];
             imagePreview = "";
             startDate = "";
@@ -169,7 +246,7 @@
         if (sending || cancelling) return;
         cancelling = true;
         try {
-            await goto("/business-panel");
+            await goto(isPartnerAdmin ? "/business-panel" : "/admin-panel");
         } finally {
             cancelling = false;
         }
@@ -184,8 +261,13 @@
             <div>
                 <h1>Crear beneficio</h1>
                 <p>
-                    Configura los detalles de tu negocio, administra tus
-                    beneficios y visualiza tu alcance.
+                    {#if isPartnerAdmin}
+                        Enviá tu propuesta de beneficio. Un administrador de
+                        CeCIT la revisará antes de publicarla.
+                    {:else}
+                        Configura los detalles de tu negocio, administra tus
+                        beneficios y visualiza tu alcance.
+                    {/if}
                 </p>
             </div>
             <div class="metrics" aria-label="Resumen de beneficios">
@@ -218,18 +300,33 @@
                         /></label
                     >
 
-                    <label class="field"
-                        ><span class="field-label">Negocio</span><select
-                            bind:value={selectedPartner}
-                            aria-label="Negocio"
-                            ><option value="">Seleccionar</option
-                            >{#each partners as partner (partner.id_partner)}<option
-                                    value={partner.id_partner}
-                                    >{partner.name}</option
-                                >{/each}</select
-                        ></label
-                    >
+                    {#if !isPartnerAdmin || needsPartnerSelect}
+                        <label class="field"
+                            ><span class="field-label">Negocio</span><select
+                                bind:value={selectedPartner}
+                                aria-label="Negocio"
+                                disabled={isPartnerAdmin &&
+                                    ownPartners.length === 0}
+                                ><option value="">Seleccionar</option
+                                >{#each isPartnerAdmin ? ownPartners : partners as partner (partner.id_partner)}<option
+                                        value={partner.id_partner}
+                                        >{partner.name}</option
+                                    >{/each}</select
+                            ></label
+                        >
+                    {:else}
+                        <div class="field">
+                            <span class="field-label">Negocio</span>
+                            <p class="locked-partner">
+                                {ownPartners[0]?.name ?? "—"}
+                            </p>
+                        </div>
+                    {/if}
                 </div>
+
+                {#if ownPartnersError}<p class="status" role="alert">
+                        {ownPartnersError}
+                    </p>{/if}
 
                 <label class="field"
                     ><span class="field-label">Descripción</span><textarea
@@ -393,9 +490,17 @@
                 <button
                     class="create-button"
                     type="submit"
-                    disabled={sending || cancelling}
+                    disabled={sending ||
+                        cancelling ||
+                        (isPartnerAdmin && ownPartners.length === 0)}
                     aria-busy={sending || undefined}
-                    >{sending ? "Creando..." : "Crear beneficio"}</button
+                    >{sending
+                        ? isPartnerAdmin
+                            ? "Enviando..."
+                            : "Creando..."
+                        : isPartnerAdmin
+                          ? "Enviar solicitud"
+                          : "Crear beneficio"}</button
                 >
             </div>
         </form>
@@ -416,11 +521,19 @@
             transition:scale={{ start: 0.92, duration: 220 }}
             role="dialog"
             aria-modal="true"
-            aria-label="Beneficio creado"
+            aria-label={isPartnerAdmin
+                ? "Solicitud enviada"
+                : "Beneficio creado"}
         >
             <div class="modal-icon">✓</div>
-            <h3>¡Beneficio creado!</h3>
-            <p>El beneficio se publicó correctamente.</p>
+            <h3>
+                {isPartnerAdmin ? "¡Solicitud enviada!" : "¡Beneficio creado!"}
+            </h3>
+            <p>
+                {isPartnerAdmin
+                    ? "Tu beneficio quedó pendiente de revisión. Un administrador de CeCIT va a aceptarlo o rechazarlo."
+                    : "El beneficio se publicó correctamente."}
+            </p>
             <div class="modal-actions">
                 <button
                     class="ghost-button"
@@ -432,7 +545,10 @@
                 <button
                     class="create-button"
                     type="button"
-                    onclick={() => goto("/business-panel")}
+                    onclick={() =>
+                        goto(
+                            isPartnerAdmin ? "/business-panel" : "/admin-panel",
+                        )}
                 >
                     Ir al panel
                 </button>
@@ -587,6 +703,22 @@
 
     .field:last-child {
         margin-bottom: 0;
+    }
+
+    /* Negocio ya fijado: se muestra como dato, no como campo editable. */
+    .locked-partner {
+        display: flex;
+        align-items: center;
+        box-sizing: border-box;
+        min-height: 44px;
+        margin: 0;
+        padding: 10px 14px;
+        border: 1px dashed #9a9a9a;
+        border-radius: 10px;
+        background: #f5f5f7;
+        font-size: 15px;
+        font-weight: 600;
+        color: #333;
     }
 
     .field-label {

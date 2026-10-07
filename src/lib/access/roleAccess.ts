@@ -27,6 +27,7 @@ const accessByRole: Record<AccountRole, RoleAccess> = {
         label: "Administrador",
         actions: [
             { label: "Crear Beneficio", href: "/create-benefit" },
+            { label: "Solicitudes", href: "/benefit-requests" },
             { label: "Panel de administrador", href: "/admin-panel" },
             { label: "Historial", href: "/history" },
             { label: "Configuración", href: "/profile#configuration" }
@@ -37,6 +38,7 @@ const accessByRole: Record<AccountRole, RoleAccess> = {
         actions: [
             { label: "Canjear Cupón", href: "/redeem" },
             { label: "Panel de negocio", href: "/business-panel" },
+            { label: "Crear Beneficio", href: "/create-benefit" },
             { label: "Historial", href: "/history" },
             { label: "Configuración", href: "/profile#configuration" }
         ]
