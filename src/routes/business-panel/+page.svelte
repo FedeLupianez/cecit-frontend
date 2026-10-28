@@ -2,9 +2,10 @@
     import { onMount } from "svelte";
     import { slide } from "svelte/transition";
     import { goto } from "$app/navigation";
+    import { resolve } from "$app/paths";
     import { accessToken } from "$lib/stores/authStore";
     import { profileStore } from "$lib/stores/profileStore";
-    import { apiFetch } from "$lib/api";
+    import { apiFetch, apiUrl } from "$lib/api";
     import {
         Pencil,
         Plus,
@@ -65,7 +66,7 @@
 
     $effect(() => {
         const profile = profileStore.getProfile();
-        if (profile && profile.role !== "PARTNER_ADMIN") goto("/");
+        if (profile && profile.role !== "PARTNER_ADMIN") goto(resolve("/"));
     });
 
     let benefits: Benefit[] = $state([]);
@@ -150,7 +151,7 @@
             const vouchers = await Promise.all(
                 benefits.map(async (b): Promise<Voucher[]> => {
                     const response = await fetch(
-                        `/api/vouchers/bybenefit?id_benefit=${b.id_benefit}`,
+                        apiUrl(`/api/vouchers/bybenefit?id_benefit=${b.id_benefit}`),
                     );
                     return response.ok ? await response.json() : [];
                 }),

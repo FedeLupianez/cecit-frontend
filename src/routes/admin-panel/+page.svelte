@@ -1,6 +1,7 @@
 <script lang="ts">
     import { fly, slide } from "svelte/transition";
     import { goto } from "$app/navigation";
+    import { resolve } from "$app/paths";
     import { accessToken } from "$lib/stores/authStore";
     import { profileStore } from "$lib/stores/profileStore";
     // Alias: todos los fetch de este panel pasan por el wrapper con
@@ -125,7 +126,7 @@
 
     $effect(() => {
         const profile = profileStore.getProfile();
-        if (profile && profile.role !== "CECIT_ADMIN") goto("/");
+        if (profile && profile.role !== "CECIT_ADMIN") goto(resolve("/"));
     });
 
     let loadingGlobal = $state(true);

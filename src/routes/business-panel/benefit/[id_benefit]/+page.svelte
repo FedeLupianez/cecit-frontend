@@ -7,6 +7,7 @@
     import { accessToken } from "$lib/stores/authStore";
     import { profileStore } from "$lib/stores/profileStore";
     import { apiFetch } from "$lib/api";
+    import { base, resolve } from "$app/paths";
 
     type VoucherStatus = "PENDING" | "DELIVERED" | "EXPIRED" | "REJECTED";
 
@@ -113,7 +114,7 @@
     $effect(() => {
         const profile = profileStore.getProfile();
         if (profile && profile.role !== "PARTNER_ADMIN")
-            goto("/business-panel");
+            goto(resolve("/business-panel"));
     });
 
     function formatDate(value: string | null | undefined) {
@@ -268,7 +269,7 @@
 
 <section class="benefit-page">
     <div class="inner">
-        <a class="back-link" href="/business-panel">
+        <a class="back-link" href="{base}/business-panel">
             <ArrowLeft size={16} />
             Volver al panel de negocio
         </a>

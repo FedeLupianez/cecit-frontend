@@ -1,5 +1,6 @@
 <script lang="ts">
     import { goto } from "$app/navigation";
+    import { resolve } from "$app/paths";
 
     let goingHome = $state(false);
 
@@ -7,7 +8,7 @@
         if (goingHome) return;
         goingHome = true;
         try {
-            await goto("/");
+            await goto(resolve("/"));
         } finally {
             goingHome = false;
         }

@@ -8,6 +8,8 @@
 
     import BenefitCard from "./BenefitCard.svelte";
     import { loadCategories, getFilters } from "$lib/stores/categories.svelte";
+    import { apiUrl } from "$lib/api";
+    import { base } from "$app/paths";
     import type { Benefit } from "$lib/types/Benefit";
 
     let { title = "Beneficios populares", endpoint = "/api/benefits/actives" } =
@@ -21,7 +23,7 @@
         await loadCategories();
         loading = true;
         try {
-            const response = await fetch(endpoint);
+            const response = await fetch(apiUrl(endpoint));
             if (!response.ok) {
                 console.log("Response does not ok");
                 return;
@@ -215,7 +217,7 @@
         <div class="title-group">
             <h2>{title}</h2>
 
-            <a class="more-btn" href="/benefits">Ver más</a>
+            <a class="more-btn" href="{base}/benefits">Ver más</a>
         </div>
     </div>
 

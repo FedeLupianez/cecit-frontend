@@ -1,7 +1,9 @@
 <script lang="ts">
     import { page } from "$app/state";
+    import { browser } from "$app/environment";
     import BenefitCard from "$lib/components/BenefitCard.svelte";
     import { getFilters, loadCategories } from "$lib/stores/categories.svelte";
+    import { apiUrl } from "$lib/api";
     import { onMount } from "svelte";
     import { toast } from "svelte-sonner";
     import type { Benefit } from "$lib/types/Benefit";
@@ -18,7 +20,7 @@
             const url = initialSearch
                 ? `/api/benefits/search?text=${encodeURIComponent(initialSearch)}`
                 : "/api/benefits/actives";
-            const response = await fetch(url);
+            const response = await fetch(apiUrl(url));
             if (!response.ok) {
                 console.log("Response does not ok");
                 toast.error("No se pudieron cargar los beneficios");
@@ -35,7 +37,7 @@
 
     async function load_payment_methods() {
         try {
-            const response = await fetch("/api/payment-methods/all");
+            const response = await fetch(apiUrl("/api/payment-methods/all"));
             if (!response.ok) return;
             paymentMethods = await response.json();
             return;
@@ -44,8 +46,9 @@
         }
     }
 
-    const initialCategory = page.url.searchParams.get("category");
-    const initialSearch = page.url.searchParams.get("search");
+    // La página se prerenderiza: los search params sólo existen en el browser.
+    const initialCategory = browser ? page.url.searchParams.get("category") : null;
+    const initialSearch = browser ? page.url.searchParams.get("search") : null;
 
     let selectedCategory = $derived(
         initialCategory && categories.includes(initialCategory)

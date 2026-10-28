@@ -6,6 +6,7 @@
     import NavigationProgress from "$lib/components/NavigationProgress.svelte";
     import { Toaster } from "svelte-sonner";
     import { navigating } from "$app/stores";
+    import { base } from "$app/paths";
 
     let { children } = $props();
 
@@ -20,7 +21,7 @@
 </script>
 
 <svelte:head>
-    <link rel="icon" href="/logo_sin_texto.png" />
+    <link rel="icon" href="{base}/logo_sin_texto.png" />
 </svelte:head>
 
 <Navbar />

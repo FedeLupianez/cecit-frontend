@@ -6,10 +6,12 @@
     import { onMount } from "svelte";
     import { goto } from "$app/navigation";
     import { accessToken } from "$lib/stores/authStore";
+    import { apiUrl } from "$lib/api";
+    import { base, resolve } from "$app/paths";
     import { getRoleAccess } from "$lib/access/roleAccess";
     import RoleCard from "$lib/components/RoleCard.svelte";
 
-    const logo = "/logo_con_texto.png";
+    const logo = `${base}/logo_con_texto.png`;
 
     let profile: Profile | null | undefined = $state();
     let avatar = $state<string>("");
@@ -23,7 +25,7 @@
         if (loggingOut) return;
         loggingOut = true;
         try {
-            await fetch("/api/auth/logout", {
+            await fetch(apiUrl("/api/auth/logout"), {
                 method: "POST",
                 credentials: "include",
             });
@@ -33,7 +35,7 @@
             showRoleMenu = false;
             showMobileMenu = false;
             try {
-                await goto("/login");
+                await goto(resolve("/login"));
             } finally {
                 loggingOut = false;
             }
@@ -187,7 +189,7 @@
             <div class="mobile-drawer-user">
                 {#if !profile}
                     <a
-                        href="/login"
+                        href="{base}/login"
                         class="mobile-login-link"
                         onclick={closeMobileMenu}
                     >

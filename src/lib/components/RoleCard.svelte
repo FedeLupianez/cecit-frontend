@@ -1,6 +1,7 @@
 <script lang="ts">
     import type { RoleAccess } from "$lib/access/roleAccess";
     import { navigating, page } from "$app/stores";
+    import { base } from "$app/paths";
     import { LogOut } from "lucide-svelte";
 
     let {
@@ -35,7 +36,7 @@
     <nav aria-label={`Opciones de ${access.label}`}>
         {#each access.actions as action}
             {@const isActive =
-                $page.url.pathname === action.href.split("#")[0] &&
+                $page.url.pathname === `${base}${action.href.split("#")[0]}` &&
                 (action.href.includes("#")
                     ? $page.url.hash === action.href.slice(action.href.indexOf("#"))
                     : true)}
@@ -44,7 +45,7 @@
                 class="option-btn"
                 class:is-pending={isPending}
                 class:active-link={isActive}
-                href={action.href}
+                href={`${base}${action.href}`}
                 data-sveltekit-preload-data="hover"
                 aria-current={isActive ? "page" : undefined}
                 aria-disabled={pendingHref !== null || undefined}

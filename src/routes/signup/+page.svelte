@@ -1,5 +1,7 @@
 <script lang="ts">
     import { accessToken } from "$lib/stores/authStore";
+    import { apiUrl } from "$lib/api";
+    import { base, resolve } from "$app/paths";
     import { goto } from "$app/navigation";
     import { toast } from "svelte-sonner";
 
@@ -36,7 +38,7 @@
         loading = true;
 
         try {
-            const response = await fetch("/api/auth/register", {
+            const response = await fetch(apiUrl("/api/auth/register"), {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -51,7 +53,7 @@
             const result = await response.json();
             accessToken.setToken(result.access_token);
             toast.success("Cuenta creada correctamente");
-            await goto("/");
+            await goto(resolve("/"));
         } catch (error) {
             console.log(error);
             toast.error("No se pudo completar el registro");
@@ -75,7 +77,7 @@
                 <p class="text">Ingresa los datos para acceder a beneficios</p>
             </div>
 
-            <a href="/login">¿Ya tenés cuenta? Inicia Sesión</a>
+            <a href="{base}/login">¿Ya tenés cuenta? Inicia Sesión</a>
         </div>
         <form onsubmit={login} class="right" novalidate>
             <input
