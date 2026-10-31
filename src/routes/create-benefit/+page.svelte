@@ -22,6 +22,10 @@
 
     const isPartnerAdmin = $derived(role === "PARTNER_ADMIN");
 
+    const selectedTypeName = $derived(
+        types.find((t) => String(t.id_type) === selectedType)?.name ?? "",
+    );
+
     /** Un PARTNER_ADMIN sólo puede crear para los negocios que administra.
      * El backend expone el listado en GET /partners-admins/me/all. */
     let ownPartners = $state<{ id_partner: string; name: string }[]>([]);
@@ -177,12 +181,21 @@
                     ? null
                     : Number(refund_limit);
 
+            const tzOffset = -new Date().getTimezoneOffset(); // minutes
+            const tzSign = tzOffset >= 0 ? "+" : "-";
+            const tzHour = String(Math.floor(Math.abs(tzOffset) / 60)).padStart(
+                2,
+                "0",
+            );
+            const tzMin = String(Math.abs(tzOffset) % 60).padStart(2, "0");
+            const tzString = `${tzSign}${tzHour}:${tzMin}`;
+
             const payload: BenefitsCreateDTO = {
                 id_admin: profileStore.getProfile()?.user_id ?? "",
                 id_partner: selectedPartner,
                 id_type: Number(selectedType),
-                start_date: `${startDate}T${startTime || "00:00"}:00`,
-                end_date: `${endDate}T${endTime || "00:00"}:00`,
+                start_date: `${startDate}T${startTime || "00:00"}:00${tzString}`,
+                end_date: `${endDate}T${endTime || "00:00"}:00${tzString}`,
 
                 image: imagePreview,
                 title: title.trim(),
@@ -375,14 +388,17 @@
                     <fieldset>
                         <legend class="sr-only">Tipo de beneficio</legend>
                         <div class="chip-row">
-                            {#each types as type}<button
+                            {#each types as type}
+                                <button
                                     type="button"
                                     class="chip"
                                     class:selected={selectedType ===
                                         String(type.id_type)}
-                                    onclick={() =>
-                                        (selectedType = String(type.id_type))}
-                                    >{type.name}</button
+                                    onclick={() => {
+                                        selectedType = String(type.id_type);
+                                        if (type.name !== "Descuento")
+                                            refund_limit = null;
+                                    }}>{type.name}</button
                                 >{/each}
                         </div>
                     </fieldset>
@@ -458,17 +474,18 @@
                             placeholder="100"
                         /></label
                     >
-
-                    <label class="field"
-                        ><span class="field-label">Tope de reintegro</span
-                        ><input
-                            type="number"
-                            min="0"
-                            placeholder="$99999"
-                            bind:value={refund_limit}
-                            aria-label="Tope de reintegro"
-                        /></label
-                    >
+                    {#if selectedTypeName === "Descuento"}
+                        <label class="field"
+                            ><span class="field-label">Tope de reintegro</span
+                            ><input
+                                type="number"
+                                min="0"
+                                placeholder="$99999"
+                                bind:value={refund_limit}
+                                aria-label="Tope de reintegro"
+                            /></label
+                        >
+                    {/if}
                 </section>
             </div>
 
@@ -634,6 +651,7 @@
         padding: 26px 28px;
         background: #fff;
         box-shadow: 0 8px 18px rgb(0 0 0 / 06%);
+        gap: 14px;
     }
 
     h2 {
@@ -693,16 +711,13 @@
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 14px;
+        margin-bottom: 14px;
     }
 
     .field {
         display: grid;
         gap: 8px;
         margin-bottom: 14px;
-    }
-
-    .field:last-child {
-        margin-bottom: 0;
     }
 
     /* Negocio ya fijado: se muestra como dato, no como campo editable. */

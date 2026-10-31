@@ -195,7 +195,13 @@
     }
 
     function toApiDate(value: string) {
-        return value ? value.replace("T", " ") + ":00" : "";
+        if (!value) return "";
+        const tzOffset = -new Date().getTimezoneOffset();
+        const tzSign = tzOffset >= 0 ? '+' : '-'; 
+        const tzHour = String(Math.floor(Math.abs(tzOffset) / 60)).padStart(2, '0');
+        const tzMin = String(Math.abs(tzOffset) % 60).padStart(2, '0');
+        const tzString = `${tzSign}${tzHour}:${tzMin}`;
+        return value.replace("T", " ").replace("Z", "").slice(0, 19) + tzString;
     }
 
     function startEdit(request: Benefit) {
