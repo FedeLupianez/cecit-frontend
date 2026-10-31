@@ -383,14 +383,18 @@
     .card {
         position: relative;
 
-        background: #f4f5f7;
-        border: 1px solid #2b2b2b;
-        border-radius: 0;
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 16px;
         overflow: visible;
 
-        box-shadow: none;
-
-        transition: box-shadow 0.25s ease;
+        box-shadow:
+            0 1px 3px rgba(0, 0, 0, 0.06),
+            0 1px 2px rgba(0, 0, 0, 0.04);
+        transition:
+            box-shadow 0.2s ease,
+            transform 0.2s ease;
+        cursor: pointer;
     }
 
     .card:hover,
@@ -410,6 +414,7 @@
         width: 100%;
         height: 174px;
         object-fit: cover;
+        border-radius: 16px 16px 0px 0px;
 
         display: block;
         flex-shrink: 0;
@@ -450,6 +455,7 @@
 
     .bottom {
         margin-top: 8px;
+        padding: 1rem;
 
         display: flex;
         justify-content: space-between;
@@ -457,6 +463,7 @@
         gap: 12px;
 
         margin-top: auto;
+        border-top: solid 1px #f3f4f6;
     }
 
     .business {
@@ -468,11 +475,12 @@
     }
 
     .business img {
-        width: 24px;
-        height: 24px;
+        width: 32px;
+        height: 32px;
 
         flex: 0 0 auto;
         object-fit: contain;
+        border-radius: 999px;
     }
 
     p {
@@ -640,12 +648,6 @@
         font-size: 1.4rem;
     }
 
-    .voucher-error {
-        color: #c0392b;
-        font-size: 1rem;
-        margin-top: 0.5rem;
-    }
-
     .expanded-coupon-btn:disabled {
         cursor: default;
         background: #4b4b4b;
@@ -698,7 +700,7 @@
         padding: 0.5rem 1rem;
         font-size: 1rem;
 
-        border-radius: 999px;
+        border-radius: 14px;
         cursor: pointer;
         flex-shrink: 0;
         white-space: nowrap;
