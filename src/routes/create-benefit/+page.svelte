@@ -8,6 +8,7 @@
     import { apiFetch } from "$lib/api";
     import { profileStore } from "$lib/stores/profileStore";
     import type { BenefitsCreateDTO } from "$lib/types/Benefit";
+    import { resolve } from "path";
 
     /** La página la pueden usar CECIT_ADMIN (crea directo) y PARTNER_ADMIN
      * (crea una solicitud que un CECIT_ADMIN tiene que aprobar). */
@@ -15,7 +16,8 @@
 
     $effect(() => {
         const profile = profileStore.getProfile();
-        if (profile && !CREATOR_ROLES.includes(profile.role ?? "")) goto("/");
+        if (profile && !CREATOR_ROLES.includes(profile.role ?? ""))
+            goto(resolve("/"));
     });
 
     const role = $derived(profileStore.getProfile()?.role ?? "");
@@ -181,8 +183,8 @@
                 id_admin: profileStore.getProfile()?.user_id ?? "",
                 id_partner: selectedPartner,
                 id_type: Number(selectedType),
-                start_date: `${startDate} ${startTime || "00:00"}:00`,
-                end_date: `${endDate} ${endTime || "00:00"}:00`,
+                start_date: `${startDate}T${startTime || "00:00"}:00`,
+                end_date: `${endDate}T${endTime || "00:00"}:00`,
 
                 image: imagePreview,
                 title: title.trim(),
@@ -190,7 +192,6 @@
 
                 payment_methods: paymentMethods,
 
-                coupons: 0,
                 max_coupons: Number(maxCoupons) || 100,
                 max_per_user: Math.max(Number(maxPerUser) || 1, 1),
                 refund_limit: parsedRefundLimit,
@@ -246,7 +247,9 @@
         if (sending || cancelling) return;
         cancelling = true;
         try {
-            await goto(isPartnerAdmin ? "/business-panel" : "/admin-panel");
+            await goto(
+                resolve(isPartnerAdmin ? "/business-panel" : "/admin-panel"),
+            );
         } finally {
             cancelling = false;
         }
@@ -547,7 +550,15 @@
                     type="button"
                     onclick={() =>
                         goto(
+<<<<<<< Updated upstream
                             isPartnerAdmin ? "/business-panel" : "/admin-panel",
+=======
+                            resolve(
+                                isPartnerAdmin
+                                    ? "/business-panel"
+                                    : "/admin-panel",
+                            ),
+>>>>>>> Stashed changes
                         )}
                 >
                     Ir al panel

@@ -90,6 +90,8 @@
     </div>
 
     <div class="links">
+        <a href="/">Home</a>
+        <span class="separator" aria-hidden="true">|</span>
         <a href="http://centrodecomercioag.com.ar/">Institucional</a>
         <span class="separator" aria-hidden="true">|</span>
         <a href="http://centrodecomercioag.com.ar/hacete-socio/">Hacete socio</a
@@ -170,6 +172,7 @@
             </div>
 
             <div class="mobile-drawer-links">
+                <a href="/" onclick={closeMobileMenu}>Home</a>
                 <a
                     href="http://centrodecomercioag.com.ar/"
                     onclick={closeMobileMenu}>Institucional</a

@@ -290,6 +290,7 @@
                             coupons={benefit.coupons}
                             max_per_user={benefit.max_per_user}
                             description={benefit.description}
+                            refund_limit={benefit.refund_limit}
                         />
                     </div>
                 {/each}

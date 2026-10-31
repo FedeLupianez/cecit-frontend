@@ -7,7 +7,6 @@ export interface BenefitsCreateDTO {
     image: string;
     title: string;
     description: string;
-    coupons: number;
     max_coupons: number;
     max_per_user: number;
     payment_methods: string[];
@@ -43,6 +42,6 @@ export interface Benefit {
     coupons: number;
     max_coupons: number;
     max_per_user: number;
-    refund_limit: number;
+    refund_limit: number | null;
     status?: BenefitStatus;
 }
