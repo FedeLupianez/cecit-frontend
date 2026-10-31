@@ -1,5 +1,17 @@
 <script lang="ts">
     import { goto } from "$app/navigation";
+
+    let goingHome = $state(false);
+
+    async function goHome() {
+        if (goingHome) return;
+        goingHome = true;
+        try {
+            await goto("/");
+        } finally {
+            goingHome = false;
+        }
+    }
 </script>
 
 <svelte:head>
@@ -14,8 +26,18 @@
 
         <p>Parece que la página que estás buscando no existe o fue movida.</p>
 
-        <button type="button" onclick={() => goto("/")}>
-            Volver al inicio
+        <button
+            type="button"
+            onclick={goHome}
+            disabled={goingHome}
+            class:is-pending={goingHome}
+            aria-busy={goingHome || undefined}
+        >
+            {#if goingHome}
+                Volviendo…
+            {:else}
+                Volver al inicio
+            {/if}
         </button>
     </div>
 </section>
@@ -83,6 +105,12 @@
     button:hover {
         transform: translateY(-2px);
         background: #25254d;
+    }
+
+    button:disabled {
+        cursor: progress;
+        opacity: 0.8;
+        transform: none;
     }
 
     button:active {

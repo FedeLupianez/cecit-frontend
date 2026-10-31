@@ -1,10 +1,7 @@
 <script>
-    const cecitLogo =
-        "http://centrodecomercioag.com.ar/wp-content/uploads/2023/07/cecit2023.png";
-    const recurso6 =
-        "http://centrodecomercioag.com.ar/wp-content/uploads/2025/04/Recurso-6.png";
-    const recurso8 =
-        "http://centrodecomercioag.com.ar/wp-content/uploads/2025/04/Recurso-8.png";
+    const cecitLogo = "/logo_sin_texto.png";
+    const recurso6 = "/empresas.png";
+    const recurso8 = "/Paseos.png";
 </script>
 
 <footer>

@@ -3,26 +3,8 @@
     import BenefitCard from "$lib/components/BenefitCard.svelte";
     import { getFilters, loadCategories } from "$lib/stores/categories.svelte";
     import { onMount } from "svelte";
-
-    interface Benefit {
-        id_benefit: string;
-        id_admin: string;
-        id_partner: string;
-        partner: string;
-        type: string;
-        categories: string[];
-        payment_methods: string[];
-        logo: string;
-        direction: string;
-        start_date: string;
-        end_date: string;
-        image: string;
-        title: string;
-        description: string;
-        coupons: number;
-        max_coupons: number;
-        max_per_user: number;
-    }
+    import { toast } from "svelte-sonner";
+    import type { Benefit } from "$lib/types/Benefit";
 
     let benefits: Benefit[] = $state([]);
     let paymentMethods: string[] = $state([]);
@@ -33,15 +15,19 @@
         loading = true;
         await loadCategories();
         try {
-            const response = await fetch("/api/benefits/all");
+            const url = initialSearch
+                ? `/api/benefits/search?text=${encodeURIComponent(initialSearch)}`
+                : "/api/benefits/actives";
+            const response = await fetch(url);
             if (!response.ok) {
                 console.log("Response does not ok");
+                toast.error("No se pudieron cargar los beneficios");
                 return;
             }
             benefits = await response.json();
-            console.log($state.snapshot(benefits));
         } catch (error) {
             console.log(error);
+            toast.error("No se pudieron cargar los beneficios");
         } finally {
             loading = false;
         }
@@ -58,9 +44,8 @@
         }
     }
 
-    const discounts = ["30% OFF", "40% OFF"];
-
     const initialCategory = page.url.searchParams.get("category");
+    const initialSearch = page.url.searchParams.get("search");
 
     let selectedCategory = $derived(
         initialCategory && categories.includes(initialCategory)
@@ -68,7 +53,6 @@
             : "Todo",
     );
     let selectedPayment = $state("Todo");
-    let selectedDiscount = $state("Todo");
 
     let filteredBenefits = $derived(
         benefits.filter((benefit) => {
@@ -103,13 +87,6 @@
             return;
         }
         selectedPayment = selectedPayment === payment ? "Todo" : payment;
-    }
-
-    /**
-     * @param {string} discount
-     */
-    function selectDiscount(discount: string) {
-        return;
     }
 
     onMount(() => {
@@ -159,22 +136,6 @@
                         {/each}
                     </div>
                 </div>
-
-                <div class="filter-group">
-                    <h2>Descuentos</h2>
-
-                    <div class="filter-buttons">
-                        {#each discounts as discount}
-                            <button
-                                type="button"
-                                class:active={selectedDiscount === discount}
-                                onclick={() => selectDiscount(discount)}
-                            >
-                                {discount}
-                            </button>
-                        {/each}
-                    </div>
-                </div>
             </aside>
 
             <div class="benefits-grid" aria-live="polite">
@@ -191,13 +152,16 @@
                                 title={benefit.title}
                                 image={benefit.image}
                                 partner={benefit.partner}
+                                startDate={benefit.start_date}
                                 endDate={benefit.end_date}
                                 methods={benefit.payment_methods}
                                 logo={benefit.logo}
-                                direction={benefit.direction}
+                                direction={benefit.directions?.join(", ") ?? ""}
                                 coupons={benefit.coupons}
                                 max_coupons={benefit.max_coupons}
                                 max_per_user={benefit.max_per_user}
+                                description={benefit.description}
+                                refund_limit={benefit.refund_limit}
                             />
                         </div>
                     {:else}

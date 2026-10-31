@@ -1,36 +1,35 @@
 <script lang="ts">
-    import { accessToken } from "$lib/stores/authStore";
     import "../app.css";
 
     import Navbar from "$lib/components/Navbar.svelte";
     import Footer from "$lib/components/Footer.svelte";
-    import { profileStore } from "$lib/stores/profileStore";
+    import NavigationProgress from "$lib/components/NavigationProgress.svelte";
+    import { Toaster } from "svelte-sonner";
+    import { navigating } from "$app/stores";
 
-    let { children, data } = $props();
+    let { children } = $props();
+
+    let isNavigating = $derived($navigating !== null);
 
     $effect(() => {
-        if (data?.accessToken) {
-            accessToken.setToken(data.accessToken);
-        }
-        if (data?.profile) {
-            profileStore.setProfile(data.profile);
-            console.log(profileStore.getProfile());
-        }
+        document.documentElement.classList.toggle(
+            "is-navigating",
+            isNavigating,
+        );
     });
 </script>
 
 <svelte:head>
-    <link
-        rel="icon"
-        href="http://centrodecomercioag.com.ar/wp-content/uploads/2023/07/cecit2023.png"
-    />
+    <link rel="icon" href="/logo_sin_texto.png" />
 </svelte:head>
 
 <Navbar />
-<main>
+<NavigationProgress />
+<main aria-busy={isNavigating}>
     {@render children()}
 </main>
 <Footer />
+<Toaster position="bottom-right" richColors closeButton />
 
 <style>
     main {
