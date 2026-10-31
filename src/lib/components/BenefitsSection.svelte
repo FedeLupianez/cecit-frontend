@@ -98,8 +98,7 @@
     }
 
     function onFiltersPointerMove(e: PointerEvent) {
-        if (!draggingFilters || !filtersEl || e.pointerType !== "mouse")
-            return;
+        if (!draggingFilters || !filtersEl || e.pointerType !== "mouse") return;
         const dx = e.clientX - dragStartX;
         if (Math.abs(dx) > 5) dragMoved = true;
         if (dragMoved) filtersEl.scrollLeft = dragStartScroll - dx;
@@ -251,7 +250,11 @@
 
     <div class="carousel-wrapper" aria-busy={loading}>
         {#if loading}
-            <div class="loading-container" role="status" aria-label="Cargando beneficios">
+            <div
+                class="loading-container"
+                role="status"
+                aria-label="Cargando beneficios"
+            >
                 <div class="spinner"></div>
                 <p>Cargando Beneficios</p>
             </div>
@@ -291,6 +294,7 @@
                             max_per_user={benefit.max_per_user}
                             description={benefit.description}
                             refund_limit={benefit.refund_limit}
+                            type={benefit.type}
                         />
                     </div>
                 {/each}

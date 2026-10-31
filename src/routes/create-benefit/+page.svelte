@@ -8,7 +8,6 @@
     import { apiFetch } from "$lib/api";
     import { profileStore } from "$lib/stores/profileStore";
     import type { BenefitsCreateDTO } from "$lib/types/Benefit";
-    import { resolve } from "path";
 
     /** La página la pueden usar CECIT_ADMIN (crea directo) y PARTNER_ADMIN
      * (crea una solicitud que un CECIT_ADMIN tiene que aprobar). */
@@ -16,8 +15,7 @@
 
     $effect(() => {
         const profile = profileStore.getProfile();
-        if (profile && !CREATOR_ROLES.includes(profile.role ?? ""))
-            goto(resolve("/"));
+        if (profile && !CREATOR_ROLES.includes(profile.role ?? "")) goto("/");
     });
 
     const role = $derived(profileStore.getProfile()?.role ?? "");
@@ -247,9 +245,7 @@
         if (sending || cancelling) return;
         cancelling = true;
         try {
-            await goto(
-                resolve(isPartnerAdmin ? "/business-panel" : "/admin-panel"),
-            );
+            await goto(isPartnerAdmin ? "/business-panel" : "/admin-panel");
         } finally {
             cancelling = false;
         }
@@ -519,6 +515,7 @@
         transition:fly={{ y: 8, duration: 180 }}
     >
         <div
+            tabindex="-1"
             class="modal-card"
             onclick={(e) => e.stopPropagation()}
             transition:scale={{ start: 0.92, duration: 220 }}
@@ -550,15 +547,7 @@
                     type="button"
                     onclick={() =>
                         goto(
-<<<<<<< Updated upstream
                             isPartnerAdmin ? "/business-panel" : "/admin-panel",
-=======
-                            resolve(
-                                isPartnerAdmin
-                                    ? "/business-panel"
-                                    : "/admin-panel",
-                            ),
->>>>>>> Stashed changes
                         )}
                 >
                     Ir al panel
