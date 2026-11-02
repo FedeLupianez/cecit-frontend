@@ -1,4 +1,6 @@
 
+import { apiUrl } from "$lib/api";
+
 interface Category {
     name: string;
     icon: string;
@@ -12,7 +14,7 @@ export async function loadCategories() {
     if (loaded) return;
     loaded = true;
     try {
-        const res = await fetch("/api/categories/actives");
+        const res = await fetch(apiUrl("/api/categories/actives"));
         if (res.ok) {
             const data = await res.json();
             filters = ["Todo", ...data.map((c: { name: string }) => c.name)];

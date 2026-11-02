@@ -1,6 +1,7 @@
 <script lang="ts">
     import { onMount } from "svelte";
     import { goto } from "$app/navigation";
+    import { resolve } from "$app/paths";
     import { CheckCircle2, Loader2, Pencil, XCircle } from "lucide-svelte";
     import { toast } from "svelte-sonner";
 
@@ -11,7 +12,7 @@
 
     $effect(() => {
         const profile = profileStore.getProfile();
-        if (profile && profile.role !== "CECIT_ADMIN") goto("/");
+        if (profile && profile.role !== "CECIT_ADMIN") goto(resolve("/"));
     });
 
     const STATUS_LABEL: Record<string, string> = {

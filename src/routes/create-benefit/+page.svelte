@@ -3,9 +3,10 @@
     import { fly, scale } from "svelte/transition";
 
     import { goto } from "$app/navigation";
+    import { resolve } from "$app/paths";
 
     import { accessToken } from "$lib/stores/authStore";
-    import { apiFetch } from "$lib/api";
+    import { apiFetch, apiUrl } from "$lib/api";
     import { profileStore } from "$lib/stores/profileStore";
     import type { BenefitsCreateDTO } from "$lib/types/Benefit";
 
@@ -15,7 +16,7 @@
 
     $effect(() => {
         const profile = profileStore.getProfile();
-        if (profile && !CREATOR_ROLES.includes(profile.role ?? "")) goto("/");
+        if (profile && !CREATOR_ROLES.includes(profile.role ?? "")) goto(resolve("/"));
     });
 
     const role = $derived(profileStore.getProfile()?.role ?? "");
@@ -99,8 +100,8 @@
     async function loadOptions() {
         const [typesResponse, paymentsResponse, partnersResponse] =
             await Promise.all([
-                fetch("/api/benefit-types/all"),
-                fetch("/api/payment-methods/all"),
+                fetch(apiUrl("/api/benefit-types/all")),
+                fetch(apiUrl("/api/payment-methods/all")),
                 isPartnerAdmin
                     ? Promise.resolve(null)
                     : apiFetch("/api/partners/all"),
@@ -258,7 +259,7 @@
         if (sending || cancelling) return;
         cancelling = true;
         try {
-            await goto(isPartnerAdmin ? "/business-panel" : "/admin-panel");
+            await goto(resolve(isPartnerAdmin ? "/business-panel" : "/admin-panel"));
         } finally {
             cancelling = false;
         }
@@ -564,7 +565,9 @@
                     type="button"
                     onclick={() =>
                         goto(
-                            isPartnerAdmin ? "/business-panel" : "/admin-panel",
+                            resolve(
+                                isPartnerAdmin ? "/business-panel" : "/admin-panel",
+                            ),
                         )}
                 >
                     Ir al panel

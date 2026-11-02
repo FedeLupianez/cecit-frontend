@@ -8,13 +8,17 @@
 		"dev:nologin": "AUTH_DISABLED=true vite dev",
 		"start": "node build",
 		"build": "vite build",
+		"build:static": "node scripts/build-static.mjs",
+		"build:static:ftp": "node scripts/build-static.mjs --env .env.ftp",
 		"preview": "vite preview",
+		"preview:static": "node scripts/static-preview.mjs",
 		"prepare": "svelte-kit sync || echo ''",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch"
 	},
 	"devDependencies": {
 		"@sveltejs/adapter-node": "^5.5.7",
+		"@sveltejs/adapter-static": "^4.0.0",
 		"@sveltejs/kit": "^2.50.2",
 		"@sveltejs/vite-plugin-svelte": "^6.2.4",
 		"@types/node": "^26.0.1",

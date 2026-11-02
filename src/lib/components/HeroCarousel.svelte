@@ -1,5 +1,6 @@
 <script>
     import { goto } from "$app/navigation";
+    import { resolve } from "$app/paths";
     import { Search } from "lucide-svelte";
 
     const banner =
@@ -11,7 +12,7 @@
         if (!search_text || searching) return;
         searching = true;
         try {
-            await goto(`/benefits?search=${encodeURIComponent(search_text)}`);
+            await goto(resolve(`/benefits?search=${encodeURIComponent(search_text)}`));
         } finally {
             searching = false;
         }

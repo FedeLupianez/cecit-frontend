@@ -1,7 +1,9 @@
 <script>
-    const cecitLogo = "/logo_sin_texto.png";
-    const recurso6 = "/empresas.png";
-    const recurso8 = "/Paseos.png";
+    import { base } from "$app/paths";
+
+    const cecitLogo = `${base}/logo_sin_texto.png`;
+    const recurso6 = `${base}/empresas.png`;
+    const recurso8 = `${base}/Paseos.png`;
 </script>
 
 <footer>
