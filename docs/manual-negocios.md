@@ -22,9 +22,12 @@ además:
 | **Administrar tu perfil de comercio** (nombre, logo, sucursales) | `Panel de negocio` |
 | **Gestionar tu equipo** de empleados | `Panel de negocio` |
 | **Ver quién canjeó** cada beneficio | `Panel de negocio` → `Detalles` |
+| **Solicitar creación de beneficios** | `Crear Beneficio` |
 
-> 💡 **No creás beneficios.** El alta de beneficios la hace el equipo del
-> CeCIT. Vos los recibís, los ves y los canjeás.
+> 💡 **Los beneficios los publica el CeCIT.** Como administrador de comercio
+> podés solicitar la creación de uno nuevo desde `Crear Beneficio` (§8); el
+> equipo del CeCIT lo revisa antes de publicarlo. Vos los recibís, los ves y
+> los canjeás.
 
 ---
 
@@ -288,8 +291,10 @@ Cada tarjeta muestra:
 | **Barra de progreso** | Cuánta demanda tiene tu beneficio |
 | **Botón "Detalles"** | Abre la ficha completa del beneficio |
 
-> ⚠️ **Los beneficios los crea el CeCIT, no vos.** Si necesitás un beneficio
-> nuevo, un cambio o una renovación, pedilo al CeCIT.
+> ⚠️ **Los beneficios los publica el CeCIT.** Como administrador de comercio
+> podés solicitar la creación de uno nuevo desde `Crear Beneficio` (§8); un
+> administrador de CeCIT lo revisa y lo aprueba o lo rechaza antes de
+> publicarlo. Si necesitás un cambio o una renovación, pedilo al CeCIT.
 
 ### 7.1 Ver los detalles de un beneficio
 
@@ -342,7 +347,78 @@ Debajo está la tabla con **quién canjeó** tu beneficio:
 
 ---
 
-## 8. Preguntas frecuentes
+## 8. Solicitar la creación de un beneficio
+
+Como administrador de comercio podés pedir que el CeCIT publique un beneficio
+nuevo para tu negocio. La entrada está en tu menú: **"Crear Beneficio"** →
+`/create-benefit`.
+
+La solicitud **no se publica automáticamente**: queda pendiente y un
+administrador de CeCIT la acepta o la rechaza antes de que aparezca en tus
+beneficios.
+
+### 8.1 Antes de empezar
+
+- Tenés que tener el rol de **administrador de comercio** (`PARTNER_ADMIN`).
+- Si administrás **varios negocios**, elegís para cuál es el beneficio. Si
+  tenés solo uno, el sistema lo asigna automáticamente y no ves el selector.
+- Necesitás la **URL de una imagen** del beneficio (el sistema no sube
+  archivos; pegá la dirección web).
+
+### 8.2 Pasos
+
+1. En el menú, hacé clic en **"Crear Beneficio"**.
+2. Escribí el **título** del beneficio (ej: `20% off en cafetería`).
+3. Elegí el **negocio** (solo si administrás más de uno).
+4. Escribí una **descripción** (opcional).
+5. Pegá la **URL de la imagen o banner**.
+6. Elegí el **tipo** de beneficio.
+7. Elegí las **fechas de publicación** (inicio y fin, con hora).
+8. Seleccioná los **medios de pago** admitidos.
+9. Configurá los **límites**: cupones por usuario, cantidad total de cupones y,
+   si es un descuento, el tope de reintegro.
+10. Hacé clic en **"Enviar solicitud"**.
+
+Campos obligatorios: título, tipo y fechas de publicación. Si falta alguno,
+el formulario muestra un aviso y no envía nada.
+
+### 8.3 Después de enviar
+
+Aparece el aviso **"¡Solicitud enviada!"**: tu beneficio quedó pendiente de
+revisión. Un administrador de CeCIT lo va a aceptar o rechazar. Mientras tanto,
+no figura publicado en "Tus beneficios".
+
+Desde ese aviso podés:
+
+- **Crear otro**: limpia el formulario para enviar otra solicitud.
+- **Ir al panel**: volvés al panel de tu negocio.
+
+### 8.4 Si algo falla
+
+| Mensaje | Qué pasó | Qué hacer |
+|---|---|---|
+| "Completá el título, tipo y período de publicación." | Faltan campos obligatorios | Completá título, tipo y fechas |
+| "No tenés negocios asociados." | Tu cuenta no tiene un comercio asignado | Contactá al CeCIT |
+| "No tenés permiso para crear beneficios con este negocio." | Tu sesión o rol no tiene permiso para ese negocio | Volvé a iniciar sesión o contactá al CeCIT |
+| "Tu sesión expiró. Volvé a iniciar sesión." | Sesión vencida | Volvé a iniciar sesión |
+
+### 8.5 Preguntas rápidas
+
+**¿El beneficio se publica enseguida?** No. Queda pendiente hasta que un
+administrador de CeCIT lo revise.
+
+**¿Puedo editar una solicitud ya enviada?** No desde esta pantalla. Contactá al
+CeCIT para que la anule o corrija.
+
+**¿Y si me equivoqué de negocio?** La solicitud queda asociada al negocio que
+seleccionaste. Pedí al CeCIT que la anule o cree una nueva.
+
+**¿El socio ve el beneficio mientras está pendiente?** No, solo aparece una vez
+que el CeCIT lo aprueba.
+
+---
+
+## 9. Preguntas frecuentes
 
 ### ¿Puedo tener más de un negocio?
 
@@ -382,8 +458,10 @@ la pantalla de canje. Contactá al CeCIT para evaluar una reversión.
 
 ### ¿Puedo crear beneficios yo?
 
-No. Los beneficios los crea el equipo del CeCIT. Pediles tus beneficios a
-través del CeCIT.
+No directamente. Los beneficios los publica el equipo del CeCIT. Como
+administrador de comercio podés solicitar la creación de uno nuevo desde
+`Crear Beneficio` (§8); la solicitud queda pendiente hasta que un administrador
+de CeCIT la acepte o la rechace.
 
 ### ¿Cómo cambio el logo de mi negocio?
 
@@ -398,7 +476,7 @@ tus clientes.
 
 ---
 
-## 9. Contacto
+## 10. Contacto
 
 | Necesitás | Contactá a |
 |---|---|
