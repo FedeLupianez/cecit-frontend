@@ -87,7 +87,7 @@
         message = "";
         try {
             const response = await apiFetch(
-                `/api/vouchers/bytoken?token=${encodeURIComponent(token)}`,
+                `vouchers/bytoken?token=${encodeURIComponent(token)}`,
             );
             if (response.status === 401 || response.status === 403) {
                 error = "No tenés permiso para canjear beneficios.";
@@ -142,7 +142,7 @@
         message = "";
         try {
             const response = await apiFetch(
-                `/api/vouchers?action=${action}&token=${encodeURIComponent(voucher.token)}`,
+                `vouchers?action=${action}&token=${encodeURIComponent(voucher.token)}`,
                 { method: "PATCH" },
             );
             if (!response.ok) {

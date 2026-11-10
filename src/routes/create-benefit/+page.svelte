@@ -99,11 +99,11 @@
     async function loadOptions() {
         const [typesResponse, paymentsResponse, partnersResponse] =
             await Promise.all([
-                fetch("/api/benefit-types/all"),
-                fetch("/api/payment-methods/all"),
+                fetch("benefit-types/all"),
+                fetch("payment-methods/all"),
                 isPartnerAdmin
                     ? Promise.resolve(null)
-                    : apiFetch("/api/partners/all"),
+                    : apiFetch("partners/all"),
             ]);
 
         if (typesResponse.ok) types = await typesResponse.json();
@@ -121,7 +121,7 @@
     async function loadOwnPartners() {
         ownPartnersError = "";
         try {
-            const response = await apiFetch("/api/partners-admins/me/all");
+            const response = await apiFetch("partners-admins/me/all");
             if (response.status === 401 || response.status === 403) {
                 ownPartnersError = "No tenés permiso para ver tus negocios.";
                 return;
@@ -209,8 +209,8 @@
             };
 
             const endpoint = isPartnerAdmin
-                ? "/api/benefits/request"
-                : "/api/benefits";
+                ? "benefits/request"
+                : "benefits";
 
             const response = await apiFetch(endpoint, {
                 method: "POST",

@@ -26,7 +26,7 @@
         loading = true;
         try {
             const response = await apiFetch(
-                `/api/vouchers/byuser?id_user=${encodeURIComponent(idUser)}`,
+                `vouchers/byuser?id_user=${encodeURIComponent(idUser)}`,
                 { method: "GET" },
             );
             if (!response.ok) throw new Error(`HTTP ${response.status}`);

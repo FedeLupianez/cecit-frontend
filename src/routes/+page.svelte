@@ -14,11 +14,8 @@
 
 <Categories />
 
-<BenefitsSection
-    title="Beneficios Populares"
-    endpoint="/api/benefits/popular"
-/>
-<BenefitsSection title="Nuevos beneficios" endpoint="/api/benefits/news" />
+<BenefitsSection title="Beneficios Populares" endpoint="/benefits/popular" />
+<BenefitsSection title="Nuevos beneficios" endpoint="/benefits/news" />
 
 <PartnersCarousel />
 
