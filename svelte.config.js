@@ -1,4 +1,5 @@
-import adapter from '@sveltejs/adapter-node';
+import adapterNode from '@sveltejs/adapter-node';
+import adapterStatic from '@sveltejs/adapter-static';
 import { relative, sep } from 'node:path';
 
 /** @type {import('@sveltejs/kit').Config} */
@@ -14,7 +15,9 @@ const config = {
 		}
 	},
 	kit: {
-		adapter: adapter()
+		adapter: process.env.STATIC_BUILD === 'true'
+			? adapterStatic({ fallback: '200.html' })
+			: adapterNode()
 	}
 };
 

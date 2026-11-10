@@ -2,6 +2,8 @@ import { browser } from "$app/environment";
 import { accessToken } from "$lib/stores/authStore";
 import { profileStore } from "$lib/stores/profileStore";
 
+export const prerender = true;
+
 export const load = async ({ url }) => {
     if (!browser) return {};
 

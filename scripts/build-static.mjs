@@ -115,6 +115,24 @@ ${apiBlock}
     return path.join(out, ".htaccess");
 }
 
+/**
+ * Convierte build/page.html → build/page/index.html
+ * para que el hosting sirva /page/ sin configuración extra.
+ */
+function reorganizeToDirectoryIndex(outDir) {
+    const files = fs.readdirSync(outDir);
+    for (const file of files) {
+        if (!file.endsWith('.html')) continue;
+        if (file === 'index.html' || file === '200.html') continue;
+
+        const name = file.replace(/\.html$/, '');
+        const dir = path.join(outDir, name);
+        fs.mkdirSync(dir, { recursive: true });
+        fs.renameSync(path.join(outDir, file), path.join(dir, 'index.html'));
+        console.log(`[build:static] ${file} → ${name}/index.html`);
+    }
+}
+
 const fileVars = readEnvFile(envFile);
 
 // El shell (y el .env que carga bun) tiene prioridad sobre el archivo.
@@ -144,6 +162,9 @@ if (result.error) {
 if (result.status !== 0) process.exit(result.status ?? 1);
 
 const htaccess = writeHtaccess(OUT, base, apiUrl);
+
+// Reorganizar: cada página .html → carpeta/index.html
+reorganizeToDirectoryIndex(OUT);
 
 console.log("");
 console.log(`[build:static] build listo en ${path.relative(ROOT, OUT)}/`);
