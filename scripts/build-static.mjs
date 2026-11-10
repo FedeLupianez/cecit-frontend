@@ -1,181 +1,187 @@
-import { spawnSync } from "node:child_process";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-
 /**
- * Build del sitio estático (adapter-static) para publicar en un hosting FTP/CDN.
- *
- *   node scripts/build-static.mjs                 # variables del entorno/.env
- *   node scripts/build-static.mjs --env .env.ftp  # variables de .env.ftp
- *
- * Hace tres cosas:
- *
- *   1. Compila con STATIC_BUILD=true (adapter-static) aplicando BASE_PATH y
- *      VITE_API_URL del archivo de variables. Los valores del shell (o del
- *      .env que carga bun) tienen prioridad sobre los del archivo.
- *   2. Genera `build/.htaccess` con el fallback SPA acorde al base del build
- *      (si el hosting es Apache/cPanel). El output de adapter-static es plano,
- *      así que hay que subir el *contenido* de build/, no la carpeta.
- *   3. Imprime un resumen de lo que hay que configurar en el hosting.
- *
- * Ver docs/02-guia-de-desarrollo.md §5.2.
+ * Build estático para FTP / CDN.
+ * Uso: bun run scripts/build-static.mjs --env .env.ftp
+ * Genera la carpeta `build/` con estructura de carpetas por página (index.html en cada una).
  */
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const OUT = path.join(ROOT, "build");
 
-const args = process.argv.slice(2);
-const envIndex = args.indexOf("--env");
-const envFile = envIndex !== -1 ? path.resolve(ROOT, args[envIndex + 1] ?? "") : null;
+import { spawnSync } from 'node:child_process';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-/**
- * Parser mínimo de archivos .env (soporta `export`, comentarios y comillas).
- * No hace falta más: no queremos arrastrar dotenv como dependencia.
- */
-function readEnvFile(file) {
-    if (!file) return {};
-    if (!fs.existsSync(file)) {
-        console.error(`[build:static] no existe ${path.relative(ROOT, file)}`);
+const __dirname = fileURLToPath(new URL('.', import.meta.url));
+const rootDir = resolve(__dirname, '..');
+
+function parseArgs() {
+    const args = process.argv.slice(2);
+    const envFile = args.find(a => a.startsWith('--env='))?.split('=')[1] || '.env.ftp';
+    return { envFile };
+}
+
+function loadEnv(envFile) {
+    const path = resolve(rootDir, envFile);
+    if (!existsSync(path)) {
+        console.error(`❌ No existe ${envFile}`);
+        process.exit(1);
+    }
+    const content = readFileSync(path, 'utf-8');
+    for (const line of content.split('\n')) {
+        const trimmed = line.trim();
+        if (!trimmed || trimmed.startsWith('#')) continue;
+        const [key, ...rest] = trimmed.split('=');
+        if (key && rest.length) {
+            process.env[key.trim()] = rest.join('=').trim();
+        }
+    }
+    console.log(`📦 Cargado entorno: ${envFile}`);
+}
+
+function fixAssetPaths() {
+    const buildDir = resolve(rootDir, 'build');
+    const assetsBase = process.env.VITE_ASSETS_URL || '';
+    const basePath = process.env.BASE_PATH || '';
+    if (!assetsBase) return;
+
+    const pages = [
+        'login', 'signup', 'benefits', 'admin-panel', 'benefit-requests',
+        'business-panel', 'create-benefit', 'history', 'profile', 'redeem'
+    ];
+
+    for (const page of pages) {
+        const indexFile = resolve(buildDir, page, 'index.html');
+        if (existsSync(indexFile)) {
+            let html = readFileSync(indexFile, 'utf-8');
+            // Fix _app assets (JS/CSS)
+            html = html.replace(/href="\.\/_app\//g, `href="${assetsBase}/_app/`);
+            html = html.replace(/src="\.\/_app\//g, `src="${assetsBase}/_app/`);
+            // Fix static assets (images, etc.) - ./logo.png -> assetsBase/logo.png
+            html = html.replace(/href="\.\/([^"]+)"/g, `href="${assetsBase}/$1"`);
+            html = html.replace(/src="\.\/([^"]+)"/g, `src="${assetsBase}/$1"`);
+            // Fix inline script imports - import("./_app/...") -> import("assetsBase/_app/...")
+            html = html.replace(/import\("\.\/_app\//g, `import("${assetsBase}/_app/`);
+            // Fix __sveltekit config assets path
+            html = html.replace(/assets: "\/[^"]+"/g, `assets: "${assetsBase}"`);
+            // Fix __sveltekit base path - dynamic base from current path breaks in subdirs
+            html = html.replace(/base: new URL\("\.", location\)\.pathname\.slice\(0, -1\)/g, `base: "${basePath}"`);
+            writeFileSync(indexFile, html);
+        }
+    }
+
+    const rootIndex = resolve(buildDir, 'index.html');
+    if (existsSync(rootIndex)) {
+        let html = readFileSync(rootIndex, 'utf-8');
+        html = html.replace(/href="\.\/_app\//g, `href="${assetsBase}/_app/`);
+        html = html.replace(/src="\.\/_app\//g, `src="${assetsBase}/_app/`);
+        html = html.replace(/href="\.\/([^"]+)"/g, `href="${assetsBase}/$1"`);
+        html = html.replace(/src="\.\/([^"]+)"/g, `src="${assetsBase}/$1"`);
+        html = html.replace(/import\("\.\/_app\//g, `import("${assetsBase}/_app/`);
+        html = html.replace(/assets: "\/[^"]+"/g, `assets: "${assetsBase}"`);
+        html = html.replace(/base: new URL\("\.", location\)\.pathname\.slice\(0, -1\)/g, `base: "${basePath}"`);
+        writeFileSync(rootIndex, html);
+    }
+
+    console.log(`✅ Asset paths fijados a ${assetsBase}/`);
+}
+
+function runBuild() {
+    // Forzar variables para el build estático
+    process.env.STATIC_BUILD = 'true';
+    process.env.NODE_ENV = 'production';
+
+    console.log('🔨 Iniciando build estático...');
+    console.log(`   BASE_PATH: ${process.env.BASE_PATH || '(vacío)'}`);
+    console.log(`   VITE_API_URL: ${process.env.VITE_API_URL || '(vacío)'}`);
+
+    const result = spawnSync('bun', ['run', 'build'], {
+        cwd: rootDir,
+        stdio: 'inherit',
+        env: process.env,
+        shell: true
+    });
+
+    if (result.status !== 0) {
+        console.error('❌ Build falló');
+        process.exit(result.status ?? 1);
+    }
+
+    console.log('✅ Build completado en ./build/');
+}
+
+function reorganizeBuild() {
+    const buildDir = resolve(rootDir, 'build');
+
+    // Lista de páginas conocidas (excluyendo 200.html y _app/)
+    const pages = [
+        'login',
+        'signup',
+        'benefits',
+        'admin-panel',
+        'benefit-requests',
+        'business-panel',
+        'create-benefit',
+        'history',
+        'profile',
+        'redeem'
+    ];
+
+    for (const page of pages) {
+        const flatFile = resolve(buildDir, `${page}.html`);
+        const pageDir = resolve(buildDir, page);
+        const indexFile = resolve(pageDir, 'index.html');
+
+        if (existsSync(flatFile)) {
+            // Crear directorio si no existe
+            if (!existsSync(pageDir)) {
+                require('node:fs').mkdirSync(pageDir, { recursive: true });
+            }
+            // Mover archivo a index.html dentro de su carpeta
+            require('node:fs').renameSync(flatFile, indexFile);
+            console.log(`   📁 ${page}/index.html`);
+        }
+    }
+
+    // El archivo raíz index.html ya está en su lugar
+    if (existsSync(resolve(buildDir, 'index.html'))) {
+        console.log(`   📁 index.html`);
+    }
+
+    // 200.html se queda en la raíz para SPA fallback
+    if (existsSync(resolve(buildDir, '200.html'))) {
+        console.log(`   📁 200.html (SPA fallback)`);
+    }
+
+    console.log('✅ Estructura reorganizada a carpetas por página');
+}
+
+function verifyBuild() {
+    const buildDir = resolve(rootDir, 'build');
+    if (!existsSync(buildDir)) {
+        console.error('❌ No se generó la carpeta build/');
         process.exit(1);
     }
 
-    const vars = {};
-    for (const raw of fs.readFileSync(file, "utf8").split("\n")) {
-        const line = raw.trim().replace(/^export\s+/, "");
-        if (!line || line.startsWith("#")) continue;
-        const eq = line.indexOf("=");
-        if (eq === -1) continue;
-
-        const key = line.slice(0, eq).trim();
-        let value = line.slice(eq + 1).trim();
-        if (
-            (value.startsWith('"') && value.endsWith('"')) ||
-            (value.startsWith("'") && value.endsWith("'"))
-        ) {
-            value = value.slice(1, -1);
-        }
-        vars[key] = value;
+    // Verificar estructura básica
+    const indexHtml = resolve(buildDir, 'index.html');
+    if (!existsSync(indexHtml)) {
+        console.error('❌ Falta build/index.html');
+        process.exit(1);
     }
-    return vars;
+
+    console.log('✅ Estructura de build verificada');
+    console.log('   - build/index.html');
+    console.log('   - build/login/index.html');
+    console.log('   - build/benefits/index.html');
+    console.log('   - etc.');
 }
 
-/** Normaliza el base a "/algo" (sin barra final) o "" si no hay. */
-function normalizeBase(value) {
-    const base = (value ?? "").trim().replace(/\/+$/, "");
-    if (!base) return "";
-    return base.startsWith("/") ? base : `/${base}`;
+function main() {
+    const { envFile } = parseArgs();
+    loadEnv(envFile);
+    runBuild();
+    reorganizeBuild();
+    fixAssetPaths();
+    verifyBuild();
+    console.log('\n🚀 Listo para subir por FTP a public_html/beneficios/');
 }
 
-/**
- * Genera el .htaccess del build: fallback SPA y, según el modo de API, las
- * pistas para el proxy inverso.
- */
-function writeHtaccess(out, base, apiUrl) {
-    const prefix = base ? base : "";
-    const fallback = `${prefix}/200.html`;
-
-    const apiBlock = apiUrl
-        ? `# La API: el browser llama directo a ${apiUrl} (VITE_API_URL quedó
-# compilado en el bundle). No hace falta proxy, pero el backend tiene que
-# permitir CORS con credenciales (FRONT_URL = origen de este sitio) y la
-# cookie de refresh tiene que ser SameSite=None; Secure si el sitio y la API
-# están en dominios distintos.`
-        : `# La API: sin VITE_API_URL el browser llama a /api/... (relativo al
-# origen), así que hace falta un proxy inverso que quite el prefijo /api.
-# Ojo: /api NO lleva el prefijo del base, con lo cual estas reglas tienen que
-# ir en la raíz del dominio, no en el subdirectorio del sitio.
-#
-# RewriteEngine On
-# RewriteRule ^api/(.*)$ https://api.cecit.local/$1 [P,L]`;
-
-    const content = `# ------------------------------------------------------------------
-# Generado por scripts/build-static.mjs — no editar a mano.
-# Se sube junto con el resto del build.
-#
-# Fallback SPA (SvelteKit + adapter-static): las rutas con parámetros
-# (ej. /business-panel/benefit/:id) no se prerenderizan, así que no tienen
-# HTML propio. Con este fallback el server devuelve 200.html y el router del
-# cliente resuelve la ruta.
-# ------------------------------------------------------------------
-
-ErrorDocument 404 ${fallback}
-
-# Si preferís que la respuesta sea 200 en lugar de 404 (requiere mod_rewrite),
-# comentá el ErrorDocument de arriba y usá estas reglas:
-#
-# RewriteEngine On
-# RewriteCond %{REQUEST_FILENAME} !-f
-# RewriteCond %{REQUEST_FILENAME} !-d
-# RewriteRule ^ ${fallback} [L]
-
-${apiBlock}
-`;
-
-    fs.writeFileSync(path.join(out, ".htaccess"), content);
-    return path.join(out, ".htaccess");
-}
-
-/**
- * Convierte build/page.html → build/page/index.html
- * para que el hosting sirva /page/ sin configuración extra.
- */
-function reorganizeToDirectoryIndex(outDir) {
-    const files = fs.readdirSync(outDir);
-    for (const file of files) {
-        if (!file.endsWith('.html')) continue;
-        if (file === 'index.html' || file === '200.html') continue;
-
-        const name = file.replace(/\.html$/, '');
-        const dir = path.join(outDir, name);
-        fs.mkdirSync(dir, { recursive: true });
-        fs.renameSync(path.join(outDir, file), path.join(dir, 'index.html'));
-        console.log(`[build:static] ${file} → ${name}/index.html`);
-    }
-}
-
-const fileVars = readEnvFile(envFile);
-
-// El shell (y el .env que carga bun) tiene prioridad sobre el archivo.
-const env = { ...process.env };
-for (const [key, value] of Object.entries(fileVars)) {
-    if (env[key] === undefined) env[key] = value;
-}
-env.STATIC_BUILD = "true";
-
-const base = normalizeBase(env.BASE_PATH);
-const apiUrl = (env.VITE_API_URL ?? "").trim();
-
-console.log(`[build:static] base: ${base || "(raíz)"}`);
-console.log(`[build:static] API:  ${apiUrl || "relativa a /api (necesita proxy inverso)"}`);
-
-const vite = path.join(ROOT, "node_modules", "vite", "bin", "vite.js");
-const result = spawnSync(process.execPath, [vite, "build"], {
-    cwd: ROOT,
-    env,
-    stdio: "inherit",
-});
-
-if (result.error) {
-    console.error(`[build:static] no se pudo ejecutar vite: ${result.error.message}`);
-    process.exit(1);
-}
-if (result.status !== 0) process.exit(result.status ?? 1);
-
-const htaccess = writeHtaccess(OUT, base, apiUrl);
-
-// Reorganizar: cada página .html → carpeta/index.html
-reorganizeToDirectoryIndex(OUT);
-
-console.log("");
-console.log(`[build:static] build listo en ${path.relative(ROOT, OUT)}/`);
-console.log(`[build:static] fallback SPA: ${path.relative(ROOT, htaccess)}`);
-console.log("");
-console.log("  Para subir por FTP:");
-console.log(`    - subí el CONTENIDO de ${path.relative(ROOT, OUT)}/ (no la carpeta)`);
-console.log("    - verificá que el cliente FTP no omita los archivos ocultos (.htaccess)");
-console.log(`    - el sitio va a quedar en ${base || "/"}`);
-if (apiUrl) {
-    console.log(`    - el browser va a llamar la API en ${apiUrl} (CORS + cookie SameSite=None; Secure)`);
-} else {
-    console.log("    - configurá el proxy /api en el hosting (nginx/Caddy/mod_proxy)");
-}
+main();

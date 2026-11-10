@@ -106,7 +106,7 @@
         loading = true;
         error = "";
         try {
-            const response = await apiFetch("/api/benefits/requests");
+            const response = await apiFetch("benefits/requests");
             if (response.status === 401 || response.status === 403) {
                 error = "No tenés permiso para ver las solicitudes.";
                 return;
@@ -153,7 +153,7 @@
         try {
             console.log(benefitRequest);
             console.log(benefitRequest.id_benefit);
-            const response = await apiFetch(`/api/benefits/${endpoint}`, {
+            const response = await apiFetch(`benefits/${endpoint}`, {
                 method: "PATCH",
                 headers: {
                     ...authHeaders(),
@@ -233,7 +233,7 @@
         rowErrors[id_benefit] = "";
         try {
             const response = await apiFetch(
-                `/api/benefits/requests/${id_benefit}`,
+                `benefits/requests/${id_benefit}`,
                 {
                     method: "PATCH",
                     headers: {

@@ -6,24 +6,25 @@
     import { onMount } from "svelte";
     import { goto } from "$app/navigation";
     import { accessToken } from "$lib/stores/authStore";
-    import { getRoleAccess } from "$lib/access/roleAccess";
+    import { getRoleAccessWithBase } from "$lib/access/roleAccess";
     import RoleCard from "$lib/components/RoleCard.svelte";
+    import { base } from "$app/paths";
 
-    const logo = "/logo_con_texto.png";
+    const logo = `${base}/logo_con_texto.png`;
 
     let profile: Profile | null | undefined = $state();
     let avatar = $state<string>("");
     let showRoleMenu = $state(false);
     let showMobileMenu = $state(false);
     let userMenu: HTMLDivElement | null = $state(null);
-    let access = $derived(getRoleAccess(profile?.role));
+    let access = $derived(getRoleAccessWithBase(profile?.role, base));
     let loggingOut = $state(false);
 
     async function logout() {
         if (loggingOut) return;
         loggingOut = true;
         try {
-            await fetch("/api/auth/logout", {
+            await fetch(`${base}auth/logout`, {
                 method: "POST",
                 credentials: "include",
             });
@@ -33,7 +34,7 @@
             showRoleMenu = false;
             showMobileMenu = false;
             try {
-                await goto("/login");
+                await goto(`${base}/login`);
             } finally {
                 loggingOut = false;
             }
@@ -90,7 +91,7 @@
     </div>
 
     <div class="links">
-        <a href="/">Home</a>
+        <a href={base}>Home</a>
         <span class="separator" aria-hidden="true">|</span>
         <a href="http://centrodecomercioag.com.ar/">Institucional</a>
         <span class="separator" aria-hidden="true">|</span>
@@ -172,7 +173,7 @@
             </div>
 
             <div class="mobile-drawer-links">
-                <a href="/" onclick={closeMobileMenu}>Home</a>
+                <a href={base} onclick={closeMobileMenu}>Home</a>
                 <a
                     href="http://centrodecomercioag.com.ar/"
                     onclick={closeMobileMenu}>Institucional</a
@@ -190,7 +191,7 @@
             <div class="mobile-drawer-user">
                 {#if !profile}
                     <a
-                        href="/login"
+                        href={`${base}/login`}
                         class="mobile-login-link"
                         onclick={closeMobileMenu}
                     >

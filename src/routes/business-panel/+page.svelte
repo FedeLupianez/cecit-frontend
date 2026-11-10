@@ -135,7 +135,7 @@
 
         try {
             const benefitsResponse = await apiFetch(
-                `/api/benefits/partner?id_partner=${encodeURIComponent(p.id_partner)}`,
+                `benefits/partner?id_partner=${encodeURIComponent(p.id_partner)}`,
                 { credentials: "include" },
             );
             if (benefitsResponse.ok) {
@@ -147,7 +147,7 @@
             const vouchers = await Promise.all(
                 benefits.map(async (b): Promise<Voucher[]> => {
                     const response = await fetch(
-                        `/api/vouchers/bybenefit?id_benefit=${b.id_benefit}`,
+                        `vouchers/bybenefit?id_benefit=${b.id_benefit}`,
                     );
                     return response.ok ? await response.json() : [];
                 }),
@@ -171,7 +171,7 @@
         }
 
         try {
-            const response = await apiFetch("/api/partners-admins/me/all", {
+            const response = await apiFetch("partners-admins/me/all", {
                 credentials: "include",
             });
             if (response.status === 401 || response.status === 403) {
@@ -208,7 +208,7 @@
         if (!token) return;
         try {
             const response = await apiFetch(
-                `/api/partners/locations?id_partner=${encodeURIComponent(partner.id_partner)}`,
+                `partners/locations?id_partner=${encodeURIComponent(partner.id_partner)}`,
                 { credentials: "include" },
             );
             if (!response.ok) {
@@ -233,7 +233,7 @@
         employeesError = "";
         try {
             const response = await apiFetch(
-                `/api/partners/employees?id_partner=${encodeURIComponent(partner.id_partner)}`,
+                `partners/employees?id_partner=${encodeURIComponent(partner.id_partner)}`,
                 { credentials: "include" },
             );
             if (!response.ok) {
@@ -270,7 +270,7 @@
         addingEmployee = true;
         addingEmployeeError = "";
         try {
-            const response = await apiFetch(`/api/partners/employees`, {
+            const response = await apiFetch(`partners/employees`, {
                 method: "POST",
                 headers: {
                     ...authHeaders(),
@@ -316,7 +316,7 @@
         employeesError = "";
         try {
             const response = await apiFetch(
-                `/api/partners/employees?id_partner=${encodeURIComponent(partner.id_partner)}&dni=${encodeURIComponent(employee.dni)}`,
+                `partners/employees?id_partner=${encodeURIComponent(partner.id_partner)}&dni=${encodeURIComponent(employee.dni)}`,
                 {
                     method: "DELETE",
                     headers: authHeaders(),
@@ -349,7 +349,7 @@
         promotingEmployeeId = employee.id_user;
         employeesError = "";
         try {
-            const response = await apiFetch("/api/accounts/role", {
+            const response = await apiFetch("accounts/role", {
                 method: "PATCH",
                 headers: {
                     ...authHeaders(),
@@ -392,7 +392,7 @@
         demotingEmployeeId = employee.id_user;
         employeesError = "";
         try {
-            const response = await apiFetch("/api/accounts/role", {
+            const response = await apiFetch("accounts/role", {
                 method: "PATCH",
                 headers: {
                     ...authHeaders(),
@@ -462,7 +462,7 @@
         savingName = true;
         nameError = "";
         try {
-            const response = await apiFetch("/api/partners/name", {
+            const response = await apiFetch("partners/name", {
                 method: "PATCH",
                 headers: {
                     ...authHeaders(),
@@ -529,7 +529,7 @@
         savingLogo = true;
         logoError = "";
         try {
-            const response = await apiFetch("/api/partners/logo", {
+            const response = await apiFetch("partners/logo", {
                 method: "PATCH",
                 headers: {
                     ...authHeaders(),
@@ -579,7 +579,7 @@
         addingLocation = true;
         addingLocationError = "";
         try {
-            const response = await apiFetch("/api/partners/locations", {
+            const response = await apiFetch("partners/locations", {
                 method: "POST",
                 headers: {
                     ...authHeaders(),
@@ -620,7 +620,7 @@
         locationsError = "";
         try {
             const response = await apiFetch(
-                `/api/partners/locations?id_location=${encodeURIComponent(id)}`,
+                `partners/locations?id_location=${encodeURIComponent(id)}`,
                 {
                     method: "DELETE",
                     headers: authHeaders(),

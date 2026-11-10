@@ -204,11 +204,11 @@
 
             if (tab === "usuarios") {
                 const [accountsRes, usersRes] = await Promise.all([
-                    fetch("/api/accounts/all", {
+                    fetch("accounts/all", {
                         headers: authHeaders(),
                         credentials: "include",
                     }),
-                    fetch("/api/users/all", {
+                    fetch("users/all", {
                         headers: authHeaders(),
                         credentials: "include",
                     }),
@@ -238,7 +238,7 @@
                     };
                 });
             } else if (tab === "negocios") {
-                const res = await fetch("/api/partners/all", {
+                const res = await fetch("partners/all", {
                     headers: authHeaders(),
                     credentials: "include",
                 });
@@ -249,12 +249,12 @@
                 partners = await res.json();
             } else if (tab === "beneficios") {
                 const [partnersRes, benefitsRes, typesRes] = await Promise.all([
-                    fetch("/api/partners/all", {
+                    fetch("partners/all", {
                         headers: authHeaders(),
                         credentials: "include",
                     }),
-                    fetch("/api/benefits/all"),
-                    fetch("/api/benefit-types/all"),
+                    fetch("benefits/all"),
+                    fetch("benefit-types/all"),
                 ]);
                 if (!partnersRes.ok || !benefitsRes.ok) {
                     setError("No se pudieron cargar los beneficios.");
@@ -266,12 +266,12 @@
             } else if (tab === "vouchers") {
                 const [accountsRes, benefitsRes, vouchersRes] =
                     await Promise.all([
-                        fetch("/api/accounts/all", {
+                        fetch("accounts/all", {
                             headers: authHeaders(),
                             credentials: "include",
                         }),
-                        fetch("/api/benefits/all"),
-                        fetch("/api/vouchers/all"),
+                        fetch("benefits/all"),
+                        fetch("vouchers/all"),
                     ]);
                 if (!accountsRes.ok || !benefitsRes.ok) {
                     setError("No se pudieron cargar los vouchers.");
@@ -281,7 +281,7 @@
                 benefits = await benefitsRes.json();
                 vouchers = vouchersRes.ok ? await vouchersRes.json() : [];
             } else if (tab === "categorias") {
-                const res = await fetch("/api/categories/all");
+                const res = await fetch("categories/all");
                 if (!res.ok) {
                     setError("No se pudieron cargar las categorías.");
                     return;
@@ -384,14 +384,19 @@
     }
 
     async function createUser() {
-        if (!newUser.name.trim() || !newUser.lastname.trim() || !newUser.dni.trim() || !newUser.id_partner) {
+        if (
+            !newUser.name.trim() ||
+            !newUser.lastname.trim() ||
+            !newUser.dni.trim() ||
+            !newUser.id_partner
+        ) {
             userCreateError = "Completá todos los campos.";
             return;
         }
         savingUserModal = true;
         userCreateError = "";
         try {
-            const response = await fetch("/api/partners/employees/cecit-create", {
+            const response = await fetch("partners/employees/cecit-create", {
                 method: "POST",
                 headers: {
                     ...authHeaders(),
@@ -411,12 +416,16 @@
                 return;
             }
             closeCreateUserModal();
-            toast.success("Usuario creado y asociado al comercio correctamente.");
+            toast.success(
+                "Usuario creado y asociado al comercio correctamente.",
+            );
             loadedTabs.delete("usuarios");
             await ensureTabData("usuarios");
         } catch (cause) {
             userCreateError =
-                cause instanceof Error ? cause.message : "No se pudo crear el usuario.";
+                cause instanceof Error
+                    ? cause.message
+                    : "No se pudo crear el usuario.";
             toast.error(userCreateError);
         } finally {
             savingUserModal = false;
@@ -426,8 +435,7 @@
     async function saveEmail(account: Account) {
         const new_email = (emailInputs[user.id_user] ?? "").trim();
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(new_email)) {
-            userErrors[user.id_user] =
-                "Ingresá un correo electrónico válido.";
+            userErrors[user.id_user] = "Ingresá un correo electrónico válido.";
             return;
         }
         if (new_email.toLowerCase() === (account.email ?? "").toLowerCase()) {
@@ -438,7 +446,7 @@
         userErrors[user.id_user] = "";
         userSuccess[user.id_user] = "";
         try {
-            const response = await fetch("/api/auth/update-profile-admin", {
+            const response = await fetch("auth/update-profile-admin", {
                 method: "PATCH",
                 headers: {
                     ...authHeaders(),
@@ -457,13 +465,10 @@
                 return;
             }
             const updated = await response.json();
-            const index = accounts.findIndex(
-                (a) => a.id_user === user.id_user,
-            );
+            const index = accounts.findIndex((a) => a.id_user === user.id_user);
             if (index >= 0) accounts[index] = updated;
             editingUser[user.id_user] = null;
-            userSuccess[user.id_user] =
-                "Correo actualizado correctamente.";
+            userSuccess[user.id_user] = "Correo actualizado correctamente.";
             toast.success(userSuccess[user.id_user]);
             successGlobal = "";
         } catch (cause) {
@@ -491,7 +496,7 @@
         userErrors[user.id_user] = "";
         userSuccess[user.id_user] = "";
         try {
-            const response = await fetch("/api/accounts", {
+            const response = await fetch("accounts", {
                 method: "PATCH",
                 headers: {
                     ...authHeaders(),
@@ -509,8 +514,7 @@
                 return;
             }
             editingUser[user.id_user] = null;
-            userSuccess[user.id_user] =
-                "Contraseña actualizada correctamente.";
+            userSuccess[user.id_user] = "Contraseña actualizada correctamente.";
             toast.success(userSuccess[user.id_user]);
         } catch (cause) {
             userErrors[user.id_user] =
@@ -526,7 +530,7 @@
         savingUser = user.id_user;
         userErrors[user.id_user] = "";
         try {
-            const response = await fetch("/api/accounts", {
+            const response = await fetch("accounts", {
                 method: "PATCH",
                 headers: {
                     ...authHeaders(),
@@ -544,9 +548,7 @@
                 return;
             }
             const updated = await response.json();
-            const index = accounts.findIndex(
-                (a) => a.id_user === user.id_user,
-            );
+            const index = accounts.findIndex((a) => a.id_user === user.id_user);
             if (index >= 0) accounts[index] = updated;
             userSuccess[user.id_user] = updated.active
                 ? "Cuenta activada."
@@ -592,7 +594,7 @@
         locationsLoading[partnerId] = true;
         try {
             const response = await fetch(
-                `/api/partners/locations?id_partner=${encodeURIComponent(partnerId)}`,
+                `partners/locations?id_partner=${encodeURIComponent(partnerId)}`,
                 { headers: authHeaders(), credentials: "include" },
             );
             locationsByPartner[partnerId] = response.ok
@@ -628,7 +630,7 @@
         partnerBusy[partner.id_partner] = true;
         partnerErrors[partner.id_partner] = "";
         try {
-            const response = await fetch("/api/partners/name", {
+            const response = await fetch("partners/name", {
                 method: "PATCH",
                 headers: {
                     ...authHeaders(),
@@ -668,7 +670,7 @@
         partnerBusy[partner.id_partner] = true;
         partnerErrors[partner.id_partner] = "";
         try {
-            const response = await fetch("/api/partners/logo", {
+            const response = await fetch("partners/logo", {
                 method: "PATCH",
                 headers: {
                     ...authHeaders(),
@@ -715,7 +717,7 @@
         partnerBusy[partner.id_partner] = true;
         partnerErrors[partner.id_partner] = "";
         try {
-            const response = await fetch("/api/partners/locations", {
+            const response = await fetch("partners/locations", {
                 method: "POST",
                 headers: {
                     ...authHeaders(),
@@ -754,7 +756,7 @@
         partnerErrors[partnerId] = "";
         try {
             const response = await fetch(
-                `/api/partners/locations?id_location=${encodeURIComponent(String(id_location))}`,
+                `partners/locations?id_location=${encodeURIComponent(String(id_location))}`,
                 {
                     method: "DELETE",
                     headers: authHeaders(),
@@ -781,14 +783,11 @@
         partnerBusy[partner.id_partner] = true;
         partnerErrors[partner.id_partner] = "";
         try {
-            const response = await fetch(
-                `/api/partners/id/${partner.id_partner}`,
-                {
-                    method: "DELETE",
-                    headers: authHeaders(),
-                    credentials: "include",
-                },
-            );
+            const response = await fetch(`partners/id/${partner.id_partner}`, {
+                method: "DELETE",
+                headers: authHeaders(),
+                credentials: "include",
+            });
             if (!response.ok) {
                 partnerErrors[partner.id_partner] = await parseError(response);
                 toast.error(partnerErrors[partner.id_partner]);
@@ -826,7 +825,7 @@
         savingPartner = true;
         partnerCreateError = "";
         try {
-            const response = await fetch("/api/partners", {
+            const response = await fetch("partners", {
                 method: "POST",
                 headers: {
                     ...authHeaders(),
@@ -910,7 +909,7 @@
         benefitBusy = benefit.id_benefit;
         benefitErrors[benefit.id_benefit] = "";
         try {
-            const response = await fetch("/api/benefits", {
+            const response = await fetch("benefits", {
                 method: "PATCH",
                 headers: {
                     ...authHeaders(),
@@ -961,8 +960,8 @@
         try {
             const endpoint: string =
                 nextStatus === "ACTIVE"
-                    ? "/api/benefits/activate"
-                    : "/api/benefits/deactivate";
+                    ? "benefits/activate"
+                    : "benefits/deactivate";
             const response = await fetch(endpoint, {
                 method: "PATCH",
                 headers: {
@@ -1023,18 +1022,15 @@
         categoryErrors[category.id_category] = "";
         categorySuccess[category.id_category] = "";
         try {
-            const response = await fetch(
-                `/api/categories/${category.id_category}`,
-                {
-                    method: "PATCH",
-                    headers: {
-                        ...authHeaders(),
-                        "Content-Type": "application/json",
-                    },
-                    credentials: "include",
-                    body: JSON.stringify({ active: !category.active }),
+            const response = await fetch(`categories/${category.id_category}`, {
+                method: "PATCH",
+                headers: {
+                    ...authHeaders(),
+                    "Content-Type": "application/json",
                 },
-            );
+                credentials: "include",
+                body: JSON.stringify({ active: !category.active }),
+            });
             if (!response.ok) {
                 categoryErrors[category.id_category] =
                     await parseError(response);
@@ -1086,8 +1082,7 @@
                 if (!voucherSearch.trim()) return true;
                 const needle = voucherSearch.trim().toLowerCase();
                 if (voucher.token.toLowerCase().includes(needle)) return true;
-                if (voucher.id_user.toLowerCase().includes(needle))
-                    return true;
+                if (voucher.id_user.toLowerCase().includes(needle)) return true;
                 if (voucher.id_benefit.toLowerCase().includes(needle))
                     return true;
                 const benefit = benefitsById.get(voucher.id_benefit);
@@ -1119,7 +1114,7 @@
         voucherErrors._search = "";
         try {
             const response = await fetch(
-                `/api/vouchers/bytoken?token=${encodeURIComponent(token)}`,
+                `vouchers/bytoken?token=${encodeURIComponent(token)}`,
                 { headers: authHeaders(), credentials: "include" },
             );
             if (!response.ok) {
@@ -1150,7 +1145,7 @@
         voucherErrors[target.token] = "";
         try {
             const response = await fetch(
-                `/api/vouchers?action=${action}&token=${encodeURIComponent(target.token)}`,
+                `vouchers?action=${action}&token=${encodeURIComponent(target.token)}`,
                 {
                     method: "PATCH",
                     headers: authHeaders(),
@@ -1194,7 +1189,7 @@
         voucherBusy = voucher.token;
         voucherErrors[voucher.token] = "";
         try {
-            const response = await fetch("/api/vouchers", {
+            const response = await fetch("vouchers", {
                 method: "DELETE",
                 headers: {
                     ...authHeaders(),
@@ -1229,7 +1224,7 @@
         savingVoucher = true;
         voucherCreateError = "";
         try {
-            const response = await fetch("/api/vouchers/create", {
+            const response = await fetch("vouchers/create", {
                 method: "POST",
                 headers: {
                     ...authHeaders(),
@@ -1393,14 +1388,18 @@
                                                             <input
                                                                 type="email"
                                                                 bind:value={
-                                                                    emailInputs[user.id_user]
+                                                                    emailInputs[
+                                                                        user
+                                                                            .id_user
+                                                                    ]
                                                                 }
                                                                 onkeydown={(
                                                                     e,
                                                                 ) =>
                                                                     e.key ===
                                                                         "Enter" &&
-                                                                    saveEmail(user,
+                                                                    saveEmail(
+                                                                        user,
                                                                     )}
                                                             />
                                                             <div
@@ -1410,7 +1409,8 @@
                                                                     class="save-btn"
                                                                     type="button"
                                                                     onclick={() =>
-                                                                        saveEmail(user,
+                                                                        saveEmail(
+                                                                            user,
                                                                         )}
                                                                     disabled={savingUser ===
                                                                         user.id_user}
@@ -1445,9 +1445,9 @@
                                                         class:on={user.active}
                                                         type="button"
                                                         onclick={() =>
-                                                            toggleActive(user,
-                                                            )}
-                                                        disabled={savingUser === user.id_user}
+                                                            toggleActive(user)}
+                                                        disabled={savingUser ===
+                                                            user.id_user}
                                                     >
                                                         {user.active
                                                             ? "ACTIVA"
@@ -1456,7 +1456,8 @@
                                                 </td>
                                                 <td>
                                                     <span class="mono"
-                                                        >{formatLastActivity(user.last_activity,
+                                                        >{formatLastActivity(
+                                                            user.last_activity,
                                                         )}</span
                                                     >
                                                 </td>
@@ -1470,14 +1471,18 @@
                                                                     type="password"
                                                                     placeholder="Nueva contraseña"
                                                                     bind:value={
-                                                                        passwordInputs[user.id_user]
+                                                                        passwordInputs[
+                                                                            user
+                                                                                .id_user
+                                                                        ]
                                                                     }
                                                                     onkeydown={(
                                                                         e,
                                                                     ) =>
                                                                         e.key ===
                                                                             "Enter" &&
-                                                                        savePassword(user,
+                                                                        savePassword(
+                                                                            user,
                                                                         )}
                                                                 />
                                                                 <div
@@ -1487,9 +1492,11 @@
                                                                         class="save-btn"
                                                                         type="button"
                                                                         onclick={() =>
-                                                                            savePassword(user,
+                                                                            savePassword(
+                                                                                user,
                                                                             )}
-                                                                        disabled={savingUser === user.id_user}
+                                                                        disabled={savingUser ===
+                                                                            user.id_user}
                                                                         >Guardar</button
                                                                     >
                                                                     <button
@@ -1509,7 +1516,8 @@
                                                                 type="button"
                                                                 title="Cambiar email"
                                                                 onclick={() =>
-                                                                    startEditEmail(user,
+                                                                    startEditEmail(
+                                                                        user,
                                                                     )}
                                                             >
                                                                 <Pencil
@@ -1521,7 +1529,8 @@
                                                                 type="button"
                                                                 title="Cambiar contraseña"
                                                                 onclick={() =>
-                                                                    startEditPassword(user,
+                                                                    startEditPassword(
+                                                                        user,
                                                                     )}
                                                             >
                                                                 <Eye
@@ -1596,7 +1605,9 @@
                                             <input
                                                 type="text"
                                                 placeholder="DNI del dueño (ej: 12345678)"
-                                                bind:value={newPartner.owner_dni}
+                                                bind:value={
+                                                    newPartner.owner_dni
+                                                }
                                                 required
                                             />
                                         </label>
@@ -2210,9 +2221,7 @@
                                         <label>
                                             Usuario
                                             <select
-                                                bind:value={
-                                                    newVoucher.id_user
-                                                }
+                                                bind:value={newVoucher.id_user}
                                             >
                                                 <option value=""
                                                     >Seleccionar…</option
@@ -2561,19 +2570,28 @@
 
 {#if creatingUser}
     <div class="modal-overlay" onclick={closeCreateUserModal}>
-        <div class="modal" onclick={(e) => e.stopPropagation()}> 
+        <div class="modal" onclick={(e) => e.stopPropagation()}>
             <header class="modal-header">
                 <h3>Crear usuario y asociar a comercio</h3>
                 <button class="modal-close" onclick={closeCreateUserModal}>
                     <XCircle size={20} />
                 </button>
             </header>
-            <form onsubmit={(e) => { e.preventDefault(); createUser(); }}>
+            <form
+                onsubmit={(e) => {
+                    e.preventDefault();
+                    createUser();
+                }}
+            >
                 <div class="modal-body">
                     {#if userCreateError}
                         <div class="modal-error">{userCreateError}</div>
                     {/if}
-                    <p class="modal-hint">Se creará el usuario y se asociará al comercio seleccionado. La cuenta (email/contraseña) se configurará cuando el usuario se registre.</p>
+                    <p class="modal-hint">
+                        Se creará el usuario y se asociará al comercio
+                        seleccionado. La cuenta (email/contraseña) se
+                        configurará cuando el usuario se registre.
+                    </p>
                     <div class="form-row">
                         <label>
                             <span>Nombre</span>
@@ -2610,7 +2628,9 @@
                                 <option value="">Seleccionar comercio</option>
                                 {#each partners as partner (partner.id_partner)}
                                     {#if partner.active}
-                                        <option value={partner.id_partner}>{partner.name}</option>
+                                        <option value={partner.id_partner}
+                                            >{partner.name}</option
+                                        >
                                     {/if}
                                 {/each}
                             </select>
@@ -3465,8 +3485,12 @@
         animation: fade-in 0.15s ease;
     }
     @keyframes fade-in {
-        from { opacity: 0; }
-        to { opacity: 1; }
+        from {
+            opacity: 0;
+        }
+        to {
+            opacity: 1;
+        }
     }
 
     .modal {
@@ -3479,8 +3503,14 @@
         animation: modal-in 0.2s ease;
     }
     @keyframes modal-in {
-        from { opacity: 0; transform: translateY(16px) scale(0.96); }
-        to { opacity: 1; transform: translateY(0) scale(1); }
+        from {
+            opacity: 0;
+            transform: translateY(16px) scale(0.96);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
     }
 
     .modal-header {
@@ -3506,7 +3536,9 @@
         background: transparent;
         color: #6b7280;
         cursor: pointer;
-        transition: background-color 0.15s ease, color 0.15s ease;
+        transition:
+            background-color 0.15s ease,
+            color 0.15s ease;
     }
     .modal-close:hover {
         background: #f4f6fb;
@@ -3584,7 +3616,9 @@
         animation: spin 0.8s linear infinite;
     }
     @keyframes spin {
-        to { transform: rotate(360deg); }
+        to {
+            transform: rotate(360deg);
+        }
     }
 
     @media (max-width: 480px) {

@@ -7,6 +7,7 @@
     import { accessToken } from "$lib/stores/authStore";
     import { profileStore } from "$lib/stores/profileStore";
     import { apiFetch } from "$lib/api";
+    import { base } from "$app/paths";
 
     type VoucherStatus = "PENDING" | "DELIVERED" | "EXPIRED" | "REJECTED";
 
@@ -151,7 +152,7 @@
         redeemersLoading = true;
         try {
             const response = await apiFetch(
-                `/api/vouchers/redeemed?id_benefit=${encodeURIComponent(idBenefit)}&id_partner=${encodeURIComponent(id_partner)}`,
+                `vouchers/redeemed?id_benefit=${encodeURIComponent(idBenefit)}&id_partner=${encodeURIComponent(id_partner)}`,
                 { credentials: "include" },
             );
             if (!response.ok) {
@@ -189,7 +190,7 @@
 
         try {
             const partnersResponse = await apiFetch(
-                "/api/partners-admins/me/all",
+                "partners-admins/me/all",
                 { credentials: "include" },
             );
             if (partnersResponse.status === 401 || partnersResponse.status === 403) {
@@ -215,7 +216,7 @@
             if (!found && partners.length > 0) partner = partners[0];
 
             const benefitsResponse = await apiFetch(
-                `/api/benefits/partner?id_partner=${encodeURIComponent(found?.id_partner ?? partnerIdParam)}`,
+                `benefits/partner?id_partner=${encodeURIComponent(found?.id_partner ?? partnerIdParam)}`,
                 { credentials: "include" },
             );
             if (!benefitsResponse.ok) {
@@ -268,7 +269,7 @@
 
 <section class="benefit-page">
     <div class="inner">
-        <a class="back-link" href="/business-panel">
+        <a class="back-link" href={`${base}/business-panel`}>
             <ArrowLeft size={16} />
             Volver al panel de negocio
         </a>

@@ -9,9 +9,12 @@
     import BenefitCard from "./BenefitCard.svelte";
     import { loadCategories, getFilters } from "$lib/stores/categories.svelte";
     import type { Benefit } from "$lib/types/Benefit";
+    import { base } from "$app/paths";
+    import { apiFetch } from "$lib/api-client";
 
-    let { title = "Beneficios populares", endpoint = "/api/benefits/actives" } =
+    let { title = "Beneficios populares", endpoint = "/benefits/actives" } =
         $props();
+    const benefitsPath = `${base}/benefits`;
 
     let benefits: Benefit[] = $state([]);
     let filters = $derived(getFilters());
@@ -21,7 +24,7 @@
         await loadCategories();
         loading = true;
         try {
-            const response = await fetch(endpoint);
+            const response = await apiFetch(endpoint);
             if (!response.ok) {
                 console.log("Response does not ok");
                 return;
@@ -214,7 +217,7 @@
         <div class="title-group">
             <h2>{title}</h2>
 
-            <a class="more-btn" href="/benefits">Ver más</a>
+            <a class="more-btn" href={benefitsPath}>Ver más</a>
         </div>
     </div>
 

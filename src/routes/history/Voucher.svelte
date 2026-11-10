@@ -47,7 +47,7 @@
         isLoading = true;
         try {
             const res = await apiFetch(
-                `/api/vouchers/file?token=${encodeURIComponent(voucherToken)}`,
+                `vouchers/file?token=${encodeURIComponent(voucherToken)}`,
                 { method: "GET" },
             );
             if (!res.ok) {

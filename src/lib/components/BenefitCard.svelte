@@ -99,7 +99,7 @@
         isLoading = true;
         try {
             const profile = profileStore.getProfile();
-            const result = await apiFetch("/api/vouchers/create", {
+            const result = await apiFetch("vouchers/create", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -137,7 +137,7 @@
     }
 
     async function getFile() {
-        const res = await apiFetch(`/api/vouchers/file?token=${voucherToken}`, {
+        const res = await apiFetch(`vouchers/file?token=${voucherToken}`, {
             method: "GET",
         });
         if (!res.ok) {
@@ -167,7 +167,7 @@
                 id_account: tmpProfile.user_id,
                 id_benefit: benefit_id,
             });
-            const res = await apiFetch(`/api/vouchers/userbenefit?${params}`, {
+            const res = await apiFetch(`vouchers/userbenefit?${params}`, {
                 method: "GET",
             });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
