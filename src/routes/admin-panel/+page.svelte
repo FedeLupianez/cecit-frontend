@@ -19,6 +19,7 @@
         CheckCircle2,
         Tags,
         Loader2,
+        UserPlus,
     } from "lucide-svelte";
     import { toast } from "svelte-sonner";
 
@@ -33,6 +34,17 @@
         name: string;
         lastname: string;
         dni: string;
+    }
+
+    interface User {
+        id_user: string;
+        name: string;
+        lastname: string;
+        dni: string;
+        has_account: boolean;
+        email: string | null;
+        role: AccountRole | null;
+        active: boolean | null;
     }
 
     interface Partner {
@@ -133,6 +145,7 @@
     let successGlobal = $state("");
 
     let accounts: Account[] = $state([]);
+    let users: User[] = $state([]);
     let partners: Partner[] = $state([]);
     let benefits: Benefit[] = $state([]);
     let benefitTypes: BenefitType[] = $state([]);
@@ -170,7 +183,7 @@
     }
 
     const accountsById = $derived(
-        new Map(accounts.map((account) => [account.id_account, account])),
+        new Map(accounts.map((account) => [user.id_user, account])),
     );
     const benefitsById = $derived(
         new Map(benefits.map((benefit) => [benefit.id_benefit, benefit])),
@@ -190,22 +203,40 @@
             loadingGlobal = true;
 
             if (tab === "usuarios") {
-                const res = await fetch("/api/accounts/all", {
-                    headers: authHeaders(),
-                    credentials: "include",
-                });
-                if (res.status === 401 || res.status === 403) {
+                const [accountsRes, usersRes] = await Promise.all([
+                    fetch("/api/accounts/all", {
+                        headers: authHeaders(),
+                        credentials: "include",
+                    }),
+                    fetch("/api/users/all", {
+                        headers: authHeaders(),
+                        credentials: "include",
+                    }),
+                ]);
+                if (accountsRes.status === 401 || accountsRes.status === 403) {
                     setError(
                         "No tenés permiso para ver el panel de administrador.",
                     );
                     return;
                 }
-                if (!res.ok) {
+                if (!accountsRes.ok || !usersRes.ok) {
                     setError("No se pudieron cargar los usuarios.");
                     return;
                 }
-                accounts = await res.json();
-                console.log(accounts);
+                accounts = await accountsRes.json();
+                const rawUsers = await usersRes.json();
+                // Merge: users with accounts get account info, others marked as has_account: false
+                const accountsByDni = new Map(accounts.map((a) => [a.dni, a]));
+                users = rawUsers.map((u) => {
+                    const acc = accountsByDni.get(u.dni);
+                    return {
+                        ...u,
+                        has_account: !!acc,
+                        email: acc?.email ?? null,
+                        role: acc?.role ?? null,
+                        active: acc?.active ?? null,
+                    };
+                });
             } else if (tab === "negocios") {
                 const res = await fetch("/api/partners/all", {
                     headers: authHeaders(),
@@ -286,40 +317,39 @@
     let userErrors = $state<Record<string, string>>({});
     let userSuccess = $state<Record<string, string>>({});
 
-    const filteredAccounts = $derived(
+    const filteredUsers = $derived(
         userFilter.trim()
-            ? accounts.filter((account) => {
+            ? users.filter((user) => {
                   const needle = userFilter.trim().toLowerCase();
                   return [
-                      account.id_account,
-                      account.email ?? "",
-                      account.name,
-                      account.lastname,
-                      account.dni,
+                      user.id_user,
+                      user.email ?? "",
+                      user.name,
+                      user.lastname,
+                      user.dni,
                   ]
                       .join(" ")
                       .toLowerCase()
                       .includes(needle);
               })
-            : accounts,
+            : users,
     );
-
     function startEditEmail(account: Account) {
-        if (editingUser[account.id_account]) return;
-        emailInputs[account.id_account] = account.email ?? "";
-        passwordInputs[account.id_account] = "";
-        userErrors[account.id_account] = "";
-        userSuccess[account.id_account] = "";
-        editingUser[account.id_account] = "email";
+        if (editingUser[user.id_user]) return;
+        emailInputs[user.id_user] = account.email ?? "";
+        passwordInputs[user.id_user] = "";
+        userErrors[user.id_user] = "";
+        userSuccess[user.id_user] = "";
+        editingUser[user.id_user] = "email";
     }
 
     function startEditPassword(account: Account) {
-        if (editingUser[account.id_account]) return;
-        emailInputs[account.id_account] = "";
-        passwordInputs[account.id_account] = "";
-        userErrors[account.id_account] = "";
-        userSuccess[account.id_account] = "";
-        editingUser[account.id_account] = "password";
+        if (editingUser[user.id_user]) return;
+        emailInputs[user.id_user] = "";
+        passwordInputs[user.id_user] = "";
+        userErrors[user.id_user] = "";
+        userSuccess[user.id_user] = "";
+        editingUser[user.id_user] = "password";
     }
 
     function cancelEditUser(id: string) {
@@ -327,20 +357,86 @@
         userErrors[id] = "";
     }
 
+    // Modal crear usuario (solo CECIT_ADMIN)
+    let creatingUser = $state(false);
+    let newUser = $state({
+        name: "",
+        lastname: "",
+        dni: "",
+        id_partner: "",
+    });
+    let savingUserModal = $state(false);
+    let userCreateError = $state("");
+
+    function openCreateUserModal() {
+        creatingUser = true;
+        newUser = {
+            name: "",
+            lastname: "",
+            dni: "",
+            id_partner: "",
+        };
+        userCreateError = "";
+    }
+
+    function closeCreateUserModal() {
+        creatingUser = false;
+    }
+
+    async function createUser() {
+        if (!newUser.name.trim() || !newUser.lastname.trim() || !newUser.dni.trim() || !newUser.id_partner) {
+            userCreateError = "Completá todos los campos.";
+            return;
+        }
+        savingUserModal = true;
+        userCreateError = "";
+        try {
+            const response = await fetch("/api/partners/employees/cecit-create", {
+                method: "POST",
+                headers: {
+                    ...authHeaders(),
+                    "Content-Type": "application/json",
+                },
+                credentials: "include",
+                body: JSON.stringify({
+                    name: newUser.name.trim(),
+                    lastname: newUser.lastname.trim(),
+                    dni: newUser.dni.trim(),
+                    id_partner: newUser.id_partner,
+                }),
+            });
+            if (!response.ok) {
+                userCreateError = await parseError(response);
+                toast.error(userCreateError);
+                return;
+            }
+            closeCreateUserModal();
+            toast.success("Usuario creado y asociado al comercio correctamente.");
+            loadedTabs.delete("usuarios");
+            await ensureTabData("usuarios");
+        } catch (cause) {
+            userCreateError =
+                cause instanceof Error ? cause.message : "No se pudo crear el usuario.";
+            toast.error(userCreateError);
+        } finally {
+            savingUserModal = false;
+        }
+    }
+
     async function saveEmail(account: Account) {
-        const new_email = (emailInputs[account.id_account] ?? "").trim();
+        const new_email = (emailInputs[user.id_user] ?? "").trim();
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(new_email)) {
-            userErrors[account.id_account] =
+            userErrors[user.id_user] =
                 "Ingresá un correo electrónico válido.";
             return;
         }
         if (new_email.toLowerCase() === (account.email ?? "").toLowerCase()) {
-            editingUser[account.id_account] = null;
+            editingUser[user.id_user] = null;
             return;
         }
-        savingUser = account.id_account;
-        userErrors[account.id_account] = "";
-        userSuccess[account.id_account] = "";
+        savingUser = user.id_user;
+        userErrors[user.id_user] = "";
+        userSuccess[user.id_user] = "";
         try {
             const response = await fetch("/api/auth/update-profile-admin", {
                 method: "PATCH",
@@ -350,28 +446,28 @@
                 },
                 credentials: "include",
                 body: JSON.stringify({
-                    id_account: account.id_account,
+                    id_account: user.id_user,
                     email: account.email,
                     new_email: new_email,
                 }),
             });
             if (!response.ok) {
-                userErrors[account.id_account] = await parseError(response);
-                toast.error(userErrors[account.id_account]);
+                userErrors[user.id_user] = await parseError(response);
+                toast.error(userErrors[user.id_user]);
                 return;
             }
             const updated = await response.json();
             const index = accounts.findIndex(
-                (a) => a.id_account === account.id_account,
+                (a) => a.id_user === user.id_user,
             );
             if (index >= 0) accounts[index] = updated;
-            editingUser[account.id_account] = null;
-            userSuccess[account.id_account] =
+            editingUser[user.id_user] = null;
+            userSuccess[user.id_user] =
                 "Correo actualizado correctamente.";
-            toast.success(userSuccess[account.id_account]);
+            toast.success(userSuccess[user.id_user]);
             successGlobal = "";
         } catch (cause) {
-            userErrors[account.id_account] =
+            userErrors[user.id_user] =
                 cause instanceof Error
                     ? cause.message
                     : "No se pudo actualizar.";
@@ -381,19 +477,19 @@
     }
 
     async function savePassword(account: Account) {
-        const password = passwordInputs[account.id_account] ?? "";
+        const password = passwordInputs[user.id_user] ?? "";
         if (!password) {
-            userErrors[account.id_account] = "Ingresá una nueva contraseña.";
+            userErrors[user.id_user] = "Ingresá una nueva contraseña.";
             return;
         }
         if (password.length < 6) {
-            userErrors[account.id_account] =
+            userErrors[user.id_user] =
                 "La contraseña debe tener al menos 6 caracteres.";
             return;
         }
-        savingUser = account.id_account;
-        userErrors[account.id_account] = "";
-        userSuccess[account.id_account] = "";
+        savingUser = user.id_user;
+        userErrors[user.id_user] = "";
+        userSuccess[user.id_user] = "";
         try {
             const response = await fetch("/api/accounts", {
                 method: "PATCH",
@@ -403,21 +499,21 @@
                 },
                 credentials: "include",
                 body: JSON.stringify({
-                    id_account: account.id_account,
+                    id_account: user.id_user,
                     password,
                 }),
             });
             if (!response.ok) {
-                userErrors[account.id_account] = await parseError(response);
-                toast.error(userErrors[account.id_account]);
+                userErrors[user.id_user] = await parseError(response);
+                toast.error(userErrors[user.id_user]);
                 return;
             }
-            editingUser[account.id_account] = null;
-            userSuccess[account.id_account] =
+            editingUser[user.id_user] = null;
+            userSuccess[user.id_user] =
                 "Contraseña actualizada correctamente.";
-            toast.success(userSuccess[account.id_account]);
+            toast.success(userSuccess[user.id_user]);
         } catch (cause) {
-            userErrors[account.id_account] =
+            userErrors[user.id_user] =
                 cause instanceof Error
                     ? cause.message
                     : "No se pudo actualizar.";
@@ -427,8 +523,8 @@
     }
 
     async function toggleActive(account: Account) {
-        savingUser = account.id_account;
-        userErrors[account.id_account] = "";
+        savingUser = user.id_user;
+        userErrors[user.id_user] = "";
         try {
             const response = await fetch("/api/accounts", {
                 method: "PATCH",
@@ -438,25 +534,25 @@
                 },
                 credentials: "include",
                 body: JSON.stringify({
-                    id_account: account.id_account,
+                    id_account: user.id_user,
                     active: !account.active,
                 }),
             });
             if (!response.ok) {
-                userErrors[account.id_account] = await parseError(response);
-                toast.error(userErrors[account.id_account]);
+                userErrors[user.id_user] = await parseError(response);
+                toast.error(userErrors[user.id_user]);
                 return;
             }
             const updated = await response.json();
             const index = accounts.findIndex(
-                (a) => a.id_account === account.id_account,
+                (a) => a.id_user === user.id_user,
             );
             if (index >= 0) accounts[index] = updated;
-            userSuccess[account.id_account] = updated.active
+            userSuccess[user.id_user] = updated.active
                 ? "Cuenta activada."
                 : "Cuenta desactivada.";
         } catch (cause) {
-            userErrors[account.id_account] =
+            userErrors[user.id_user] =
                 cause instanceof Error
                     ? cause.message
                     : "No se pudo actualizar.";
@@ -482,15 +578,12 @@
     let creatingPartner = $state(false);
     let newPartner = $state({
         partner_name: "",
-        email: "",
-        password: "",
+        owner_dni: "",
         logo: "",
         directions: "",
     });
     let savingPartner = $state(false);
     let partnerCreateError = $state("");
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     async function ensureLocations(partnerId: string) {
         if (locationsByPartner[partnerId] || locationsLoading[partnerId])
@@ -722,12 +815,8 @@
             partnerCreateError = "Ingresá el nombre del negocio.";
             return;
         }
-        if (!emailRegex.test(newPartner.email.trim())) {
-            partnerCreateError = "Ingresá un correo electrónico válido.";
-            return;
-        }
-        if (!newPartner.password) {
-            partnerCreateError = "Ingresá una contraseña.";
+        if (!newPartner.owner_dni.trim()) {
+            partnerCreateError = "Ingresá el DNI del dueño.";
             return;
         }
         if (!newPartner.logo.trim()) {
@@ -746,8 +835,7 @@
                 credentials: "include",
                 body: JSON.stringify({
                     partner_name: newPartner.partner_name.trim(),
-                    email: newPartner.email.trim().toLowerCase(),
-                    password: newPartner.password,
+                    owner_dni: newPartner.owner_dni.trim(),
                     logo: newPartner.logo.trim(),
                     directions,
                 }),
@@ -760,8 +848,7 @@
             creatingPartner = false;
             newPartner = {
                 partner_name: "",
-                email: "",
-                password: "",
+                owner_dni: "",
                 logo: "",
                 directions: "",
             };
@@ -999,13 +1086,13 @@
                 if (!voucherSearch.trim()) return true;
                 const needle = voucherSearch.trim().toLowerCase();
                 if (voucher.token.toLowerCase().includes(needle)) return true;
-                if (voucher.id_account.toLowerCase().includes(needle))
+                if (voucher.id_user.toLowerCase().includes(needle))
                     return true;
                 if (voucher.id_benefit.toLowerCase().includes(needle))
                     return true;
                 const benefit = benefitsById.get(voucher.id_benefit);
                 if (benefit?.title.toLowerCase().includes(needle)) return true;
-                const account = accountsById.get(voucher.id_account);
+                const account = accountsById.get(voucher.id_user);
                 if (
                     account &&
                     `${account.name} ${account.lastname}`
@@ -1116,7 +1203,7 @@
                 credentials: "include",
                 body: JSON.stringify({
                     token: voucher.token,
-                    id_account: voucher.id_account,
+                    id_account: voucher.id_user,
                 }),
             });
             if (!response.ok) {
@@ -1135,7 +1222,7 @@
     }
 
     async function createVoucher() {
-        if (!newVoucher.id_account || !newVoucher.id_benefit) {
+        if (!newVoucher.id_user || !newVoucher.id_benefit) {
             voucherCreateError = "Elegí un usuario y un beneficio.";
             return;
         }
@@ -1150,7 +1237,7 @@
                 },
                 credentials: "include",
                 body: JSON.stringify({
-                    id_account: newVoucher.id_account,
+                    id_account: newVoucher.id_user,
                     id_benefit: newVoucher.id_benefit,
                 }),
             });
@@ -1256,12 +1343,22 @@
                                         correo o contraseña.
                                     </p>
                                 </div>
-                                <input
-                                    class="search"
-                                    type="search"
-                                    placeholder="Buscar por nombre, DNI o email…"
-                                    bind:value={userFilter}
-                                />
+                                <div class="section-actions">
+                                    <button
+                                        class="primary-btn"
+                                        type="button"
+                                        onclick={openCreateUserModal}
+                                    >
+                                        <UserPlus size={16} />
+                                        Crear usuario
+                                    </button>
+                                    <input
+                                        class="search"
+                                        type="search"
+                                        placeholder="Buscar por nombre, DNI o email…"
+                                        bind:value={userFilter}
+                                    />
+                                </div>
                             </header>
 
                             <div class="table-wrap">
@@ -1277,37 +1374,33 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {#each filteredAccounts as account (account.id_account)}
+                                        {#each filteredUsers as user (user.id_user)}
                                             <tr>
                                                 <td>
                                                     <strong
-                                                        >{account.name}
-                                                        {account.lastname}</strong
+                                                        >{user.name}
+                                                        {user.lastname}</strong
                                                     >
                                                     <span class="sub"
-                                                        >{account.dni} · {account.id_account}</span
+                                                        >{user.dni} · {user.id_user}</span
                                                     >
                                                 </td>
                                                 <td>
-                                                    {#if editingUser[account.id_account] === "email"}
+                                                    {#if editingUser[user.id_user] === "email"}
                                                         <div
                                                             class="inline-edit"
                                                         >
                                                             <input
                                                                 type="email"
                                                                 bind:value={
-                                                                    emailInputs[
-                                                                        account
-                                                                            .id_account
-                                                                    ]
+                                                                    emailInputs[user.id_user]
                                                                 }
                                                                 onkeydown={(
                                                                     e,
                                                                 ) =>
                                                                     e.key ===
                                                                         "Enter" &&
-                                                                    saveEmail(
-                                                                        account,
+                                                                    saveEmail(user,
                                                                     )}
                                                             />
                                                             <div
@@ -1317,11 +1410,10 @@
                                                                     class="save-btn"
                                                                     type="button"
                                                                     onclick={() =>
-                                                                        saveEmail(
-                                                                            account,
+                                                                        saveEmail(user,
                                                                         )}
                                                                     disabled={savingUser ===
-                                                                        account.id_account}
+                                                                        user.id_user}
                                                                     >Guardar</button
                                                                 >
                                                                 <button
@@ -1329,7 +1421,7 @@
                                                                     type="button"
                                                                     onclick={() =>
                                                                         cancelEditUser(
-                                                                            account.id_account,
+                                                                            user.id_user,
                                                                         )}
                                                                     >Cancelar</button
                                                                 >
@@ -1337,43 +1429,40 @@
                                                         </div>
                                                     {:else}
                                                         <span class="mono"
-                                                            >{account.email ??
+                                                            >{user.email ??
                                                                 "—"}</span
                                                         >
                                                     {/if}
                                                 </td>
                                                 <td>
                                                     <span class="role-badge"
-                                                        >{account.role}</span
+                                                        >{user.role}</span
                                                     >
                                                 </td>
                                                 <td>
                                                     <button
                                                         class="status-btn"
-                                                        class:on={account.active}
+                                                        class:on={user.active}
                                                         type="button"
                                                         onclick={() =>
-                                                            toggleActive(
-                                                                account,
+                                                            toggleActive(user,
                                                             )}
-                                                        disabled={savingUser ===
-                                                            account.id_account}
+                                                        disabled={savingUser === user.id_user}
                                                     >
-                                                        {account.active
+                                                        {user.active
                                                             ? "ACTIVA"
                                                             : "INACTIVA"}
                                                     </button>
                                                 </td>
                                                 <td>
                                                     <span class="mono"
-                                                        >{formatLastActivity(
-                                                            account.last_activity,
+                                                        >{formatLastActivity(user.last_activity,
                                                         )}</span
                                                     >
                                                 </td>
                                                 <td>
                                                     <div class="row-actions">
-                                                        {#if editingUser[account.id_account] === "password"}
+                                                        {#if editingUser[user.id_user] === "password"}
                                                             <div
                                                                 class="inline-edit"
                                                             >
@@ -1381,18 +1470,14 @@
                                                                     type="password"
                                                                     placeholder="Nueva contraseña"
                                                                     bind:value={
-                                                                        passwordInputs[
-                                                                            account
-                                                                                .id_account
-                                                                        ]
+                                                                        passwordInputs[user.id_user]
                                                                     }
                                                                     onkeydown={(
                                                                         e,
                                                                     ) =>
                                                                         e.key ===
                                                                             "Enter" &&
-                                                                        savePassword(
-                                                                            account,
+                                                                        savePassword(user,
                                                                         )}
                                                                 />
                                                                 <div
@@ -1402,11 +1487,9 @@
                                                                         class="save-btn"
                                                                         type="button"
                                                                         onclick={() =>
-                                                                            savePassword(
-                                                                                account,
+                                                                            savePassword(user,
                                                                             )}
-                                                                        disabled={savingUser ===
-                                                                            account.id_account}
+                                                                        disabled={savingUser === user.id_user}
                                                                         >Guardar</button
                                                                     >
                                                                     <button
@@ -1414,20 +1497,19 @@
                                                                         type="button"
                                                                         onclick={() =>
                                                                             cancelEditUser(
-                                                                                account.id_account,
+                                                                                user.id_user,
                                                                             )}
                                                                         >Cancelar</button
                                                                     >
                                                                 </div>
                                                             </div>
-                                                        {:else if editingUser[account.id_account] !== "email"}
+                                                        {:else if editingUser[user.id_user] !== "email"}
                                                             <button
                                                                 class="ico-btn"
                                                                 type="button"
                                                                 title="Cambiar email"
                                                                 onclick={() =>
-                                                                    startEditEmail(
-                                                                        account,
+                                                                    startEditEmail(user,
                                                                     )}
                                                             >
                                                                 <Pencil
@@ -1439,8 +1521,7 @@
                                                                 type="button"
                                                                 title="Cambiar contraseña"
                                                                 onclick={() =>
-                                                                    startEditPassword(
-                                                                        account,
+                                                                    startEditPassword(user,
                                                                     )}
                                                             >
                                                                 <Eye
@@ -1511,19 +1592,12 @@
                                             />
                                         </label>
                                         <label>
-                                            Email del admin
+                                            DNI del dueño
                                             <input
-                                                type="email"
-                                                placeholder="admin@negocio.com"
-                                                bind:value={newPartner.email}
-                                            />
-                                        </label>
-                                        <label>
-                                            Contraseña del admin
-                                            <input
-                                                type="password"
-                                                placeholder="••••••••"
-                                                bind:value={newPartner.password}
+                                                type="text"
+                                                placeholder="DNI del dueño (ej: 12345678)"
+                                                bind:value={newPartner.owner_dni}
+                                                required
                                             />
                                         </label>
                                         <label>
@@ -2137,15 +2211,15 @@
                                             Usuario
                                             <select
                                                 bind:value={
-                                                    newVoucher.id_account
+                                                    newVoucher.id_user
                                                 }
                                             >
                                                 <option value=""
                                                     >Seleccionar…</option
                                                 >
-                                                {#each accounts as account (account.id_account)}
+                                                {#each accounts as account (user.id_user)}
                                                     <option
-                                                        value={account.id_account}
+                                                        value={user.id_user}
                                                     >
                                                         {account.name}
                                                         {account.lastname}
@@ -2358,11 +2432,11 @@
                                                     {(() => {
                                                         const account =
                                                             accountsById.get(
-                                                                voucher.id_account,
+                                                                voucher.id_user,
                                                             );
                                                         return account
                                                             ? `${account.name} ${account.lastname}`
-                                                            : voucher.id_account;
+                                                            : voucher.id_user;
                                                     })()}
                                                 </td>
                                                 <td>
@@ -2484,6 +2558,91 @@
         {/if}
     </div>
 </section>
+
+{#if creatingUser}
+    <div class="modal-overlay" onclick={closeCreateUserModal}>
+        <div class="modal" onclick={(e) => e.stopPropagation()}> 
+            <header class="modal-header">
+                <h3>Crear usuario y asociar a comercio</h3>
+                <button class="modal-close" onclick={closeCreateUserModal}>
+                    <XCircle size={20} />
+                </button>
+            </header>
+            <form onsubmit={(e) => { e.preventDefault(); createUser(); }}>
+                <div class="modal-body">
+                    {#if userCreateError}
+                        <div class="modal-error">{userCreateError}</div>
+                    {/if}
+                    <p class="modal-hint">Se creará el usuario y se asociará al comercio seleccionado. La cuenta (email/contraseña) se configurará cuando el usuario se registre.</p>
+                    <div class="form-row">
+                        <label>
+                            <span>Nombre</span>
+                            <input
+                                type="text"
+                                bind:value={newUser.name}
+                                placeholder="Nombre"
+                                required
+                            />
+                        </label>
+                        <label>
+                            <span>Apellido</span>
+                            <input
+                                type="text"
+                                bind:value={newUser.lastname}
+                                placeholder="Apellido"
+                                required
+                            />
+                        </label>
+                    </div>
+                    <div class="form-row">
+                        <label>
+                            <span>DNI</span>
+                            <input
+                                type="text"
+                                bind:value={newUser.dni}
+                                placeholder="DNI"
+                                required
+                            />
+                        </label>
+                        <label>
+                            <span>Comercio</span>
+                            <select bind:value={newUser.id_partner} required>
+                                <option value="">Seleccionar comercio</option>
+                                {#each partners as partner (partner.id_partner)}
+                                    {#if partner.active}
+                                        <option value={partner.id_partner}>{partner.name}</option>
+                                    {/if}
+                                {/each}
+                            </select>
+                        </label>
+                    </div>
+                </div>
+                <footer class="modal-footer">
+                    <button
+                        type="button"
+                        class="secondary-btn"
+                        onclick={closeCreateUserModal}
+                        disabled={savingUserModal}
+                    >
+                        Cancelar
+                    </button>
+                    <button
+                        type="submit"
+                        class="primary-btn"
+                        disabled={savingUserModal}
+                    >
+                        {#if savingUserModal}
+                            <Loader2 size={16} class="spin" />
+                            Creando…
+                        {:else}
+                            Crear usuario
+                        {/if}
+                    </button>
+                </footer>
+            </form>
+        </div>
+    </div>
+{/if}
 
 <style>
     .admin-panel {
@@ -3238,6 +3397,206 @@
         }
         .lookup-row .search-btn {
             width: 100%;
+        }
+    }
+
+    .section-actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .primary-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 18px;
+        border: none;
+        border-radius: 9px;
+        background: var(--primary-blue);
+        color: #fff;
+        font: inherit;
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: background-color 0.15s ease;
+    }
+    .primary-btn:hover:not(:disabled) {
+        background: var(--primary-blue-light);
+    }
+    .primary-btn:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+    }
+
+    .secondary-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 18px;
+        border: 1px solid #cdd3e2;
+        border-radius: 9px;
+        background: #fff;
+        color: #1a1f36;
+        font: inherit;
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: background-color 0.15s ease;
+    }
+    .secondary-btn:hover:not(:disabled) {
+        background: #f4f6fb;
+    }
+    .secondary-btn:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+    }
+
+    .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(20, 24, 60, 0.45);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        z-index: 1000;
+        animation: fade-in 0.15s ease;
+    }
+    @keyframes fade-in {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    .modal {
+        width: 100%;
+        max-width: 480px;
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: 0 20px 48px rgba(20, 24, 60, 0.18);
+        overflow: hidden;
+        animation: modal-in 0.2s ease;
+    }
+    @keyframes modal-in {
+        from { opacity: 0; transform: translateY(16px) scale(0.96); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 18px 22px;
+        border-bottom: 1px solid #e2e5ef;
+    }
+    .modal-header h3 {
+        margin: 0;
+        font-size: 18px;
+        color: #1a1f36;
+    }
+    .modal-close {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        border: none;
+        border-radius: 8px;
+        background: transparent;
+        color: #6b7280;
+        cursor: pointer;
+        transition: background-color 0.15s ease, color 0.15s ease;
+    }
+    .modal-close:hover {
+        background: #f4f6fb;
+        color: #1a1f36;
+    }
+
+    .modal-body {
+        padding: 22px;
+    }
+    .modal-error {
+        margin: 0 0 16px;
+        padding: 12px 14px;
+        border-radius: 8px;
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        color: #b91c1c;
+        font-size: 13px;
+    }
+    .modal-hint {
+        margin: 0 0 16px;
+        padding: 12px 14px;
+        border-radius: 8px;
+        background: #eef1fa;
+        border: 1px solid #cdd3e2;
+        color: #4b5468;
+        font-size: 13px;
+        line-height: 1.4;
+    }
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+        margin-bottom: 14px;
+    }
+    .form-row:last-of-type {
+        margin-bottom: 0;
+    }
+    .form-row label {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+    .form-row label span {
+        font-size: 13px;
+        font-weight: 600;
+        color: #4b5468;
+    }
+    .form-row input,
+    .form-row select {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 10px 13px;
+        border: 1px solid #cdd3e2;
+        border-radius: 9px;
+        font: inherit;
+        font-size: 14px;
+        background: #fff;
+    }
+    .form-row input:focus,
+    .form-row select:focus {
+        outline: none;
+        border-color: var(--primary-blue);
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+    }
+
+    .modal-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        padding: 16px 22px;
+        border-top: 1px solid #e2e5ef;
+        background: #fafbfe;
+    }
+    .spin {
+        animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    @media (max-width: 480px) {
+        .form-row {
+            grid-template-columns: 1fr;
+        }
+        .modal-footer {
+            flex-direction: column-reverse;
+        }
+        .modal-footer button {
+            width: 100%;
+            justify-content: center;
         }
     }
 </style>
