@@ -6,8 +6,11 @@ import { base } from "$app/paths";
 import { redirect } from "@sveltejs/kit";
 
 export const prerender = true;
+export const ssr = false;
+export const trailingSlash = 'always';
 
-export const load = async ({ url, redirect: doRedirect }) => {
+
+export const load = async ({ url }) => {
     // Skip during prerender (no window) and SSR
     if (!browser || typeof window === 'undefined') return {};
 
@@ -21,14 +24,14 @@ export const load = async ({ url, redirect: doRedirect }) => {
             method: "POST",
         });
         if (!res.ok) {
-            if (!isAuthPage) doRedirect(302, `${base}/login`);
+            if (!isAuthPage) throw redirect(302, `${base}/login`);
             return {};
         }
         const { access_token, profile } = await res.json();
         if (access_token) accessToken.setToken(access_token);
         if (profile) profileStore.setProfile(profile);
     } catch {
-        if (!isAuthPage) doRedirect(302, `${base}/login`);
+        if (!isAuthPage) throw redirect(302, `${base}/login`);
     }
     return {};
 };
