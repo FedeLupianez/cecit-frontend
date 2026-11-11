@@ -21,9 +21,6 @@ export const load: LayoutServerLoad = async ({ cookies, url, request, platform }
     const cookieHeader = request.headers.get("cookie");
     if (!cookieHeader) return {};
 
-    // No redirigir durante prerendering (el prerenderer no tiene cookies)
-    if (request.headers.get("x-sveltekit-prerender") === "1") return {};
-
     const refreshToken = cookies.get("refresh_token_cecit");
     if (!refreshToken) throw redirect(302, loginRedirect);
 

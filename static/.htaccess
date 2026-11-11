@@ -1,0 +1,9 @@
+DirectoryIndex 200.html
+
+RewriteEngine On
+RewriteBase /beneficios/
+
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteRule ^ - [L]
+
+RewriteRule ^ 200.html [L]
