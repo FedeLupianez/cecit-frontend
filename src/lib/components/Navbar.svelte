@@ -9,6 +9,7 @@
     import { getRoleAccessWithBase } from "$lib/access/roleAccess";
     import RoleCard from "$lib/components/RoleCard.svelte";
     import { base } from "$app/paths";
+    import { apiFetch } from "$lib/api-client";
 
     const logo = `${base}/logo_con_texto.png`;
 
@@ -24,9 +25,8 @@
         if (loggingOut) return;
         loggingOut = true;
         try {
-            await fetch(`${base}auth/logout`, {
+            await apiFetch(`auth/logout`, {
                 method: "POST",
-                credentials: "include",
             });
         } finally {
             accessToken.clear();

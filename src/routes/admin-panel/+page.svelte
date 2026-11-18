@@ -3,6 +3,7 @@
     import { goto } from "$app/navigation";
     import { accessToken } from "$lib/stores/authStore";
     import { profileStore } from "$lib/stores/profileStore";
+    import { loadPartners, getPartners } from "$lib/stores/partners.svelte";
     // Alias: todos los fetch de este panel pasan por el wrapper con
     // Authorization automática y reintento tras refresh ante 401.
     import { apiFetch as fetch } from "$lib/api";
@@ -146,7 +147,7 @@
 
     let accounts: Account[] = $state([]);
     let users: User[] = $state([]);
-    let partners: Partner[] = $state([]);
+    let partners = $derived(getPartners());
     let benefits: Benefit[] = $state([]);
     let benefitTypes: BenefitType[] = $state([]);
     let vouchers: Voucher[] = $state([]);
@@ -183,7 +184,7 @@
     }
 
     const accountsById = $derived(
-        new Map(accounts.map((account) => [user.id_user, account])),
+        new Map(accounts.map((account) => [account.id_account, account])),
     );
     const benefitsById = $derived(
         new Map(benefits.map((benefit) => [benefit.id_benefit, benefit])),
@@ -302,6 +303,7 @@
     }
 
     $effect(() => {
+        loadPartners();
         ensureTabData(activeTab);
     });
 
@@ -576,6 +578,16 @@
     let partnerBusy = $state<Record<string, boolean>>({});
     let partnerErrors = $state<Record<string, string>>({});
     let partnerSuccess = $state<Record<string, string>>({});
+
+    let partnerFilter = $state("");
+
+    const filteredPartners = $derived(
+        partnerFilter.trim()
+            ? partners.filter((partner) =>
+                  partner.name.toLowerCase().includes(partnerFilter.trim().toLowerCase()),
+              )
+            : partners,
+    );
 
     let creatingPartner = $state(false);
     let newPartner = $state({
@@ -1082,12 +1094,12 @@
                 if (!voucherSearch.trim()) return true;
                 const needle = voucherSearch.trim().toLowerCase();
                 if (voucher.token.toLowerCase().includes(needle)) return true;
-                if (voucher.id_user.toLowerCase().includes(needle)) return true;
+                if (voucher.id_account.toLowerCase().includes(needle)) return true;
                 if (voucher.id_benefit.toLowerCase().includes(needle))
                     return true;
                 const benefit = benefitsById.get(voucher.id_benefit);
                 if (benefit?.title.toLowerCase().includes(needle)) return true;
-                const account = accountsById.get(voucher.id_user);
+                const account = accountsById.get(voucher.id_account);
                 if (
                     account &&
                     `${account.name} ${account.lastname}`
@@ -1198,7 +1210,7 @@
                 credentials: "include",
                 body: JSON.stringify({
                     token: voucher.token,
-                    id_account: voucher.id_user,
+                    id_account: voucher.id_account,
                 }),
             });
             if (!response.ok) {
@@ -1217,7 +1229,7 @@
     }
 
     async function createVoucher() {
-        if (!newVoucher.id_user || !newVoucher.id_benefit) {
+        if (!newVoucher.id_account || !newVoucher.id_benefit) {
             voucherCreateError = "Elegí un usuario y un beneficio.";
             return;
         }
@@ -1232,7 +1244,7 @@
                 },
                 credentials: "include",
                 body: JSON.stringify({
-                    id_account: newVoucher.id_user,
+                    id_account: newVoucher.id_account,
                     id_benefit: newVoucher.id_benefit,
                 }),
             });
@@ -1566,17 +1578,25 @@
                                         como un negociante.
                                     </p>
                                 </div>
-                                <button
-                                    class="add-btn"
-                                    type="button"
-                                    onclick={() =>
-                                        (creatingPartner = !creatingPartner)}
-                                >
-                                    <Plus size={16} />
-                                    {creatingPartner
-                                        ? "Cancelar"
-                                        : "Nuevo negocio"}
-                                </button>
+                                <div class="section-actions">
+                                    <input
+                                        class="search"
+                                        type="search"
+                                        placeholder="Buscar por nombre…"
+                                        bind:value={partnerFilter}
+                                    />
+                                    <button
+                                        class="add-btn"
+                                        type="button"
+                                        onclick={() =>
+                                            (creatingPartner = !creatingPartner)}
+                                    >
+                                        <Plus size={16} />
+                                        {creatingPartner
+                                            ? "Cancelar"
+                                            : "Nuevo negocio"}
+                                    </button>
+                                </div>
                             </header>
 
                             {#if creatingPartner}
@@ -1645,7 +1665,7 @@
                             {/if}
 
                             <div class="cards-grid">
-                                {#each partners as partner (partner.id_partner)}
+                                {#each filteredPartners as partner (partner.id_partner)}
                                     <article class="data-card">
                                         <div class="card-top">
                                             <img
@@ -2221,14 +2241,14 @@
                                         <label>
                                             Usuario
                                             <select
-                                                bind:value={newVoucher.id_user}
+                                                bind:value={newVoucher.id_account}
                                             >
                                                 <option value=""
                                                     >Seleccionar…</option
                                                 >
-                                                {#each accounts as account (user.id_user)}
+                                                {#each accounts as account (account.id_account)}
                                                     <option
-                                                        value={user.id_user}
+                                                        value={account.id_account}
                                                     >
                                                         {account.name}
                                                         {account.lastname}
@@ -2441,11 +2461,11 @@
                                                     {(() => {
                                                         const account =
                                                             accountsById.get(
-                                                                voucher.id_user,
+                                                                voucher.id_account,
                                                             );
                                                         return account
                                                             ? `${account.name} ${account.lastname}`
-                                                            : voucher.id_user;
+                                                            : voucher.id_account;
                                                     })()}
                                                 </td>
                                                 <td>
