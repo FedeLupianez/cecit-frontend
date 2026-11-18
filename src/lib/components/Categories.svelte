@@ -33,6 +33,7 @@
         getCategories,
         loadCategories,
     } from "$lib/stores/categories.svelte";
+    import { base } from "$app/paths";
 
     const iconMap: Record<string, typeof Tag> = {
         Car,
@@ -130,7 +131,7 @@
                         {@const Icon = getIcon(category.icon)}
                         <a
                             class="category-wrapper"
-                            href={`/benefits?category=${category.name}`}
+                            href={`${base}/benefits?category=${category.name}`}
                         >
                             <button class="category-btn">
                                 <Icon size={28} />

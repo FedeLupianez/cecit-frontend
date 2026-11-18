@@ -33,7 +33,7 @@ const config = {
             precompress: true
         }),
         paths: {
-            base: '/beneficios',
+            base: basePath,
             assets: assetsPath
         }
     }

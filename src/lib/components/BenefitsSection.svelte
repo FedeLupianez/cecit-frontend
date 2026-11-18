@@ -179,22 +179,19 @@
 
         const nextPosition = carousel.scrollLeft + direction * SCROLL_AMOUNT;
 
-        if (direction === 1 && nextPosition >= maxScroll - 10) {
-            carousel.scrollTo({
-                left: 0,
-                behavior: "smooth",
-            });
-
-            return;
-        }
-
-        if (direction === -1 && nextPosition <= 10) {
-            carousel.scrollTo({
-                left: maxScroll,
-                behavior: "smooth",
-            });
-
-            return;
+        // If scroll amount exceeds maxScroll, just go to the end/start instead of wrapping
+        if (direction === 1) {
+            if (carousel.scrollLeft >= maxScroll - 10) return; // already at end
+            if (nextPosition >= maxScroll) {
+                carousel.scrollTo({ left: maxScroll, behavior: "smooth" });
+                return;
+            }
+        } else {
+            if (carousel.scrollLeft <= 10) return; // already at start
+            if (nextPosition <= 0) {
+                carousel.scrollTo({ left: 0, behavior: "smooth" });
+                return;
+            }
         }
 
         carousel.scrollBy({

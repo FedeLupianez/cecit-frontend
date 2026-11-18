@@ -99,8 +99,8 @@
     async function loadOptions() {
         const [typesResponse, paymentsResponse, partnersResponse] =
             await Promise.all([
-                fetch("benefit-types/all"),
-                fetch("payment-methods/all"),
+                apiFetch("benefit-types/all"),
+                apiFetch("payment-methods/all"),
                 isPartnerAdmin
                     ? Promise.resolve(null)
                     : apiFetch("partners/all"),
@@ -208,9 +208,7 @@
                 refund_limit: parsedRefundLimit,
             };
 
-            const endpoint = isPartnerAdmin
-                ? "benefits/request"
-                : "benefits";
+            const endpoint = isPartnerAdmin ? "benefits/request" : "benefits";
 
             const response = await apiFetch(endpoint, {
                 method: "POST",
