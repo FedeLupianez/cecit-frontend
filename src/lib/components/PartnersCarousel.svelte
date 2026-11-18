@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { apiFetch } from "$lib/api-client";
     import { onMount } from "svelte";
 
     interface Partner {
@@ -9,7 +10,7 @@
     let partners: Partner[] = $state([]);
 
     async function load_partners() {
-        const result = await fetch("/api/partners/all", {
+        const result = await apiFetch("partners/all", {
             method: "GET",
             credentials: "include",
         });

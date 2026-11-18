@@ -88,7 +88,7 @@
         emailError = "";
         emailSuccess = "";
         try {
-            const response = await apiFetch("/api/auth/update", {
+            const response = await apiFetch("auth/update", {
                 method: "PATCH",
                 headers: {
                     ...authHeaders(),
@@ -174,7 +174,7 @@
         passwordError = "";
         passwordSuccess = "";
         try {
-            const response = await apiFetch("/api/auth/update", {
+            const response = await apiFetch("auth/update", {
                 method: "PATCH",
                 headers: {
                     ...authHeaders(),

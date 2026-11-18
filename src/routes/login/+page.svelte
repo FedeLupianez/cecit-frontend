@@ -3,6 +3,8 @@
     import { goto } from "$app/navigation";
     import { navigating } from "$app/stores";
     import { toast } from "svelte-sonner";
+    import { base } from "$app/paths";
+    import { apiFetch } from "$lib/api-client";
 
     let email = $state("");
     let password = $state("");
@@ -33,18 +35,16 @@
 
         try {
             loading = true;
-            const response = await fetch("/api/auth/login", {
+            const response = await apiFetch("/auth/login", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email: email, password: password }),
-                credentials: "include",
             });
             if (!response.ok)
                 throw new Error(`Response status : ${response.status}`);
             const result = await response.json();
             accessToken.setToken(result.access_token);
             toast.success("Sesión iniciada correctamente");
-            await goto("/");
+            await goto(base);
         } catch (rerror) {
             error = "Credenciales Inválidas";
             toast.error("Credenciales Inválidas");
@@ -70,7 +70,7 @@
             <p class="text">Ingresa los datos para iniciar sesión</p>
             <p class="signup-text">
                 ¿No tenés cuenta?
-                <a href="/signup" class="signup-link">Creá tu cuenta</a>
+                <a href={`${base}/signup`} class="signup-link">Creá tu cuenta</a>
             </p>
         </div>
         <form onsubmit={login} class="right" novalidate>

@@ -105,6 +105,23 @@ La nueva contraseña debe tener **mínimo 6 caracteres**.
 > conserva sus beneficios e historial histórico. Es la opción preferida frente
 > a eliminar.
 
+### 3.5.1 Usuarios sin cuenta
+
+A partir de la versión reciente, el panel muestra **también los usuarios que
+no tienen cuenta en la plataforma** (solo DNI, nombre y comercio asignado). Estas
+filas aparecen con:
+
+- **Email**: `—` (no aplicable)
+- **Rol**: según corresponda
+- **Estado**: siempre `INACTIVA` (no pueden loguearse)
+- **Acciones**: botones de email, password y active están **deshabilitados** para
+  estos usuarios, ya que no tienen cuenta asociada.
+
+> 💡 **Caso de uso:** el administrador CECIT puede crear un usuario directamente
+> asociado a un comercio (usando el modal "Crear usuario" en la pestaña Usuarios),
+> sin necesidad de crear una cuenta de usuario con email y contraseña. El usuario
+> quedará vinculado al comercio y podrá gestionarse desde allí.
+
 ### 3.6 Editar una fila por vez
 
 Solo una fila puede estar en edición simultáneamente. Si empezás a editar una

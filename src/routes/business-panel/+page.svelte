@@ -97,9 +97,6 @@
     let employeeDniInput = $state("");
     let addingEmployee = $state(false);
     let addingEmployeeError = $state("");
-    let newEmployee = $state({ name: "", lastname: "", dni: "" });
-    let creatingEmployee = $state(false);
-    let creatingEmployeeError = $state("");
     let removingEmployeeId: string | null = $state(null);
     let promotingEmployeeId: string | null = $state(null);
     let demotingEmployeeId: string | null = $state(null);
@@ -138,7 +135,7 @@
 
         try {
             const benefitsResponse = await apiFetch(
-                `/api/benefits/partner?id_partner=${encodeURIComponent(p.id_partner)}`,
+                `benefits/partner?id_partner=${encodeURIComponent(p.id_partner)}`,
                 { credentials: "include" },
             );
             if (benefitsResponse.ok) {
@@ -150,7 +147,7 @@
             const vouchers = await Promise.all(
                 benefits.map(async (b): Promise<Voucher[]> => {
                     const response = await fetch(
-                        `/api/vouchers/bybenefit?id_benefit=${b.id_benefit}`,
+                        `vouchers/bybenefit?id_benefit=${b.id_benefit}`,
                     );
                     return response.ok ? await response.json() : [];
                 }),
@@ -174,7 +171,7 @@
         }
 
         try {
-            const response = await apiFetch("/api/partners-admins/me/all", {
+            const response = await apiFetch("partners-admins/me/all", {
                 credentials: "include",
             });
             if (response.status === 401 || response.status === 403) {
@@ -211,7 +208,7 @@
         if (!token) return;
         try {
             const response = await apiFetch(
-                `/api/partners/locations?id_partner=${encodeURIComponent(partner.id_partner)}`,
+                `partners/locations?id_partner=${encodeURIComponent(partner.id_partner)}`,
                 { credentials: "include" },
             );
             if (!response.ok) {
@@ -236,7 +233,7 @@
         employeesError = "";
         try {
             const response = await apiFetch(
-                `/api/partners/employees?id_partner=${encodeURIComponent(partner.id_partner)}`,
+                `partners/employees?id_partner=${encodeURIComponent(partner.id_partner)}`,
                 { credentials: "include" },
             );
             if (!response.ok) {
@@ -273,7 +270,7 @@
         addingEmployee = true;
         addingEmployeeError = "";
         try {
-            const response = await apiFetch(`/api/partners/employees`, {
+            const response = await apiFetch(`partners/employees`, {
                 method: "POST",
                 headers: {
                     ...authHeaders(),
@@ -309,59 +306,6 @@
         }
     }
 
-    function resetNewEmployee() {
-        newEmployee = { name: "", lastname: "", dni: "" };
-    }
-
-    async function createEmployee() {
-        if (!partner || creatingEmployee) return;
-        const name = newEmployee.name.trim();
-        const lastname = newEmployee.lastname.trim();
-        const dni = newEmployee.dni.trim();
-        if (!name || !lastname || !dni) {
-            creatingEmployeeError =
-                "Completá nombre, apellido y DNI del empleado.";
-            return;
-        }
-        if (!accessToken.getToken()) {
-            creatingEmployeeError = "Tu sesión expiró. Volvé a iniciar sesión.";
-            return;
-        }
-        creatingEmployee = true;
-        creatingEmployeeError = "";
-        try {
-            const response = await apiFetch("/api/partners/employees/new", {
-                method: "POST",
-                headers: {
-                    ...authHeaders(),
-                    "Content-Type": "application/json",
-                },
-                credentials: "include",
-                body: JSON.stringify({
-                    id_partner: partner.id_partner,
-                    name,
-                    lastname,
-                    dni,
-                }),
-            });
-            if (!response.ok) {
-                creatingEmployeeError = await parseError(response);
-                toast.error(creatingEmployeeError);
-                return;
-            }
-            resetNewEmployee();
-            await loadEmployees();
-            toast.success("Empleado creado correctamente");
-        } catch (cause) {
-            creatingEmployeeError =
-                cause instanceof Error
-                    ? cause.message
-                    : "No se pudo crear el empleado.";
-        } finally {
-            creatingEmployee = false;
-        }
-    }
-
     async function removeEmployee(employee: UsersDTO) {
         if (!partner || removingEmployeeId) return;
         if (!accessToken.getToken()) {
@@ -372,7 +316,7 @@
         employeesError = "";
         try {
             const response = await apiFetch(
-                `/api/partners/employees?id_partner=${encodeURIComponent(partner.id_partner)}&dni=${encodeURIComponent(employee.dni)}`,
+                `partners/employees?id_partner=${encodeURIComponent(partner.id_partner)}&dni=${encodeURIComponent(employee.dni)}`,
                 {
                     method: "DELETE",
                     headers: authHeaders(),
@@ -405,7 +349,7 @@
         promotingEmployeeId = employee.id_user;
         employeesError = "";
         try {
-            const response = await apiFetch("/api/accounts/role", {
+            const response = await apiFetch("accounts/role", {
                 method: "PATCH",
                 headers: {
                     ...authHeaders(),
@@ -448,7 +392,7 @@
         demotingEmployeeId = employee.id_user;
         employeesError = "";
         try {
-            const response = await apiFetch("/api/accounts/role", {
+            const response = await apiFetch("accounts/role", {
                 method: "PATCH",
                 headers: {
                     ...authHeaders(),
@@ -518,7 +462,7 @@
         savingName = true;
         nameError = "";
         try {
-            const response = await apiFetch("/api/partners/name", {
+            const response = await apiFetch("partners/name", {
                 method: "PATCH",
                 headers: {
                     ...authHeaders(),
@@ -585,7 +529,7 @@
         savingLogo = true;
         logoError = "";
         try {
-            const response = await apiFetch("/api/partners/logo", {
+            const response = await apiFetch("partners/logo", {
                 method: "PATCH",
                 headers: {
                     ...authHeaders(),
@@ -635,7 +579,7 @@
         addingLocation = true;
         addingLocationError = "";
         try {
-            const response = await apiFetch("/api/partners/locations", {
+            const response = await apiFetch("partners/locations", {
                 method: "POST",
                 headers: {
                     ...authHeaders(),
@@ -676,7 +620,7 @@
         locationsError = "";
         try {
             const response = await apiFetch(
-                `/api/partners/locations?id_location=${encodeURIComponent(id)}`,
+                `partners/locations?id_location=${encodeURIComponent(id)}`,
                 {
                     method: "DELETE",
                     headers: authHeaders(),
@@ -1047,53 +991,6 @@
                                 </li>
                             {/each}
                         </ul>
-                    {/if}
-
-                    <form
-                        class="add-employee"
-                        onsubmit={(e) => {
-                            e.preventDefault();
-                            createEmployee();
-                        }}
-                    >
-                        <h3 class="add-employee-title">Crear empleado</h3>
-                        <div class="add-employee-fields">
-                            <input
-                                type="text"
-                                placeholder="Nombre"
-                                aria-label="Nombre del empleado"
-                                bind:value={newEmployee.name}
-                            />
-                            <input
-                                type="text"
-                                placeholder="Apellido"
-                                aria-label="Apellido del empleado"
-                                bind:value={newEmployee.lastname}
-                            />
-                            <input
-                                type="text"
-                                placeholder="DNI"
-                                aria-label="DNI del empleado"
-                                bind:value={newEmployee.dni}
-                            />
-                        </div>
-                        <button
-                            class="add-btn"
-                            type="submit"
-                            disabled={creatingEmployee}
-                        >
-                            {#if creatingEmployee}
-                                <span class="spinner"></span>
-                            {:else}
-                                <UserPlus size={18} />
-                            {/if}
-                            Crear empleado
-                        </button>
-                    </form>
-                    {#if creatingEmployeeError}
-                        <p class="field-error" style="margin-top:8px">
-                            {creatingEmployeeError}
-                        </p>
                     {/if}
 
                     <form

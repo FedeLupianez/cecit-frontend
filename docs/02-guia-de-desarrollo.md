@@ -135,7 +135,7 @@ Reglas prácticas:
 Los componentes con props usan tipado explícito del objeto `$props()`:
 
 ```ts
-let { title, endpoint = "/api/benefits/actives" }: {
+let { title, endpoint = "benefits/actives" }: {
     title: string;
     endpoint: string;
 } = $props();
@@ -212,10 +212,10 @@ Dos patrones conviven:
 ```ts
 // 1. Endpoint autenticado → siempre apiFetch
 import { apiFetch } from "$lib/api";
-const res = await apiFetch("/api/partners/all");
+const res = await apiFetch("partners/all");
 
 // 2. Endpoint público → fetch crudo
-const res = await fetch("/api/benefits/actives");
+const res = await fetch("benefits/actives");
 ```
 
 `apiFetch` inyecta el token, refresca ante 401 y reintenta una vez. **Usalo por

@@ -154,7 +154,7 @@ El modelo es **access token corto en memoria + refresh token largo en cookie
 Es el único hook de servidor y **no autentica**: es un proxy transparente.
 
 ```text
-Navegador  ──►  GET /api/benefits/actives
+Navegador  ──►  GET benefits/actives
                         │
                         ▼
               hooks.server.ts  (SvelteKit / Node)
@@ -210,7 +210,7 @@ if (!browser) return {};
 if (url.pathname === "/login" || url.pathname === "/signup") return {};
 if (accessToken.getToken() && profileStore.getProfile()) return {};
 
-const res = await fetch("/api/auth/refresh", { method: "POST", credentials: "include" });
+const res = await fetch("auth/refresh", { method: "POST", credentials: "include" });
 const { access_token, profile } = await res.json();
 if (access_token) accessToken.setToken(access_token);
 if (profile) profileStore.setProfile(profile);
@@ -243,7 +243,7 @@ function refreshOnce() {
 ```
 
 El *single-flight* (`refreshing`) es la clave: si 10 peticiones fallan con 401
-al mismo tiempo, se ejecuta **un solo** `POST /api/auth/refresh` y las 10
+al mismo tiempo, se ejecuta **un solo** `POST auth/refresh` y las 10
 esperan la misma promesa.
 
 ### 5.5 Control de acceso por rol
@@ -286,7 +286,7 @@ Dos matices a tener en cuenta al mantener el código:
 
 - El `profile &&` hace que **la comprobación se salte mientras el perfil es
   `null`**, es decir, durante la ventana entre el montaje y la respuesta de
-  `/api/auth/refresh`.
+  `auth/refresh`.
 - `profileStore.getProfile()` es una lectura **no reactiva** (`get({subscribe})`),
   así que el efecto se evalúa una vez por montaje.
 
@@ -344,91 +344,91 @@ No existen variables `PUBLIC_*`, ni `$env/static/*`, ni `envPrefix` custom.
 ### 6.2 Inventario de endpoints
 
 Los endpoints no están abstraídos en funciones por recurso: cada página llama a
-`/api/...` directamente. El contrato real vive en los call sites.
+`...` directamente. El contrato real vive en los call sites.
 
-#### Autenticación — `/api/auth/*`
+#### Autenticación — `auth/*`
 
 | Método | Ruta | Body | Respuesta |
 |---|---|---|---|
-| POST | `/api/auth/login` | `{ email, password }` | `{ access_token }` |
-| POST | `/api/auth/register` | `{ id_user, email, password }` | `{ access_token }` |
-| POST | `/api/auth/refresh` | — | `{ access_token, profile }` |
-| POST | `/api/auth/logout` | — | ignorada |
-| PATCH | `/api/auth/update` | `{ process: "EMAIL", email, new_email, current_password }` | — |
-| PATCH | `/api/auth/update` | `{ process: "PASSWD", current_password, new_password }` | — |
-| PATCH | `/api/auth/update-profile-admin` | `{ id_account, email, new_email }` | cuenta actualizada |
+| POST | `auth/login` | `{ email, password }` | `{ access_token }` |
+| POST | `auth/register` | `{ id_user, email, password }` | `{ access_token }` |
+| POST | `auth/refresh` | — | `{ access_token, profile }` |
+| POST | `auth/logout` | — | ignorada |
+| PATCH | `auth/update` | `{ process: "EMAIL", email, new_email, current_password }` | — |
+| PATCH | `auth/update` | `{ process: "PASSWD", current_password, new_password }` | — |
+| PATCH | `auth/update-profile-admin` | `{ id_account, email, new_email }` | cuenta actualizada |
 
 `process` es el discriminador que selecciona qué operación se ejecuta.
 
-#### Beneficios — `/api/benefits/*`
+#### Beneficios — `benefits/*`
 
 | Método | Ruta | Uso |
 |---|---|---|
-| GET | `/api/benefits/actives` | Listado público de beneficios vigentes |
-| GET | `/api/benefits/popular` | Carrusel "Beneficios Populares" |
-| GET | `/api/benefits/news` | Carrusel "Nuevos beneficios" |
-| GET | `/api/benefits/search?text=` | Buscador del hero |
-| GET | `/api/benefits/all` | Panel de administrador |
-| GET | `/api/benefits/partner?id_partner=` | Beneficios de un comercio |
-| POST | `/api/benefits` | Alta (`BenefitsCreateDTO`) |
-| PATCH | `/api/benefits` | Edición `{ id_benefit, ...draft }` |
-| PATCH | `/api/benefits/activate` | `{ id_benefit }` |
-| PATCH | `/api/benefits/deactivate` | `{ id_benefit }` |
+| GET | `benefits/actives` | Listado público de beneficios vigentes |
+| GET | `benefits/popular` | Carrusel "Beneficios Populares" |
+| GET | `benefits/news` | Carrusel "Nuevos beneficios" |
+| GET | `benefits/search?text=` | Buscador del hero |
+| GET | `benefits/all` | Panel de administrador |
+| GET | `benefits/partner?id_partner=` | Beneficios de un comercio |
+| POST | `benefits` | Alta (`BenefitsCreateDTO`) |
+| PATCH | `benefits` | Edición `{ id_benefit, ...draft }` |
+| PATCH | `benefits/activate` | `{ id_benefit }` |
+| PATCH | `benefits/deactivate` | `{ id_benefit }` |
 
-#### Vouchers — `/api/vouchers/*`
+#### Vouchers — `vouchers/*`
 
 | Método | Ruta | Uso |
 |---|---|---|
-| POST | `/api/vouchers/create` | `{ id_user, id_benefit }` (socio) · `{ id_account, id_benefit }` (admin) |
-| GET | `/api/vouchers/userbenefit?id_account=&id_benefit=` | `{ coupons }` |
-| GET | `/api/vouchers/file?token=` | PDF binario |
-| GET | `/api/vouchers/byuser?id_user=` | Historial del usuario |
-| GET | `/api/vouchers/bytoken?token=` | Búsqueda para canje |
-| GET | `/api/vouchers/bybenefit?id_benefit=` | Vouchers de un beneficio |
-| GET | `/api/vouchers/redeemed?id_benefit=&id_partner=` | Tabla de canjes |
-| GET | `/api/vouchers/all` | Panel de administrador |
-| PATCH | `/api/vouchers?action=redeem&token=` | Canjear |
-| PATCH | `/api/vouchers?action=reject&token=` | Rechazar |
-| DELETE | `/api/vouchers` | `{ token, id_account }` |
+| POST | `vouchers/create` | `{ id_user, id_benefit }` (socio) · `{ id_account, id_benefit }` (admin) |
+| GET | `vouchers/userbenefit?id_account=&id_benefit=` | `{ coupons }` |
+| GET | `vouchers/file?token=` | PDF binario |
+| GET | `vouchers/byuser?id_user=` | Historial del usuario |
+| GET | `vouchers/bytoken?token=` | Búsqueda para canje |
+| GET | `vouchers/bybenefit?id_benefit=` | Vouchers de un beneficio |
+| GET | `vouchers/redeemed?id_benefit=&id_partner=` | Tabla de canjes |
+| GET | `vouchers/all` | Panel de administrador |
+| PATCH | `vouchers?action=redeem&token=` | Canjear |
+| PATCH | `vouchers?action=reject&token=` | Rechazar |
+| DELETE | `vouchers` | `{ token, id_account }` |
 
 `action` es un discriminador en query string: `redeem` y `reject` son el mismo
 endpoint.
 
-#### Comercios — `/api/partners/*`
+#### Comercios — `partners/*`
 
 | Método | Ruta | Body / notas |
 |---|---|---|
-| GET | `/api/partners/all` | `Partner[]` |
-| POST | `/api/partners` | `{ partner_name, email, password, logo, directions[] }` |
-| PATCH | `/api/partners/name` | `{ id_partner, new_name }` |
-| PATCH | `/api/partners/logo` | `{ id_partner, new_logo }` |
-| GET | `/api/partners/locations?id_partner=` | `LocationItem[]` |
-| POST | `/api/partners/locations` | `{ id_partner, direction }` |
-| DELETE | `/api/partners/locations?id_location=` | — |
-| DELETE | `/api/partners/id/:id_partner` | — |
-| GET | `/api/partners/employees?id_partner=` | Acepta `Employee[]` o `{ employees: [...] }` |
-| POST | `/api/partners/employees` | `{ id_partner, dni }` |
-| DELETE | `/api/partners/employees?id_partner=&dni=` | **Claveado por DNI**, no por id |
-| GET | `/api/partners-admins/me/all` | Negocios que administra el usuario |
+| GET | `partners/all` | `Partner[]` |
+| POST | `partners` | `{ partner_name, email, password, logo, directions[] }` |
+| PATCH | `partners/name` | `{ id_partner, new_name }` |
+| PATCH | `partners/logo` | `{ id_partner, new_logo }` |
+| GET | `partners/locations?id_partner=` | `LocationItem[]` |
+| POST | `partners/locations` | `{ id_partner, direction }` |
+| DELETE | `partners/locations?id_location=` | — |
+| DELETE | `partners/id/:id_partner` | — |
+| GET | `partners/employees?id_partner=` | Acepta `Employee[]` o `{ employees: [...] }` |
+| POST | `partners/employees` | `{ id_partner, dni }` |
+| DELETE | `partners/employees?id_partner=&dni=` | **Claveado por DNI**, no por id |
+| GET | `partners-admins/me/all` | Negocios que administra el usuario |
 
-#### Cuentas — `/api/accounts/*`
+#### Cuentas — `accounts/*`
 
 | Método | Ruta | Body |
 |---|---|---|
-| GET | `/api/accounts/all` | — |
-| PATCH | `/api/accounts` | `{ id_account, password }` (reset) |
-| PATCH | `/api/accounts` | `{ id_account, active }` (toggle) |
-| PATCH | `/api/accounts/role` | `{ id_account, id_partner, newRole }` |
+| GET | `accounts/all` | — |
+| PATCH | `accounts` | `{ id_account, password }` (reset) |
+| PATCH | `accounts` | `{ id_account, active }` (toggle) |
+| PATCH | `accounts/role` | `{ id_account, id_partner, newRole }` |
 
 #### Datos de referencia
 
 | Método | Ruta | Respuesta |
 |---|---|---|
-| GET | `/api/categories/actives` | `[{ name, icon_url }]` |
-| GET | `/api/categories/all` | `[{ id_category, name, icon_url, active }]` |
-| PATCH | `/api/categories/:id_category` | `{ active: boolean }` |
-| GET | `/api/benefit-types/all` | `[{ id_type, name }]` |
-| GET | `/api/payment-methods/all` | `string[]` |
+| GET | `categories/actives` | `[{ name, icon_url }]` |
+| GET | `categories/all` | `[{ id_category, name, icon_url, active }]` |
+| PATCH | `categories/:id_category` | `{ active: boolean }` |
+| GET | `benefit-types/all` | `[{ id_type, name }]` |
+| GET | `payment-methods/all` | `string[]` |
 
 ### 6.3 Manejo de errores
 
@@ -503,7 +503,7 @@ export interface Profile {
 ```
 
 El rol **nunca se persiste ni se re-decodifica**: llega únicamente dentro del
-objeto `profile` de `POST /api/auth/refresh`. Cuando el backend devuelve un
+objeto `profile` de `POST auth/refresh`. Cuando el backend devuelve un
 objeto actualizado, el patrón de mutación local es:
 
 ```ts
@@ -773,7 +773,7 @@ conviene tener en cuenta antes de ampliar el sistema.
 
 | Objetivo | Dónde |
 |---|---|
-| Agregar un endpoint | No hay capa: llamar `/api/...` desde la página, idealmente vía `apiFetch` |
+| Agregar un endpoint | No hay capa: llamar `...` desde la página, idealmente vía `apiFetch` |
 | Agregar un rol | `roleAccess.ts` + handling de perfil en backend |
 | Agregar una sección de home | Componer en `routes/+page.svelte` |
 | Cambiar el backend | `BACKEND_URL` en el entorno de runtime de Node |

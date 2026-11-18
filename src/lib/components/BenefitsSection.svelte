@@ -9,9 +9,12 @@
     import BenefitCard from "./BenefitCard.svelte";
     import { loadCategories, getFilters } from "$lib/stores/categories.svelte";
     import type { Benefit } from "$lib/types/Benefit";
+    import { base } from "$app/paths";
+    import { apiFetch } from "$lib/api-client";
 
-    let { title = "Beneficios populares", endpoint = "/api/benefits/actives" } =
+    let { title = "Beneficios populares", endpoint = "/benefits/actives" } =
         $props();
+    const benefitsPath = `${base}/benefits`;
 
     let benefits: Benefit[] = $state([]);
     let filters = $derived(getFilters());
@@ -21,7 +24,7 @@
         await loadCategories();
         loading = true;
         try {
-            const response = await fetch(endpoint);
+            const response = await apiFetch(endpoint);
             if (!response.ok) {
                 console.log("Response does not ok");
                 return;
@@ -176,22 +179,19 @@
 
         const nextPosition = carousel.scrollLeft + direction * SCROLL_AMOUNT;
 
-        if (direction === 1 && nextPosition >= maxScroll - 10) {
-            carousel.scrollTo({
-                left: 0,
-                behavior: "smooth",
-            });
-
-            return;
-        }
-
-        if (direction === -1 && nextPosition <= 10) {
-            carousel.scrollTo({
-                left: maxScroll,
-                behavior: "smooth",
-            });
-
-            return;
+        // If scroll amount exceeds maxScroll, just go to the end/start instead of wrapping
+        if (direction === 1) {
+            if (carousel.scrollLeft >= maxScroll - 10) return; // already at end
+            if (nextPosition >= maxScroll) {
+                carousel.scrollTo({ left: maxScroll, behavior: "smooth" });
+                return;
+            }
+        } else {
+            if (carousel.scrollLeft <= 10) return; // already at start
+            if (nextPosition <= 0) {
+                carousel.scrollTo({ left: 0, behavior: "smooth" });
+                return;
+            }
         }
 
         carousel.scrollBy({
@@ -214,7 +214,7 @@
         <div class="title-group">
             <h2>{title}</h2>
 
-            <a class="more-btn" href="/benefits">Ver más</a>
+            <a class="more-btn" href={benefitsPath}>Ver más</a>
         </div>
     </div>
 

@@ -20,11 +20,16 @@ además:
 | **Canjear cupones** de tus clientes en el mostrador | `Canjear Cupón` |
 | **Ver estadísticas** de tus beneficios | `Panel de negocio` |
 | **Administrar tu perfil de comercio** (nombre, logo, sucursales) | `Panel de negocio` |
-| **Gestionar tu equipo** de empleados | `Panel de negocio` |
-| **Ver quién canjeó** cada beneficio | `Panel de negocio` → `Detalles` |
+| **Gestionar tu equipo** de empleados (agregar, dar/quitar permisos de admin, eliminar) | `Panel de negocio` → `Empleados` |
+| **Ver quién canjeó** cada beneficio con filtros y búsqueda | `Panel de negocio` → `Detalles` |
+| **Solicitar creación de beneficios** (queda pendiente de revisión del CeCIT) | `Crear Beneficio` |
 
-> 💡 **No creás beneficios.** El alta de beneficios la hace el equipo del
-> CeCIT. Vos los recibís, los ves y los canjeás.
+> **Los beneficios los publica el CeCIT.** Como administrador de comercio
+> podés solicitar la creación de uno nuevo desde `Crear Beneficio` (§8); el
+> equipo del CeCIT lo revisa antes de publicarlo. Vos los recibís, los ves y
+> los canjeás.
+
+> **Lo que NO podés hacer:** publicar beneficios directamente, modificar beneficios ya publicados, crear beneficios para comercios que no administrás, ni asignar roles de administrador a empleados que no tengan cuenta en la plataforma.
 
 ---
 
@@ -45,7 +50,7 @@ Tu menú debería verse así:
 │ Historial                   │
 │ Configuración               │
 │ ─────────────────────────── │
-│ 🔴 Cerrar sesión            │
+│ Cerrar sesión               │
 └─────────────────────────────┘
 ```
 
@@ -104,7 +109,7 @@ Si el token es válido, aparece una tarjeta con:
 | **Métodos de pago** | Con qué medios se puede aplicar |
 | **Ubicación** | A qué dirección del negocio corresponde |
 
-> ⚠️ **Siempre verificá el nombre del socio contra su documento.** Es la
+> **Siempre verificá el nombre del socio contra su documento.** Es la
 > forma de confirmar que el cupón no lo está usando otra persona.
 
 ### 3.4 Canjear el cupón
@@ -140,7 +145,7 @@ Hacé clic en **"Quitar"** para limpiar la pantalla y buscar otro token.
 | "No tenés permiso para canjear beneficios." | Tu cuenta no habilitada | Contactá al CeCIT |
 | "Este voucher pertenece a otro negocio. No tenés acceso para canjearlo." | El cupón es de otro comercio | No lo atiendas; que el socio use su comercio |
 
-> 💡 **Consejo de mostrador:** anotá siempre el token antes de escribirlo. Si
+> **Consejo de mostrador:** anotá siempre el token antes de escribirlo. Si
 > el socio no tiene el PDF a mano, el token escrito sirve igual.
 
 ---
@@ -159,7 +164,7 @@ Arriba de todo ves tres números:
 | **Canjes** | Total de cupones efectivamente canjeados |
 | **Beneficios activos** | Cuántos de tus beneficios están vigentes |
 
-> 💡 Estos números son **en vivo**: se calculan con los datos que hay en este
+> **Estos números son **en vivo**: se calculan con los datos que hay en este
 > momento, no con un informe histórico acumulado.
 
 ### 4.2 Si tenés más de un negocio
@@ -181,13 +186,13 @@ Es el primer bloque del panel.
 | **Logo** | Clic en el ícono de lápiz → pegá la URL de la nueva imagen → **Guardar** |
 | **Nombre** | Clic en el ícono de lápiz → escribí el nombre → **Guardar** |
 
-> ⚠️ **Sobre el logo:** el sistema **no sube archivos**. Pegá una **dirección
+> **Sobre el logo:** el sistema **no sube archivos**. Pegá una **dirección
 > web (URL)** de una imagen. Ejemplo: `https://mi-negocio.com/logo.png`.
 > Podés probarlo con un servicio de imágenes gratuito.
 >
 > También podés pedirle al CeCIT que suba tu logo si no tenés dónde alojarlo.
 
-> 💡 Si escribís un nombre idéntico al que ya tenías, el sistema no hace nada y
+> Si escribís un nombre idéntico al que ya tenías, el sistema no hace nada y
 > cierra el editor sin avisar. Es normal.
 
 ---
@@ -205,17 +210,17 @@ Aparecen listadas con el ícono de ubicación.
 1. Escribí la dirección en el campo de texto.
 2. Hacé clic en **"Agregar"**.
 
-> 💡 **Separá múltiples direcciones con comas.** Por ejemplo:
+> **Separá múltiples direcciones con comas.** Por ejemplo:
 > `Av. España 123, Alta Gracia` agrega **dos** ubicaciones.
 >
-> 📌 Cada ubicación aparece como un punto en el mapa dentro de la ficha del
+> Cada ubicación aparece como un punto en el mapa dentro de la ficha del
 > beneficio, así que escribilas completas y con el número exacto.
 
 ### 5.3 Eliminar una ubicación
 
-Hacé clic en la **X** (🗑) junto a la dirección que querés borrar.
+Hacé clic en la **X** junto a la dirección que querés borrar.
 
-> ⚠️ Esta acción **no se puede deshacer**. Revisá antes de confirmar.
+> **Esta acción **no se puede deshacer**. Revisá antes de confirmar.
 
 ---
 
@@ -234,17 +239,17 @@ Tu equipo aparece con nombre, apellido, DNI y rol. Hay un botón
 1. Escribí el **DNI** del empleado en el campo de texto.
 2. Hacé clic en **"Agregar"**.
 
-> ⚠️ **El DNI es la clave.** Si el empleado no figura en la base de socios del
+> **El DNI es la clave.** Si el empleado no figura en la base de socios del
 > CeCIT, el sistema **no lo va a poder agregar**. Verificá que esté dado de alta
 > como socio antes.
 
-> 💡 Si el empleado aparece sin correo electrónico, es que **todavía no tiene
+> Si el empleado aparece sin correo electrónico, es que **todavía no tiene
 > cuenta creada en la plataforma**. Podés agregarlo a tu lista, pero no vas a
 > poder darle permisos de administrador hasta que tenga su cuenta.
 
 ### 6.3 Dar permisos de administrador a un empleado
 
-Si el empleado **tiene cuenta con correo electrónico**, aparece el botón
+Si el empleado **tiene cuenta con correo electrónico** (aparece el ícono de correo y su email), aparece el botón
 **"Hacer admin"**.
 
 1. Hacé clic en **"Hacer admin"**.
@@ -254,24 +259,37 @@ A partir de ahí, ese empleado puede:
 - Entrar al panel del negocio.
 - Canjear cupones.
 - Administrar sucursales y empleados.
+- Solicitar creación de beneficios.
 
-Se le asigna una insignia **"Admin"** al lado de su nombre.
+Se le asigna una insignia **"Admin"** (corona) al lado de su nombre.
 
-> ⚠️ **Solo los empleados con cuenta pueden ser administradores.** Los que
-> están sin correo no pueden recibir el rol.
+> **Solo los empleados con cuenta pueden ser administradores.** Los que
+> están sin correo (aparece "Sin cuenta") no pueden recibir el rol.
 
 ### 6.4 Quitar permisos de administrador
 
-1. Hacé clic en **"Quitar admin"**.
+1. Hacé clic en **"Quitar admin"** (ícono de escudo tachado).
 2. Confirmá.
 
-La persona sigue en tu lista de empleados, pero vuelve a ser un usuario común.
+La persona sigue en tu lista de empleados, pero vuelve a ser un usuario común
+(sin acceso al panel de negocio).
 
-### 6.5 Eliminar un empleado
+### 6.5 Agregar un socio existente (por DNI)
+
+Si la persona **ya es socio del CeCIT** (tiene cuenta con correo):
+
+1. En el formulario **"Agregar socio existente"**, escribí su **DNI**.
+2. Hacé clic en **"Agregar"**.
+
+> **El DNI es la clave.** Si el socio no figura en la base del CeCIT, el
+> sistema **no lo va a poder agregar**. Verificá que esté dado de alta como socio
+> antes.
+
+### 6.6 Eliminar un empleado
 
 Hacé clic en la **X** junto a su fila.
 
-> ⚠️ Esta acción **no se puede deshacer**. El empleado deja de formar parte de
+> **Esta acción **no se puede deshacer**. El empleado deja de formar parte de
 > tu negocio.
 
 ---
@@ -288,8 +306,10 @@ Cada tarjeta muestra:
 | **Barra de progreso** | Cuánta demanda tiene tu beneficio |
 | **Botón "Detalles"** | Abre la ficha completa del beneficio |
 
-> ⚠️ **Los beneficios los crea el CeCIT, no vos.** Si necesitás un beneficio
-> nuevo, un cambio o una renovación, pedilo al CeCIT.
+> **Los beneficios los publica el CeCIT.** Como administrador de comercio
+> podés solicitar la creación de uno nuevo desde `Crear Beneficio` (§8); un
+> administrador de CeCIT lo revisa y lo aprueba o lo rechaza antes de
+> publicarlo. Si necesitás un cambio o una renovación, pedilo al CeCIT.
 
 ### 7.1 Ver los detalles de un beneficio
 
@@ -302,10 +322,10 @@ Hacé clic en **"Detalles"**. Se abre una ficha con:
 | **Estado** | Activo / Inactivo / Pendiente |
 | **Tipo** | Descuento, promotional, cortesía, etc. |
 | **Categorías** | En qué categorías aparece el beneficio |
-| **Vigencia** | Desde y hasta qué fecha |
+| **Vigencia** | Desde y hasta qué fecha (con hora) |
 | **Métodos de pago** | Medios de pago admitidos |
 | **Cupones por usuario** | Máximo que puede pedir cada socio |
-| **Límite de reintegro** | Tope máximo del descuento |
+| **Límite de reintegro** | Tope máximo del descuento (solo para tipo "Descuento") |
 | **Direcciones** | Todas tus sucursales donde aplica |
 
 #### Contador
@@ -318,15 +338,15 @@ Debajo está la tabla con **quién canjeó** tu beneficio:
 
 | Columna | Qué muestra |
 |---|---|
-| **Usuario** | Nombre y apellido del socio |
+| **Usuario** | Nombre y apellido del socio + email (o "Sin cuenta") |
 | **DNI** | Documento del socio |
 | **Solicitado** | Fecha en que pidió el cupón |
 | **Entregado** | Fecha en que lo canjeó (vacío si no lo canjeó) |
 | **Vence** | Fecha límite del cupón |
-| **Token** | El código del cupón |
+| **Token** | El código del cupón (6 caracteres) |
 | **Estado** | Pendiente / Canjeado / Expirado / Rechazado |
 
-> 💡 La columna **"Entregado"** aparece vacía mientras el cupón siga
+> **La columna **"Entregado"** aparece vacía mientras el cupón siga
 > pendiente. Es la forma rápida de distinguir "lo pidió pero no lo usó" de
 > "ya lo usó".
 
@@ -334,15 +354,102 @@ Debajo está la tabla con **quién canjeó** tu beneficio:
 
 - **Botones de estado** con la cantidad de cada uno:
   `Todos (12) · Pendiente (4) · Canjeado (6) · Expirado (1) · Rechazado (1)`
+  Los botones de estados sin resultados aparecen deshabilitados.
 - **Cuadro de búsqueda** para filtrar por nombre, apellido, DNI, correo o
   token.
+- Botón **"Recargar"** para actualizar la lista.
 
-> 💡 Sirve mucho para responder "¿quién pidió esto?" o para auditar un canje
-> puntual.
+> **Sirve mucho para responder "¿quién pidió esto?" o para auditar un canje
+> puntual.**
 
 ---
 
-## 8. Preguntas frecuentes
+## 8. Solicitar la creación de un beneficio
+
+Como administrador de comercio podés pedir que el CeCIT publique un beneficio
+nuevo para tu negocio. La entrada está en tu menú: **"Crear Beneficio"** →
+`/create-benefit`.
+
+La solicitud **no se publica automáticamente**: queda **pendiente** y un
+administrador de CeCIT la acepta o la rechaza antes de que aparezca en tus
+beneficios. Mientras está pendiente, **los socios no la ven**.
+
+> **Un administrador de CeCIT puede **editar tu solicitud** antes de aceptarla
+> (cambiar título, fechas, límites, imagen, etc.).**
+
+### 8.1 Antes de empezar
+
+- Tenés que tener el rol de **administrador de comercio** (`PARTNER_ADMIN`).
+- Si administrás **varios negocios**, elegís para cuál es el beneficio (solo
+  ves los tuyos). Si tenés solo uno, el sistema lo asigna automáticamente y no
+  ves el selector.
+- Necesitás la **URL de una imagen** del beneficio (el sistema **no sube
+  archivos**; pegá la dirección web, ej: `https://mi-sitio.com/banner.jpg`).
+
+### 8.2 Pasos
+
+1. En el menú, hacé clic en **"Crear Beneficio"**.
+2. Escribí el **título** del beneficio (ej: `20% off en cafetería`).
+3. Elegí el **negocio** (solo si administrás más de uno).
+4. Escribí una **descripción** (opcional; si la dejás vacía, se usa el título).
+5. Pegá la **URL de la imagen o banner** (se ve una vista previa).
+6. Elegí el **tipo** de beneficio (chips: Descuento, Promocional, Cortesía, etc.).
+   - Si **NO es "Descuento"**, el campo "Tope de reintegro" se oculta y se
+     pone en 0.
+7. Elegí las **fechas de publicación** (inicio y fin, **con hora**; ej: 09:00 a
+   18:00).
+8. Seleccioná los **medios de pago** admitidos (chips: Efectivo, Débito,
+   Crédito, Transferencia, QR, etc.; podés elegir varios).
+9. Configurá los **límites**:
+   - **Límite por usuario** (mínimo 1).
+   - **Cantidad total de cupones** (stock).
+   - **Tope de reintegro** (solo si el tipo es "Descuento"; en $).
+10. Hacé clic en **"Enviar solicitud"**.
+
+Campos obligatorios: **título**, **tipo** y **fechas de publicación** (inicio y
+fin). Si falta alguno, el formulario muestra un aviso y no envía nada.
+
+### 8.3 Después de enviar
+
+Aparece el modal **"¡Solicitud enviada!"**: tu beneficio quedó pendiente de
+revisión. Un administrador de CeCIT lo va a **aceptar** (queda **Activo**) o
+**rechazar** (queda **Rechazada**). Mientras tanto, **no figura** en "Tus
+beneficios" ni la ven los socios.
+
+Desde ese modal podés:
+
+- **Crear otro**: limpia el formulario para enviar otra solicitud.
+- **Ir al panel**: volvés al panel de tu negocio.
+
+### 8.4 Si algo falla
+
+| Mensaje | Qué pasó | Qué hacer |
+|---|---|---|
+| "Completá el título, tipo y período de publicación." | Faltan campos obligatorios | Completá título, tipo y fechas |
+| "No tenés negocios asociados." | Tu cuenta no tiene un comercio asignado | Contactá al CeCIT |
+| "No tenés permiso para crear beneficios con este negocio." | Tu sesión o rol no tiene permiso para ese negocio | Volvé a iniciar sesión o contactá al CeCIT |
+| "Tu sesión expiró. Volvé a iniciar sesión." | Sesión vencida | Volvé a iniciar sesión |
+
+### 8.5 Preguntas rápidas
+
+**¿El beneficio se publica enseguida?** No. Queda pendiente hasta que un
+administrador de CeCIT lo revise y lo acepte.
+
+**¿Puedo editar una solicitud ya enviada?** No desde esta pantalla. Contactá al
+CeCIT para que la anule, la edite o la rechace.
+
+**¿Y si me equivoqué de negocio?** La solicitud queda asociada al negocio que
+seleccionaste. Pedí al CeCIT que la anule o cree una nueva.
+
+**¿El socio ve el beneficio mientras está pendiente?** No, solo aparece una vez
+que el CeCIT lo aprueba (estado **Activo**).
+
+**¿Puedo ver mis solicitudes anteriores?** No hay una lista propia en el panel.
+Si necesitás saber el estado de una solicitud, contactá al CeCIT.
+
+---
+
+## 9. Preguntas frecuentes
 
 ### ¿Puedo tener más de un negocio?
 
@@ -382,8 +489,34 @@ la pantalla de canje. Contactá al CeCIT para evaluar una reversión.
 
 ### ¿Puedo crear beneficios yo?
 
-No. Los beneficios los crea el equipo del CeCIT. Pediles tus beneficios a
-través del CeCIT.
+No directamente. Los beneficios los publica el equipo del CeCIT. Como
+administrador de comercio podés **solicitar la creación** de uno nuevo desde
+`Crear Beneficio` (§8); la solicitud queda **pendiente** hasta que un
+administrador de CeCIT la **acepte** (pasa a **Activo**) o la **rechace**.
+Mientras está pendiente, **no la ven los socios**.
+
+### ¿Puedo editar un beneficio ya publicado?
+
+No. Una vez que el CeCIT publica el beneficio (estado **Activo**), solo un
+administrador de CeCIT puede modificarlo. Si necesitás un cambio, contactá al
+CeCIT.
+
+### ¿Puedo dar de alta empleados que no tengan cuenta?
+
+No. Solo los administradores del CeCIT pueden crear nuevos usuarios en la
+plataforma. Para agregar un empleado a tu negocio, la persona debe tener ya una
+cuenta en el sistema (ser socio del CeCIT o solicitar al administrador de CeCIT que lo agregue). Luego podés agregarlo desde
+"Agregar socio existente" usando su DNI.
+
+### ¿Qué pasa si un empleado tiene cuenta pero está inactiva?
+
+Aparece con la etiqueta "Cuenta inactiva". No podés darle permisos de admin
+hasta que el empleado reactive su cuenta.
+
+### ¿Puedo ver las solicitudes de beneficio que envié?
+
+No hay una lista propia en el panel de negocio. Las solicitudes las ve y gestiona
+el CeCIT desde su panel. Si necesitás saber el estado, contactá al CeCIT.
 
 ### ¿Cómo cambio el logo de mi negocio?
 
@@ -398,7 +531,7 @@ tus clientes.
 
 ---
 
-## 9. Contacto
+## 10. Contacto
 
 | Necesitás | Contactá a |
 |---|---|

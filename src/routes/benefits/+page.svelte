@@ -1,10 +1,12 @@
 <script lang="ts">
     import { page } from "$app/state";
+    import { browser, building } from "$app/environment";
     import BenefitCard from "$lib/components/BenefitCard.svelte";
     import { getFilters, loadCategories } from "$lib/stores/categories.svelte";
     import { onMount } from "svelte";
     import { toast } from "svelte-sonner";
     import type { Benefit } from "$lib/types/Benefit";
+    import { apiFetch } from "$lib/api-client";
 
     let benefits: Benefit[] = $state([]);
     let paymentMethods: string[] = $state([]);
@@ -14,11 +16,16 @@
     async function load_benefits() {
         loading = true;
         await loadCategories();
+        // Skip API calls during prerender/build
+        if (building || !browser) {
+            loading = false;
+            return;
+        }
         try {
             const url = initialSearch
-                ? `/api/benefits/search?text=${encodeURIComponent(initialSearch)}`
-                : "/api/benefits/actives";
-            const response = await fetch(url);
+                ? `/benefits/search?text=${encodeURIComponent(initialSearch)}`
+                : "/benefits/actives";
+            const response = await apiFetch(url);
             if (!response.ok) {
                 console.log("Response does not ok");
                 toast.error("No se pudieron cargar los beneficios");
@@ -34,8 +41,10 @@
     }
 
     async function load_payment_methods() {
+        // Skip API calls during prerender/build
+        if (building || !browser) return;
         try {
-            const response = await fetch("/api/payment-methods/all");
+            const response = await apiFetch("/payment-methods/all");
             if (!response.ok) return;
             paymentMethods = await response.json();
             return;
@@ -44,8 +53,8 @@
         }
     }
 
-    const initialCategory = page.url.searchParams.get("category");
-    const initialSearch = page.url.searchParams.get("search");
+    const initialCategory = $derived(page.url.searchParams.get("category"));
+    const initialSearch = $derived(page.url.searchParams.get("search"));
 
     let selectedCategory = $derived(
         initialCategory && categories.includes(initialCategory)
@@ -302,7 +311,7 @@
         border: 5px solid #e0e0e0;
         border-top-color: #151535;
         border-radius: 50%;
-        animation: spin 0.8s linear infinite;
+        animation: spin 0.8s linear infinite.;
     }
 
     @keyframes spin {
@@ -321,7 +330,7 @@
             position: static;
             display: grid;
             grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 22px;
+            gap: 22px.;
         }
 
         .benefits-grid {
@@ -349,7 +358,7 @@
 
         .benefits-grid {
             grid-template-columns: 1fr;
-            gap: 22px;
+            gap: 22px.;
         }
     }
 </style>
