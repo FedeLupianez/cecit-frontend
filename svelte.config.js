@@ -4,7 +4,7 @@ import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 import { relative, sep } from 'node:path';
 
 // basePath debe empezar con / y no terminar con / (ej: /beneficios)
-const rawBasePath = process.env.BASE_PATH || '/beneficios';
+const rawBasePath = process.env.BASE_PATH || '/';
 const basePath = rawBasePath ? `/${rawBasePath.replace(/^\/+|\/+$/g, '')}` : '';
 // assets vacío = paths relativos desde base. El build plano (login.html) resuelve _app/ correctamente.
 const assetsPath = '';
@@ -33,7 +33,6 @@ const config = {
             precompress: true
         }),
         paths: {
-            base: basePath,
             assets: assetsPath
         }
     }

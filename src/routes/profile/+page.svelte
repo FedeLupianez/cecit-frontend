@@ -4,12 +4,13 @@
     import { apiFetch } from "$lib/api";
     import { profileStore } from "$lib/stores/profileStore";
     import RoleCard from "$lib/components/RoleCard.svelte";
-    import { getRoleAccess } from "$lib/access/roleAccess";
+    import { getRoleAccessWithBase } from "$lib/access/roleAccess";
+    import { base } from "$app/paths";
     import { Pencil, Mail, Lock, BadgeCheck, Hash } from "lucide-svelte";
     import { toast } from "svelte-sonner";
 
     const profile = $derived(profileStore.getProfile());
-    const access = $derived(getRoleAccess(profile?.role));
+    const access = $derived(getRoleAccessWithBase(profile?.role, base));
 
     const avatar = $derived(
         profile?.email
@@ -381,33 +382,6 @@
                         </button>
                     {/if}
                 </div>
-            </section>
-
-            <section id="access-sections" class="detail-grid">
-                {#if profile?.role === "CECIT_ADMIN"}
-                    <section id="admin-panel" class="detail-section tile">
-                        <h3>Panel de administrador</h3>
-                        <p>
-                            Los accesos de administración están habilitados para
-                            tu rol.
-                        </p>
-                    </section>
-                    <section id="create-benefit" class="detail-section tile">
-                        <h3>Crear beneficio</h3>
-                        <p>
-                            Podés crear beneficios con la API mediante
-                            <code>POST /benefits</code>.
-                        </p>
-                    </section>
-                {:else if profile?.role === "PARTNER_ADMIN"}
-                    <section id="partner-panel" class="detail-section tile">
-                        <h3>Panel de administrador</h3>
-                        <p>
-                            Tu rol puede administrar el comercio asociado
-                            mediante los endpoints protegidos del backend.
-                        </p>
-                    </section>
-                {/if}
             </section>
         </div>
     </div>

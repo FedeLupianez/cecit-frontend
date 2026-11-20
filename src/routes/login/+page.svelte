@@ -1,5 +1,6 @@
 <script lang="ts">
     import { accessToken } from "$lib/stores/authStore";
+    import { profileStore } from "$lib/stores/profileStore";
     import { goto } from "$app/navigation";
     import { navigating } from "$app/stores";
     import { toast } from "svelte-sonner";
@@ -43,17 +44,30 @@
                 throw new Error(`Response status : ${response.status}`);
             const result = await response.json();
             accessToken.setToken(result.access_token);
+            try {
+                const refreshRes = await apiFetch("/auth/refresh", {
+                    method: "POST",
+                });
+                if (refreshRes.ok) {
+                    const { access_token, profile } = await refreshRes.json();
+                    if (access_token) accessToken.setToken(access_token);
+                    if (profile) profileStore.setProfile(profile);
+                }
+            } catch {
+                // Si falla, el layout lo manejará
+            }
             toast.success("Sesión iniciada correctamente");
-            await goto(base);
+            await goto("/");
         } catch (rerror) {
             error = "Credenciales Inválidas";
             toast.error("Credenciales Inválidas");
-            loading = false;
             console.log(rerror);
             if (errorTimeout) clearTimeout(errorTimeout);
             errorTimeout = setTimeout(() => {
                 error = "";
             }, 3000);
+        } finally {
+            loading = false;
         }
     }
 </script>
@@ -70,7 +84,8 @@
             <p class="text">Ingresa los datos para iniciar sesión</p>
             <p class="signup-text">
                 ¿No tenés cuenta?
-                <a href={`${base}/signup`} class="signup-link">Creá tu cuenta</a>
+                <a href={`${base}/signup`} class="signup-link">Creá tu cuenta</a
+                >
             </p>
         </div>
         <form onsubmit={login} class="right" novalidate>

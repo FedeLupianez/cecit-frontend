@@ -91,14 +91,13 @@
     </div>
 
     <div class="links">
-        <a href={base}>Home</a>
+        <a href="https://centrodecomercioag.com.ar/">Home</a>
         <span class="separator" aria-hidden="true">|</span>
-        <a href="http://centrodecomercioag.com.ar/">Institucional</a>
+        <a href="https://centrodecomercioag.com.ar/">Institucional</a>
         <span class="separator" aria-hidden="true">|</span>
-        <a href="http://centrodecomercioag.com.ar/hacete-socio/">Hacete socio</a
-        >
+        <a href="https://centrodecomercioag.com.ar">Hacete socio</a>
         <span class="separator" aria-hidden="true">|</span>
-        <a href="http://centrodecomercioag.com.ar/contacto/">Contacto</a>
+        <a href="https://centrodecomercioag.com.ar">Contacto</a>
 
         <div class="user-menu" bind:this={userMenu}>
             <button

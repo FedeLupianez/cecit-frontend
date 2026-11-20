@@ -37,7 +37,8 @@
             {@const isActive =
                 $page.url.pathname === action.href.split("#")[0] &&
                 (action.href.includes("#")
-                    ? $page.url.hash === action.href.slice(action.href.indexOf("#"))
+                    ? $page.url.hash ===
+                      action.href.slice(action.href.indexOf("#"))
                     : true)}
             {@const isPending = pendingHref === action.href}
             <a
