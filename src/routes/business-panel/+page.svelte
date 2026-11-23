@@ -18,6 +18,7 @@
         Mail,
     } from "lucide-svelte";
     import { toast } from "svelte-sonner";
+    import { toWebpUrl } from "$lib/utils/image";
 
     interface Partner {
         id_partner: string;
@@ -106,6 +107,11 @@
     );
     const active = $derived(
         benefits.filter((benefit) => benefit.status === "ACTIVE").length,
+    );
+
+    const partnerLogoWebp = $derived(partner ? toWebpUrl(partner.logo) : "");
+    const benefitImagesWebp = $derived(
+        benefits.map((b) => ({ id: b.id_benefit, webp: toWebpUrl(b.image) })),
     );
 
     function authHeaders(): Record<string, string> {
@@ -696,12 +702,15 @@
                             class:active={p.id_partner === selectedPartnerId}
                             onclick={() => selectPartner(p)}
                         >
-                            <img
-                                class="partner-tab-logo"
-                                src={p.logo}
-                                alt=""
-                                loading="lazy"
-                            />
+                            <picture>
+                                <source type="image/webp" srcset={toWebpUrl(p.logo)} />
+                                <img
+                                    class="partner-tab-logo"
+                                    src={p.logo}
+                                    alt=""
+                                    loading="lazy"
+                                />
+                            </picture>
                             <span>{p.name}</span>
                         </button>
                     {/each}
@@ -711,11 +720,14 @@
             {#if partner}
                 <section class="business-card">
                     <div class="logo-col">
-                        <img
-                            class="logo"
-                            src={partner.logo}
-                            alt={`Logo de ${partner.name}`}
-                        />
+                        <picture>
+                            <source type="image/webp" srcset={partnerLogoWebp} />
+                            <img
+                                class="logo"
+                                src={partner.logo}
+                                alt={`Logo de ${partner.name}`}
+                            />
+                        </picture>
 
                         {#if editingLogo}
                             <div
@@ -1036,7 +1048,10 @@
                     <div class="coupon-grid">
                         {#each benefits as benefit}
                             <article class="coupon">
-                                <img src={benefit.image} alt={benefit.title} />
+                                <picture>
+                                    <source type="image/webp" srcset={benefitImagesWebp.find(b => b.id === benefit.id_benefit)?.webp ?? ""} />
+                                    <img src={benefit.image} alt={benefit.title} />
+                                </picture>
                                 <h3>{benefit.title}</h3>
                                 <p>
                                     <b>{benefit.coupons}</b> /
@@ -1669,7 +1684,7 @@
         border-radius: 3px;
         text-align: center;
     }
-    .coupon img {
+    .coupon picture > img {
         display: block;
         width: 100%;
         height: 136px;

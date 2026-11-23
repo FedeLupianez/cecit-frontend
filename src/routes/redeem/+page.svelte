@@ -4,6 +4,7 @@
     import { profileStore } from "$lib/stores/profileStore";
     import { apiFetch } from "$lib/api";
     import { toast } from "svelte-sonner";
+    import { toWebpUrl } from "$lib/utils/image";
 
     interface VoucherInfo {
         token: string;
@@ -54,6 +55,9 @@
             ? voucher.methods.join(", ")
             : "No especificados",
     );
+
+    const voucherImageWebp = $derived(voucher ? toWebpUrl(voucher.image) : "");
+    const voucherLogoWebp = $derived(voucher ? toWebpUrl(voucher.logo) : "");
 
     async function parseErrorMessage(response: Response) {
         try {
@@ -214,7 +218,10 @@
 
         {#if voucher}
             <section class="voucher-card">
-                <img class="photo" src={voucher.image} alt={voucher.title} />
+                <picture>
+                    <source type="image/webp" srcset={voucherImageWebp} />
+                    <img class="photo" src={voucher.image} alt={voucher.title} />
+                </picture>
                 <div class="voucher-details">
                     <div class="title-row">
                         <h2>{voucher.title}</h2>
@@ -232,7 +239,10 @@
                     </div>
 
                     <p class="business-name">
-                        <img loading="lazy" src={voucher.logo} alt="" />
+                        <picture>
+                            <source type="image/webp" srcset={voucherLogoWebp} />
+                            <img loading="lazy" src={voucher.logo} alt="" />
+                        </picture>
                         {voucher.partner}
                     </p>
 
@@ -456,7 +466,7 @@
         color: #555;
         font-size: 16px;
     }
-    .business-name img {
+    .business-name picture > img {
         width: 24px;
         height: 24px;
         object-fit: contain;

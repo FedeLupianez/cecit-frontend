@@ -10,8 +10,11 @@
     import RoleCard from "$lib/components/RoleCard.svelte";
     import { base } from "$app/paths";
     import { apiFetch } from "$lib/api-client";
+    import { toWebpUrl } from "$lib/utils/image";
 
     const logo = `${base}/logo_con_texto.png`;
+    const logoWebp = toWebpUrl(logo);
+    const avatarWebp = $derived(toWebpUrl(avatar));
 
     let profile: Profile | null | undefined = $state();
     let avatar = $state<string>("");
@@ -87,7 +90,10 @@
 
 <nav class="navbar">
     <div class="logo">
-        <img loading="lazy" src={logo} alt="CeCIT Logo" />
+        <picture>
+            <source type="image/webp" srcset={logoWebp} />
+            <img loading="lazy" src={logo} alt="CeCIT Logo" />
+        </picture>
     </div>
 
     <div class="links">
@@ -159,7 +165,10 @@
         >
             <div class="mobile-drawer-header">
                 <div class="logo">
-                    <img loading="lazy" src={logo} alt="CeCIT Logo" />
+                    <picture>
+                        <source type="image/webp" srcset={logoWebp} />
+                        <img loading="lazy" src={logo} alt="CeCIT Logo" />
+                    </picture>
                 </div>
                 <button
                     class="close-btn"
@@ -199,11 +208,14 @@
                     </a>
                 {:else}
                     <div class="mobile-user-info">
-                        <img
-                            src={avatar}
-                            alt="profileImage"
-                            class="profile-icon"
-                        />
+                        <picture>
+                            <source type="image/webp" srcset={avatarWebp} />
+                            <img
+                                src={avatar}
+                                alt="profileImage"
+                                class="profile-icon"
+                            />
+                        </picture>
                         <span>{profile.email}</span>
                     </div>
                     {#if access}
@@ -242,7 +254,7 @@
         min-width: 0;
     }
 
-    .logo img {
+    .logo picture > img {
         height: 78px;
         object-fit: contain;
     }
@@ -327,7 +339,7 @@
             display: none;
         }
 
-        .logo img {
+        .logo picture > img {
             height: 70px;
             max-width: 220px;
             width: auto;
@@ -346,7 +358,7 @@
             padding: 16px 18px;
         }
 
-        .logo img {
+        .logo picture > img {
             height: 58px;
             max-width: 190px;
         }
@@ -399,7 +411,7 @@
         border-bottom: 1px solid #e5e7eb;
     }
 
-    .mobile-drawer-header .logo img {
+    .mobile-drawer-header .logo picture > img {
         height: 50px;
         object-fit: contain;
     }

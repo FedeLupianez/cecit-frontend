@@ -1,9 +1,11 @@
-DirectoryIndex 200.html
+DirectoryIndex index.html
 
 RewriteEngine On
-RewriteBase /beneficios/
 
-RewriteCond %{REQUEST_FILENAME} -f
+# Si existe el archivo o directorio, servirlo directamente
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
 RewriteRule ^ - [L]
 
-RewriteRule ^ 200.html [L]
+# Fallback para rutas no encontradas
+RewriteRule ^ /200.html [L]

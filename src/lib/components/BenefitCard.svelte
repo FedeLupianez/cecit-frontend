@@ -14,6 +14,7 @@
     import { accessToken } from "$lib/stores/authStore";
     import { apiFetch } from "$lib/api";
     import { toast } from "svelte-sonner";
+    import { toWebpUrl } from "$lib/utils/image";
 
     let {
         benefit_id,
@@ -75,6 +76,9 @@
         if (endDateFormatted) return `Hasta ${endDateFormatted}`;
         return "";
     });
+
+    const imageWebp = $derived(toWebpUrl(image));
+    const logoWebp = $derived(toWebpUrl(logo || favicon));
 
     let user_vouchers = $state<number>(0);
     let error = $state("");
@@ -198,7 +202,10 @@
         role="button"
         tabindex="0"
     >
-        <img loading="lazy" src={image} alt={title} />
+        <picture>
+            <source type="image/webp" srcset={imageWebp} />
+            <img loading="lazy" src={image} alt={title} />
+        </picture>
 
         <div class="content">
             <div class="title-row">
@@ -207,7 +214,10 @@
 
             <div class="bottom">
                 <div class="business">
-                    <img loading="lazy" src={logo || favicon} alt="" />
+                    <picture>
+                        <source type="image/webp" srcset={logoWebp} />
+                        <img loading="lazy" src={logo || favicon} alt="" />
+                    </picture>
                     <p>{partner}</p>
                 </div>
 
@@ -410,7 +420,7 @@
         height: 310px;
     }
 
-    .compact-card > img {
+    .compact-card > picture > img {
         width: 100%;
         height: 174px;
         object-fit: cover;
@@ -781,7 +791,7 @@
             background: #fff;
         }
 
-        .compact-card > img {
+        .compact-card > picture > img {
             height: 145px;
         }
 

@@ -8,6 +8,7 @@
     import { profileStore } from "$lib/stores/profileStore";
     import { apiFetch } from "$lib/api";
     import { base } from "$app/paths";
+    import { toWebpUrl } from "$lib/utils/image";
 
     type VoucherStatus = "PENDING" | "DELIVERED" | "EXPIRED" | "REJECTED";
 
@@ -110,6 +111,8 @@
                 .includes(term);
         }),
     );
+
+    const benefitImageWebp = $derived(benefit ? toWebpUrl(benefit.image) : "");
 
     $effect(() => {
         const profile = profileStore.getProfile();
@@ -280,7 +283,10 @@
             <p class="state error">{error}</p>
         {:else if benefit}
             <header class="head">
-                <img src={benefit.image} alt={benefit.title} />
+                <picture>
+                    <source type="image/webp" srcset={benefitImageWebp} />
+                    <img src={benefit.image} alt={benefit.title} />
+                </picture>
                 <div class="head-text">
                     <span class="partner-name">{benefit.partner}</span>
                     <h1>{benefit.title}</h1>
@@ -489,7 +495,7 @@
         border-radius: 8px;
         padding: 22px 26px;
     }
-    .head img {
+    .head picture > img {
         width: 100%;
         aspect-ratio: 16 / 10;
         border-radius: 6px;

@@ -2,6 +2,7 @@
     import { Download } from "lucide-svelte";
     import favicon from "$lib/assets/favicon.svg";
     import { apiFetch } from "$lib/api";
+    import { toWebpUrl } from "$lib/utils/image";
 
     let {
         title,
@@ -39,6 +40,9 @@
         }),
     );
 
+    const imageWebp = $derived(toWebpUrl(image));
+    const logoWebp = $derived(toWebpUrl(logo || favicon));
+
     let isLoading = $state(false);
     let error = $state("");
 
@@ -72,7 +76,10 @@
 
 <div class="card">
     <div class="compact-card">
-        <img loading="lazy" src={image} alt={title} />
+        <picture>
+            <source type="image/webp" srcset={imageWebp} />
+            <img loading="lazy" src={image} alt={title} />
+        </picture>
 
         <div class="content">
             <div class="title-row">
@@ -108,7 +115,10 @@
 
             <div class="bottom">
                 <div class="business">
-                    <img loading="lazy" src={logo || favicon} alt="" />
+                    <picture>
+                        <source type="image/webp" srcset={logoWebp} />
+                        <img loading="lazy" src={logo || favicon} alt="" />
+                    </picture>
                     <p>{partner}</p>
                 </div>
 
@@ -170,7 +180,7 @@
         min-height: 0;
     }
 
-    .compact-card > img {
+    .compact-card > picture > img {
         width: 100%;
         height: 174px;
         object-fit: cover;
@@ -325,7 +335,7 @@
         gap: 8px;
     }
 
-    .business img {
+    .business picture > img {
         width: 22px;
         height: 22px;
 
@@ -411,7 +421,7 @@
             border-radius: 12px;
         }
 
-        .compact-card > img {
+        .compact-card > picture > img {
             height: 145px;
         }
 
