@@ -6,10 +6,12 @@
     import NavigationProgress from "$lib/components/NavigationProgress.svelte";
     import { Toaster } from "svelte-sonner";
     import { navigating } from "$app/stores";
+    import { base } from "$app/paths";
 
     let { children } = $props();
 
     let isNavigating = $derived($navigating !== null);
+    const favicon = `${base}/logo_sin_texto.png`;
 
     $effect(() => {
         document.documentElement.classList.toggle(
@@ -20,7 +22,7 @@
 </script>
 
 <svelte:head>
-    <link rel="icon" href="/logo_sin_texto.png" />
+    <link rel="icon" href={favicon} />
 </svelte:head>
 
 <Navbar />

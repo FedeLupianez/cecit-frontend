@@ -14,33 +14,34 @@ export interface RoleAccess {
  * The backend exposes one `role` per account in GET /auth/profile, but it does
  * not expose a permissions endpoint. This mapping mirrors its real guards and
  * keeps the navigation rules in one place until such an endpoint exists.
+ * Paths are relative (no leading slash) so they can be prefixed with base path.
  */
 const accessByRole: Record<AccountRole, RoleAccess> = {
     USER: {
         label: "Usuario",
         actions: [
-            { label: "Configuración", href: "/profile#configuration" },
-            { label: "Historial", href: "/history" },
+            { label: "Configuración", href: "profile#configuration" },
+            { label: "Historial", href: "history" },
         ]
     },
     CECIT_ADMIN: {
         label: "Administrador",
         actions: [
-            { label: "Crear Beneficio", href: "/create-benefit" },
-            { label: "Solicitudes", href: "/benefit-requests" },
-            { label: "Panel de administrador", href: "/admin-panel" },
-            { label: "Historial", href: "/history" },
-            { label: "Configuración", href: "/profile#configuration" }
+            { label: "Crear Beneficio", href: "create-benefit" },
+            { label: "Solicitudes", href: "benefit-requests" },
+            { label: "Panel de administrador", href: "admin-panel" },
+            { label: "Historial", href: "history" },
+            { label: "Configuración", href: "profile#configuration" }
         ]
     },
     PARTNER_ADMIN: {
         label: "Negociante",
         actions: [
-            { label: "Canjear Cupón", href: "/redeem" },
-            { label: "Panel de negocio", href: "/business-panel" },
-            { label: "Crear Beneficio", href: "/create-benefit" },
-            { label: "Historial", href: "/history" },
-            { label: "Configuración", href: "/profile#configuration" }
+            { label: "Canjear Cupón", href: "redeem" },
+            { label: "Panel de negocio", href: "business-panel" },
+            { label: "Crear Beneficio", href: "create-benefit" },
+            { label: "Historial", href: "history" },
+            { label: "Configuración", href: "profile#configuration" }
         ]
     }
 };
@@ -49,4 +50,16 @@ export function getRoleAccess(role: string | undefined): RoleAccess | undefined 
     return role && role in accessByRole
         ? accessByRole[role as AccountRole]
         : undefined;
+}
+
+export function getRoleAccessWithBase(role: string | undefined, base: string): RoleAccess | undefined {
+    const access = getRoleAccess(role);
+    if (!access) return undefined;
+    return {
+        ...access,
+        actions: access.actions.map((a) => ({
+            ...a,
+            href: `${base}/${a.href}`,
+        })),
+    };
 }

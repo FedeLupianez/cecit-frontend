@@ -7,6 +7,7 @@
     import { accessToken } from "$lib/stores/authStore";
     import { apiFetch } from "$lib/api";
     import { profileStore } from "$lib/stores/profileStore";
+    import { loadPartners, getPartners } from "$lib/stores/partners.svelte";
     import type { BenefitsCreateDTO } from "$lib/types/Benefit";
 
     /** La página la pueden usar CECIT_ADMIN (crea directo) y PARTNER_ADMIN
@@ -74,7 +75,7 @@
 
     let payments = $state<string[]>([]);
 
-    let partners = $state<{ id_partner: string; name: string }[]>([]);
+    let partners = $derived(getPartners().map(p => ({ id_partner: p.id_partner, name: p.name })));
 
     function togglePayment(method: string) {
         paymentMethods = paymentMethods.includes(method)
@@ -97,21 +98,17 @@
     }
 
     async function loadOptions() {
-        const [typesResponse, paymentsResponse, partnersResponse] =
-            await Promise.all([
-                fetch("/api/benefit-types/all"),
-                fetch("/api/payment-methods/all"),
-                isPartnerAdmin
-                    ? Promise.resolve(null)
-                    : apiFetch("/api/partners/all"),
-            ]);
+        loadPartners();
+        const [typesResponse, paymentsResponse] = await Promise.all([
+            apiFetch("benefit-types/all"),
+            apiFetch("payment-methods/all"),
+        ]);
 
         if (typesResponse.ok) types = await typesResponse.json();
 
         if (paymentsResponse.ok) {
             payments = await paymentsResponse.json();
         }
-        if (partnersResponse?.ok) partners = await partnersResponse.json();
 
         if (isPartnerAdmin) await loadOwnPartners();
     }
@@ -121,7 +118,7 @@
     async function loadOwnPartners() {
         ownPartnersError = "";
         try {
-            const response = await apiFetch("/api/partners-admins/me/all");
+            const response = await apiFetch("partners-admins/me/all");
             if (response.status === 401 || response.status === 403) {
                 ownPartnersError = "No tenés permiso para ver tus negocios.";
                 return;
@@ -208,9 +205,7 @@
                 refund_limit: parsedRefundLimit,
             };
 
-            const endpoint = isPartnerAdmin
-                ? "/api/benefits/request"
-                : "/api/benefits";
+            const endpoint = isPartnerAdmin ? "benefits/request" : "benefits";
 
             const response = await apiFetch(endpoint, {
                 method: "POST",
