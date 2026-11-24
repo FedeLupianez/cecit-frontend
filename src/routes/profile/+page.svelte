@@ -8,20 +8,12 @@
     import { base } from "$app/paths";
     import { Pencil, Mail, Lock, BadgeCheck, Hash } from "lucide-svelte";
     import { toast } from "svelte-sonner";
-    import { toWebpUrl } from "$lib/utils/image";
+    import Avatar from "$lib/components/Avatar.svelte";
 
     const profile = $derived(profileStore.getProfile());
     const access = $derived(getRoleAccessWithBase(profile?.role, base));
 
-    const avatar = $derived(
-        profile?.email
-            ? `https://ui-avatars.com/api/?background=19194f&color=fff&bold=true&name=${encodeURIComponent(profile.email)}`
-            : "",
-    );
-
     const roleLabel = $derived(access?.label ?? "Sin rol");
-
-    const avatarWebp = $derived(toWebpUrl(avatar));
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -220,10 +212,7 @@
     <div class="hero">
         <div class="hero-inner">
             <div class="identity">
-                <picture>
-                    <source type="image/webp" srcset={avatarWebp} />
-                    <img class="avatar" src={avatar} alt="Foto de perfil" />
-                </picture>
+                <Avatar name={profile?.email ?? ""} size={72} class="avatar" alt="Foto de perfil" />
                 <div class="identity-text">
                     <h1>Mi cuenta</h1>
                     <p class="email">{profile?.email ?? "Sin sesión"}</p>

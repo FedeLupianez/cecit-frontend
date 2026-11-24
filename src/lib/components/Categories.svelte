@@ -1,7 +1,6 @@
 <script lang="ts">
     import "./Categories.css";
 
-    import { onMount } from "svelte";
     import {
         ChevronRight,
         ChevronLeft,
@@ -29,11 +28,14 @@
         Banknote,
         Landmark,
     } from "lucide-svelte";
-    import {
-        getCategories,
-        loadCategories,
-    } from "$lib/stores/categories.svelte";
     import { base } from "$app/paths";
+
+    interface Category {
+        name: string;
+        icon: string;
+    }
+
+    let { categories = [] } = $props<{ categories: Category[] }>();
 
     const iconMap: Record<string, typeof Tag> = {
         Car,
@@ -64,14 +66,7 @@
         return iconMap[name] ?? Tag;
     }
 
-    let categories = $derived(getCategories());
     let isLoading = $derived(categories.length === 0);
-
-    const SKELETON_COUNT = 10;
-
-    onMount(() => {
-        loadCategories();
-    });
 
     let carousel: HTMLElement | undefined;
 

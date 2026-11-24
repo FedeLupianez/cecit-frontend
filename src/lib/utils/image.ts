@@ -4,7 +4,7 @@
  */
 export function toWebpUrl(url: string): string {
     if (!url) return url;
-    return url.replace(/\.(png|jpe?g|gif|bmp|tiff?|svg)(\?.*)?$/i, '.webp$2');
+    return url.replace(/\.(png|jpe?g|gif|bmp|tiff?|svg)(\?.*)?$/i, '.avif');
 }
 
 /**

@@ -7,21 +7,26 @@ interface Category {
 
 let filters: string[] = $state([]);
 let categories: Category[] = $state([]);
-let loaded = false;
+let loadPromise: Promise<void> | null = null;
 
 export async function loadCategories() {
-    if (loaded) return;
-    loaded = true;
-    try {
-        const res = await apiFetch("categories/actives");
-        if (res.ok) {
-            const data = await res.json();
-            filters = ["Todo", ...data.map((c: { name: string }) => c.name)];
-            categories = [...data.map((c: { name: string, icon_url: string }): Category => ({ name: c.name, icon: c.icon_url }))];
+    if (categories.length) return;
+    if (loadPromise) return loadPromise;
+    loadPromise = (async () => {
+        try {
+            const res = await apiFetch("categories/actives");
+            if (res.ok) {
+                const data = await res.json();
+                filters = ["Todo", ...data.map((c: { name: string }) => c.name)];
+                categories = [...data.map((c: { name: string, icon_url: string }): Category => ({ name: c.name, icon: c.icon_url }))];
+            }
+        } catch {
+            /* noop */
+        } finally {
+            loadPromise = null;
         }
-    } catch {
-        /* noop */
-    }
+    })();
+    return loadPromise;
 }
 
 export function getFilters() {

@@ -1,24 +1,16 @@
 <script lang="ts">
-    import { apiFetch } from "$lib/api-client";
     import { onMount } from "svelte";
+    import { loadPartners, getPartners } from "$lib/stores/partners.svelte";
+    import Avatar from "$lib/components/Avatar.svelte";
 
-    interface Partner {
-        name: string;
-        logo: string;
-    }
+    let partners = $derived.by(() => {
+        const p = getPartners();
+        return [...p, ...p]; // duplicate for seamless carousel loop
+    });
 
-    let partners: Partner[] = $state([]);
-
-    async function load_partners() {
-        const result = await apiFetch("partners/all", {
-            method: "GET",
-            credentials: "include",
-        });
-        if (!result.ok) return;
-        const data = await result.json();
-        partners = [...data, ...data];
-    }
-    onMount(load_partners);
+    onMount(() => {
+        loadPartners();
+    });
 </script>
 
 <section class="partners">
@@ -28,14 +20,29 @@
         <div class="track">
             {#each partners as partner}
                 <div class="partner-card">
-                    <img
-                        loading="lazy"
-                        src={partner.logo}
-                        alt={partner.name}
-                        onerror={(e) =>
-                            (e.target.src =
-                                "https://upload.wikimedia.org/wikipedia/commons/1/14/No_Image_Available.jpg")}
-                    />
+                    <div
+                        class="partner-logo"
+                        role="img"
+                        aria-label={partner.name}
+                    >
+                        {#if partner.logo.startsWith("https://ui-avatars.com/api")}
+                            <Avatar
+                                name={partner.name}
+                                size={160}
+                                class="logo-fallback"
+                                alt={partner.name}
+                            />
+                        {:else}
+                            <img
+                                loading="lazy"
+                                src={partner.logo}
+                                alt=""
+                                onerror={(e) => {
+                                    e.currentTarget.style.display = "none";
+                                }}
+                            />
+                        {/if}
+                    </div>
                     <p>{partner.name}</p>
                 </div>
             {/each}
@@ -91,16 +98,39 @@
         text-align: center;
     }
 
-    img {
+    .partner-logo {
         width: 10rem;
         height: 10rem;
-
-        object-fit: cover;
-        border-radius: 99%;
-
+        margin: 0 auto;
+        position: relative;
+        border-radius: 50%;
+        overflow: hidden;
         background: white;
-
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    }
+
+    .partner-logo img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 50%;
+        transition: opacity 0.2s ease;
+    }
+
+    .partner-logo img:not([style*="display: none"]) + .logo-fallback {
+        display: none;
+    }
+
+    .logo-fallback {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
     }
 
     p {
@@ -143,9 +173,13 @@
             width: 116px;
         }
 
-        img {
+        .partner-logo {
             width: 104px;
             height: 104px;
+        }
+
+        .logo-fallback {
+            font-size: 28px;
         }
 
         p {
@@ -162,9 +196,13 @@
             width: 104px;
         }
 
-        img {
+        .partner-logo {
             width: 92px;
             height: 92px;
+        }
+
+        .logo-fallback {
+            font-size: 24px;
         }
     }
 </style>

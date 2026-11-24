@@ -246,9 +246,8 @@ a {
     font-weight: 800;
     line-height: 1.1;
     text-align: center;
-    white-space: nowrap;
-    text-wrap: wrap;
-    max-width: 7rem;
+    overflow-wrap: anywhere;
+    max-width: 9rem;
 }
 
 /*
