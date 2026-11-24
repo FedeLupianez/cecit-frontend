@@ -33,6 +33,7 @@
         } finally {
             accessToken.clear();
             profileStore.clear();
+            accessToken.clearAuth();
             showRoleMenu = false;
             showMobileMenu = false;
             try {

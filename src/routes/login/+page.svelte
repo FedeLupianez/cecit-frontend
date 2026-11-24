@@ -6,6 +6,7 @@
     import { toast } from "svelte-sonner";
     import { base } from "$app/paths";
     import { apiFetch } from "$lib/api-client";
+    import { browser } from "$app/environment";
 
     let email = $state("");
     let password = $state("");
@@ -49,9 +50,14 @@
                     method: "POST",
                 });
                 if (refreshRes.ok) {
-                    const { access_token, profile } = await refreshRes.json();
+                    const { access_token, profile, expires_at } = await refreshRes.json();
                     if (access_token) accessToken.setToken(access_token);
-                    if (profile) profileStore.setProfile(profile);
+                    if (profile) {
+                        profileStore.setProfile(profile);
+                        // Save to localStorage for session restoration
+                        const expiresAt = expires_at ? new Date(expires_at).getTime() : Date.now() + 7 * 24 * 60 * 60 * 1000; // fallback 7 days
+                        accessToken.saveAuth(profile, expiresAt);
+                    }
                 }
             } catch {
                 // Si falla, el layout lo manejará
