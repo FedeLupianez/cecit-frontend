@@ -89,13 +89,13 @@
     </div>
 
     <div class="links">
-        <a href="https://centrodecomercioag.com.ar/">Home</a>
+        <a href="/">Home</a>
         <span class="separator" aria-hidden="true">|</span>
-        <a href="https://centrodecomercioag.com.ar/">Institucional</a>
+        <a href="/">Institucional</a>
         <span class="separator" aria-hidden="true">|</span>
-        <a href="https://centrodecomercioag.com.ar">Hacete socio</a>
+        <a href="/">Hacete socio</a>
         <span class="separator" aria-hidden="true">|</span>
-        <a href="https://centrodecomercioag.com.ar">Contacto</a>
+        <a href="/">Contacto</a>
         {#if access}
             <span class="separator" aria-hidden="true">|</span>
             <a href={access.benefits} data-sveltekit-preload-data="tap"

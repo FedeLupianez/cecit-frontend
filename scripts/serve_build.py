@@ -4,6 +4,7 @@ Simple HTTP server to serve the static build folder for testing.
 Usage: python serve_build.py [port]
 Default port: 8080
 """
+
 import sys
 import os
 from http.server import HTTPServer, SimpleHTTPRequestHandler
@@ -11,6 +12,7 @@ from http.server import HTTPServer, SimpleHTTPRequestHandler
 # Get the build directory path (parent of this script's directory)
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 BUILD_DIR = os.path.join(os.path.dirname(SCRIPT_DIR), "build")
+
 
 class BuildHandler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
@@ -26,6 +28,7 @@ class BuildHandler(SimpleHTTPRequestHandler):
     def log_message(self, format, *args):
         # Cleaner logging
         print(f"[{self.address_string()}] {format % args}")
+
 
 if __name__ == "__main__":
     port = int(sys.argv[1]) if len(sys.argv) > 1 else 8080
@@ -44,3 +47,4 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         print("\nShutting down...")
         server.shutdown()
+
