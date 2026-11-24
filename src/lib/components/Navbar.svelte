@@ -98,14 +98,20 @@
         <a href="https://centrodecomercioag.com.ar">Contacto</a>
         {#if access}
             <span class="separator" aria-hidden="true">|</span>
-            <a href={access.benefits} data-sveltekit-preload-data="tap">Beneficios</a>
+            <a href={access.benefits} data-sveltekit-preload-data="tap"
+                >Beneficios</a
+            >
             {#if access.panel}
                 <span class="separator" aria-hidden="true">|</span>
-                <a href={access.panel} data-sveltekit-preload-data="tap">Mi Panel</a>
+                <a href={access.panel} data-sveltekit-preload-data="tap"
+                    >Mi Panel</a
+                >
             {/if}
             {#if access.admin}
                 <span class="separator" aria-hidden="true">|</span>
-                <a href={access.admin} data-sveltekit-preload-data="tap">Admin</a>
+                <a href={access.admin} data-sveltekit-preload-data="tap"
+                    >Admin</a
+                >
             {/if}
         {/if}
 
@@ -120,7 +126,12 @@
                 {#if !profile}
                     <User24Icon height="3.0em" class="profile-icon" />
                 {:else}
-                    <Avatar name={profile.email} size={36} class="profile-icon" alt="Foto de perfil" />
+                    <Avatar
+                        name={profile.email}
+                        size={68}
+                        class="profile-icon"
+                        alt="Foto de perfil"
+                    />
                 {/if}
             </button>
 
@@ -185,7 +196,11 @@
             </div>
 
             <div class="mobile-drawer-links">
-                <a href={base} data-sveltekit-preload-data="tap" onclick={closeMobileMenu}>Home</a>
+                <a
+                    href={base}
+                    data-sveltekit-preload-data="tap"
+                    onclick={closeMobileMenu}>Home</a
+                >
                 <a
                     href="http://centrodecomercioag.com.ar/"
                     onclick={closeMobileMenu}>Institucional</a
@@ -199,12 +214,24 @@
                     onclick={closeMobileMenu}>Contacto</a
                 >
                 {#if access}
-                    <a href={access.benefits} data-sveltekit-preload-data="tap" onclick={closeMobileMenu}>Beneficios</a>
+                    <a
+                        href={access.benefits}
+                        data-sveltekit-preload-data="tap"
+                        onclick={closeMobileMenu}>Beneficios</a
+                    >
                     {#if access.panel}
-                        <a href={access.panel} data-sveltekit-preload-data="tap" onclick={closeMobileMenu}>Mi Panel</a>
+                        <a
+                            href={access.panel}
+                            data-sveltekit-preload-data="tap"
+                            onclick={closeMobileMenu}>Mi Panel</a
+                        >
                     {/if}
                     {#if access.admin}
-                        <a href={access.admin} data-sveltekit-preload-data="tap" onclick={closeMobileMenu}>Admin</a>
+                        <a
+                            href={access.admin}
+                            data-sveltekit-preload-data="tap"
+                            onclick={closeMobileMenu}>Admin</a
+                        >
                     {/if}
                 {/if}
             </div>
@@ -221,7 +248,12 @@
                     </a>
                 {:else}
                     <div class="mobile-user-info">
-                        <Avatar name={profile.email} size={40} class="profile-icon" alt="Foto de perfil" />
+                        <Avatar
+                            name={profile.email}
+                            size={48}
+                            class="profile-icon"
+                            alt="Foto de perfil"
+                        />
                         <span>{profile.email}</span>
                     </div>
                     {#if access}
