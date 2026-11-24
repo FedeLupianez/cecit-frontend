@@ -9,19 +9,24 @@ export interface Partner {
 }
 
 let partners: Partner[] = $state([]);
-let loaded = false;
+let loadPromise: Promise<void> | null = null;
 
 export async function loadPartners() {
-    if (loaded) return;
-    loaded = true;
-    try {
-        const res = await apiFetch("partners/all");
-        if (res.ok) {
-            partners = await res.json();
+    if (partners.length) return;
+    if (loadPromise) return loadPromise;
+    loadPromise = (async () => {
+        try {
+            const res = await apiFetch("partners/all");
+            if (res.ok) {
+                partners = await res.json();
+            }
+        } catch {
+            /* noop */
+        } finally {
+            loadPromise = null;
         }
-    } catch {
-        /* noop */
-    }
+    })();
+    return loadPromise;
 }
 
 export function getPartners() {
@@ -30,5 +35,5 @@ export function getPartners() {
 
 export function resetPartners() {
     partners = [];
-    loaded = false;
+    loadPromise = null;
 }

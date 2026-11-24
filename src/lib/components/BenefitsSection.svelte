@@ -1,5 +1,4 @@
 <script lang="ts">
-    import { onMount } from "svelte";
     /*
   ==========================================
   IMPORTS
@@ -7,37 +6,13 @@
   */
 
     import BenefitCard from "./BenefitCard.svelte";
-    import { loadCategories, getFilters } from "$lib/stores/categories.svelte";
     import type { Benefit } from "$lib/types/Benefit";
     import { base } from "$app/paths";
-    import { apiFetch } from "$lib/api-client";
 
-    let { title = "Beneficios populares", endpoint = "/benefits/actives" } =
-        $props();
+    let { title = "Beneficios populares", benefits = [], filters = ["Todo"] } = $props();
     const benefitsPath = `${base}/benefits`;
 
-    let benefits: Benefit[] = $state([]);
-    let filters = $derived(getFilters());
-    let loading: boolean = $state(true);
-
-    async function load_benefits() {
-        await loadCategories();
-        loading = true;
-        try {
-            const response = await apiFetch(endpoint);
-            if (!response.ok) {
-                console.log("Response does not ok");
-                return;
-            }
-            benefits = await response.json();
-        } catch (error) {
-            console.log(error);
-        } finally {
-            loading = false;
-        }
-    }
-
-    onMount(() => load_benefits());
+    let loading = $derived(benefits.length === 0);
 
     import { ChevronLeft, ChevronRight, TicketX } from "lucide-svelte";
 

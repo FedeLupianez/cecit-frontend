@@ -4,6 +4,12 @@
     import BenefitsSection from "$lib/components/BenefitsSection.svelte";
     import PartnersCarousel from "$lib/components/PartnersCarousel.svelte";
     import JoinSection from "$lib/components/JoinSection.svelte";
+
+    let { data } = $props();
+    const categories = $derived(data.categories);
+    const popularBenefits = $derived(data.popularBenefits);
+    const newsBenefits = $derived(data.newsBenefits);
+    const partners = $derived(data.partners);
 </script>
 
 <svelte:head>
@@ -12,10 +18,10 @@
 
 <HeroCarousel />
 
-<Categories />
+<Categories {categories} />
 
-<BenefitsSection title="Beneficios Populares" endpoint="/benefits/popular" />
-<BenefitsSection title="Nuevos beneficios" endpoint="/benefits/news" />
+<BenefitsSection title="Beneficios Populares" benefits={popularBenefits} filters={['Todo', ...categories.map(c => c.name)]} />
+<BenefitsSection title="Nuevos beneficios" benefits={newsBenefits} filters={['Todo', ...categories.map(c => c.name)]} />
 
 <PartnersCarousel />
 
