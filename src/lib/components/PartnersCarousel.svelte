@@ -25,14 +25,14 @@
                         role="img"
                         aria-label={partner.name}
                     >
-                        {#if partner.logo.startsWith("https://ui-avatars.com/api")}
+                        {#if partner.logo && partner.logo.startsWith("https://ui-avatars.com/api")}
                             <Avatar
                                 name={partner.name}
                                 size={160}
                                 class="logo-fallback"
                                 alt={partner.name}
                             />
-                        {:else}
+                        {:else if partner.logo}
                             <img
                                 loading="lazy"
                                 src={partner.logo}
@@ -40,6 +40,13 @@
                                 onerror={(e) => {
                                     e.currentTarget.style.display = "none";
                                 }}
+                            />
+                        {:else}
+                            <Avatar
+                                name={partner.name}
+                                size={160}
+                                class="logo-fallback"
+                                alt={partner.name}
                             />
                         {/if}
                     </div>

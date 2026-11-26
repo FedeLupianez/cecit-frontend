@@ -44,24 +44,35 @@
             if (!response.ok)
                 throw new Error(`Response status : ${response.status}`);
             const result = await response.json();
-            accessToken.setToken(result.access_token);
-            try {
-                const refreshRes = await apiFetch("/auth/refresh", {
-                    method: "POST",
-                });
-                if (refreshRes.ok) {
-                    const { access_token, profile, expires_at } = await refreshRes.json();
-                    if (access_token) accessToken.setToken(access_token);
-                    if (profile) {
-                        profileStore.setProfile(profile);
-                        // Save to localStorage for session restoration
-                        const expiresAt = expires_at ? new Date(expires_at).getTime() : Date.now() + 7 * 24 * 60 * 60 * 1000; // fallback 7 days
-                        accessToken.saveAuth(profile, expiresAt);
+            if (result?.access_token) accessToken.setToken(result.access_token);
+
+            const hasProfileFromLogin =
+                result?.profile && result?.expires_at;
+            if (hasProfileFromLogin) {
+                profileStore.setProfile(result.profile);
+                const expiresAt = new Date(result.expires_at).getTime();
+                accessToken.saveAuth(result.profile, expiresAt);
+            } else {
+                try {
+                    const refreshRes = await apiFetch("/auth/refresh", {
+                        method: "POST",
+                    });
+                    if (refreshRes.ok) {
+                        const { access_token, profile, expires_at } = await refreshRes.json();
+                        if (access_token) accessToken.setToken(access_token);
+                        if (profile) {
+                            profileStore.setProfile(profile);
+                            const expiresAt = expires_at
+                                ? new Date(expires_at).getTime()
+                                : Date.now() + 7 * 24 * 60 * 60 * 1000;
+                            accessToken.saveAuth(profile, expiresAt);
+                        }
                     }
+                } catch {
+                    // Si falla, el layout lo manejará
                 }
-            } catch {
-                // Si falla, el layout lo manejará
             }
+
             toast.success("Sesión iniciada correctamente");
             await goto("/");
         } catch (rerror) {
